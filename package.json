@@ -1,5 +1,5 @@
 {
-  "name": "veramotest",
+  "name": "veramo-agent",
   "version": "1.0.0",
   "description": "Veramo agent",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "postinstall": "patch-package"
   },
   "keywords": [],
-  "author": "Sphereon <dev@sphereon.com>",
+  "author": "Michiel Uitdehaag <info@muisit.nl>",
   "license": "Apache-2.0",
   "private": false,
   "dependencies": {
