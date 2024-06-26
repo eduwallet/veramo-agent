@@ -1,0 +1,94 @@
+{
+  "name": "veramotest",
+  "version": "1.0.0",
+  "description": "Veramo agent",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "build:clean": "tsc --build --clean && tsc --build",
+    "start:prod": "node --experimental-specifier-resolution=node dist/index.js",
+    "start:dev": "node --experimental-specifier-resolution=node --loader ts-node/esm src/agent.ts",
+    "postinstall": "patch-package"
+  },
+  "keywords": [],
+  "author": "Sphereon <dev@sphereon.com>",
+  "license": "Apache-2.0",
+  "private": false,
+  "dependencies": {
+    "@sphereon/oid4vci-client": "0.10.4-unstable.61",
+    "@sphereon/oid4vci-issuer": "0.10.4-unstable.61",
+    "@sphereon/oid4vci-issuer-server": "0.10.4-unstable.61",
+    "@sphereon/ssi-express-support": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk-ext.did-provider-jwk": "0.18.2",
+    "@sphereon/ssi-sdk-ext.did-provider-web": "0.18.2",
+    "@sphereon/ssi-sdk-ext.did-resolver-jwk": "0.18.2",
+    "@sphereon/ssi-sdk-ext.key-manager": "0.18.2",
+    "@sphereon/ssi-sdk-ext.kms-local": "0.18.2",
+    "@sphereon/ssi-sdk.core": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.data-store": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.oid4vci-issuer": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.oid4vci-issuer-rest-api": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.pd-manager": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.presentation-exchange": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.remote-server-rest-api": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.siopv2-oid4vp-rp-rest-api": "0.23.5-unstable.87",
+    "@sphereon/ssi-sdk.vc-handler-ld-local": "0.23.5-unstable.87",
+    "@veramo/core": "4.2.0",
+    "@veramo/credential-eip712": "4.2.0",
+    "@veramo/credential-w3c": "4.2.0",
+    "@veramo/data-store": "4.2.0",
+    "@veramo/did-comm": "4.2.0",
+    "@veramo/did-jwt": "4.2.0",
+    "@veramo/did-manager": "4.2.0",
+    "@veramo/did-provider-ethr": "4.2.0",
+    "@veramo/did-provider-ion": "4.2.0",
+    "@veramo/did-provider-key": "4.2.0",
+    "@veramo/did-resolver": "4.2.0",
+    "@veramo/key-manager": "4.2.0",
+    "@veramo/kms-local": "4.2.0",
+    "@veramo/remote-server": "4.2.0",
+    "@veramo/selective-disclosure": "4.2.0",
+    "@veramo/url-handler": "4.2.0",
+    "date-fns": "^3.6.0",
+    "did-jwt": "^6.11.6",
+    "dotenv-flow": "^4.1.0",
+    "express": "^4.19.2",
+    "handlebars": "^4.7.8",
+    "patch-package": "^8.0.0",
+    "postinstall": "^0.10.3",
+    "sqlite3": "^5.1.7",
+    "ts-node": "^10.9.2",
+    "web-did-resolver": "^2.0.27"
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "README.md",
+    "plugin.schema.json",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">= 18.0.0"
+  },
+  "prettier": {
+    "endOfLine": "auto",
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 150
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@veramo/core@4.2.0": "patches/@veramo__core@4.2.0.patch",
+      "@veramo/data-store@4.2.0": "patches/@veramo__data-store@4.2.0.patch",
+      "did-jwt@6.11.6": "patches/did-jwt@6.11.6.patch",
+      "@veramo/credential-w3c@4.2.0": "patches/@veramo__credential-w3c@4.2.0.patch"
+    }
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/express": "^4.17.21"
+  }
+}
