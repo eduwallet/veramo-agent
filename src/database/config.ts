@@ -8,6 +8,7 @@ import { SqliteConnectionOptions } from 'typeorm/driver/sqlite/SqliteConnectionO
 import { KeyValueStoreEntity, kvStoreMigrations } from '@sphereon/ssi-sdk.kv-store-temp'
 import {DB_SQLITE_FILE} from "../environment";
 
+console.log('database configuration', process.env);
 if (!process.env.DB_ENCRYPTION_KEY) {
   console.warn(`Please provide a DB_ENCRYPTION_KEY env var. Now we will use a pre-configured one. When you change to the var you will have to replace your DB`)
 }

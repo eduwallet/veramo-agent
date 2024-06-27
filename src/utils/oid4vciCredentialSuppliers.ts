@@ -5,7 +5,9 @@ import {
 } from "@sphereon/oid4vci-issuer"
 import {TemplateVCGenerator} from "./templateManager"
 import {getTypesFromRequest} from "@sphereon/oid4vci-common"
-import {CONF_PATH, CredentialSupplierConfigWithTemplateSupport, normalizeFilePath} from "../environment"
+import {CONF_PATH} from "../environment"
+import {CredentialSupplierConfigWithTemplateSupport } from '../types';
+import {normalizeFilePath } from '../utils';
 
 const templateVCGenerator = new TemplateVCGenerator()
 

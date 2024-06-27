@@ -6,11 +6,12 @@ import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
 import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
 import agent, {context} from "../agent";
 import {DIDDocumentSection, IIdentifier} from "@veramo/core";
-import {DID_PREFIX, DIDMethods, didOptConfigs, IDIDResult, KMS, UNIVERSAL_RESOLVER_RESOLVE_URL} from "../environment";
+import {DID_PREFIX, didOptConfigs, UNIVERSAL_RESOLVER_RESOLVE_URL} from "../environment";
+import { IDIDResult, KMS } from '../types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
 import {generatePrivateKeyHex, TKeyType, toJwk} from "@sphereon/ssi-sdk-ext.key-utils";
 import {getUniResolver} from "@sphereon/did-uni-client";
-
+import {DIDMethods} from '../types';
 
 export function createDidResolver() {
     return new Resolver({

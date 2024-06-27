@@ -1,14 +1,8 @@
 import {IRPDefaultOpts, SIOPv2RP} from "@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth";
 import {IPEXInstanceOptions} from "@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth/src/types/ISIOPv2RP";
-import {
-    createDidResolver,
-    getDefaultDID,
-    getDefaultKid,
-    getIdentifier,
-    IS_OID4VP_ENABLED,
-    OID4VPInstanceOpts,
-    oid4vpInstanceOpts
-} from "../environment";
+import { createDidResolver, getDefaultDID, getDefaultKid, getIdentifier } from "../utils";
+import { OID4VPInstanceOpts } from "../types";
+import { IS_OID4VP_ENABLED, oid4vpInstanceOpts} from "../environment";
 import {CheckLinkedDomain, SupportedVersion} from "@sphereon/did-auth-siop";
 import {Resolvable} from "did-resolver";
 import {AbstractPdStore} from "@sphereon/ssi-sdk.data-store";

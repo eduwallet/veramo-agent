@@ -1,12 +1,5 @@
-import {
-    createDidResolver,
-    getDefaultDID,
-    getDefaultKid,
-    getIdentifier,
-    IS_OID4VCI_ENABLED,
-    oid4vciInstanceOpts,
-    oid4vciMetadataOpts
-} from "../environment";
+import { IS_OID4VCI_ENABLED, oid4vciInstanceOpts, oid4vciMetadataOpts } from "../environment";
+import {createDidResolver, getDefaultDID, getDefaultKid, getIdentifier } from "../utils";
 import {IIssuerDefaultOpts, OID4VCIIssuer} from "@sphereon/ssi-sdk.oid4vci-issuer";
 import {Resolvable} from "did-resolver";
 import {
