@@ -9,7 +9,12 @@ import {IDIDOpts, OID4VPInstanceOpts} from "./types";
 import { IIssuerOptsImportArgs, IMetadataImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 
 export const DB_CONNECTION_NAME = process.env.DB_CONNECTION_NAME ?? 'default'
-export const DB_SQLITE_FILE = process.env.DB_SQLITE_FILE ?? 'database/agent_default.sqlite'
+export const DB_NAME = process.env.DB_NAME ?? 'postgres'
+export const DB_SCHEMA = process.env.DB_SCHEMA ?? 'agent'
+export const DB_HOST = process.env.DB_HOST ?? 'localhost'
+export const DB_PORT = process.env.DB_PORT ?? '5432'
+export const DB_USER = process.env.DB_USER ?? 'postgres'
+export const DB_PASSWORD = process.env.DB_PASSWORD ?? 'topsecret'
 export const DB_ENCRYPTION_KEY = process.env.DB_ENCRYPTION_KEY ?? '29739248cad1bd1a0fc4d9b75cd4d2990de535baf5caadfdf8d8f86664aa830c'
 export const INTERNAL_PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 export const INTERNAL_HOSTNAME_OR_IP = process.env.INTERNAL_HOSTNAME_OR_IP ?? '0.0.0.0'

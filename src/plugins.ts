@@ -16,13 +16,13 @@ import {IPDManager, PDManager} from '@sphereon/ssi-sdk.pd-manager'
 import {IOID4VCIStore, OID4VCIStore} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 import {IOID4VCIIssuer} from "@sphereon/ssi-sdk.oid4vci-issuer";
 
-import { DB_ENCRYPTION_KEY, DB_CONNECTION_NAME, DID_PREFIX, IS_OID4VCI_ENABLED, IS_OID4VP_ENABLED } from "./environment";
+import { DID_PREFIX, IS_OID4VCI_ENABLED, IS_OID4VP_ENABLED } from "./environment";
 import { DIDMethods } from './types';
 import { getDbConnection } from './database'
 import { createDidProviders, createDidResolver, createOID4VPRP } from "./utils";
 import { createOID4VCIIssuer, createOID4VCIStore } from "./utils/oid4vci";
 
-const dbConnection = getDbConnection(DB_CONNECTION_NAME)
+const dbConnection = getDbConnection()
 const pdStore = new PDStore(dbConnection);
 const privateKeyStore: PrivateKeyStore = new PrivateKeyStore(dbConnection)
 export const resolver = createDidResolver()
