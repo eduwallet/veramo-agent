@@ -6,7 +6,7 @@ import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
 import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
 import agent, {context} from "../agent";
 import {DIDDocumentSection, IIdentifier} from "@veramo/core";
-import {DID_PREFIX, didOptConfigs, UNIVERSAL_RESOLVER_RESOLVE_URL} from "../environment";
+import {didOptConfigs, UNIVERSAL_RESOLVER_RESOLVE_URL} from "../environment";
 import { IDIDResult, KMS } from '../types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
 import {generatePrivateKeyHex, TKeyType, toJwk} from "@sphereon/ssi-sdk-ext.key-utils";
@@ -33,20 +33,13 @@ export function createDidResolver() {
 
 export function createDidProviders() {
     return {
-        /*[`${DID_PREFIX}:${DIDMethods.DID_ETHR}`]: new EthrDIDProvider({
-            defaultKms: KMS.LOCAL,
-            network: 'goerli',
-        }),*/
-        /*[`${DID_PREFIX}:${DIDMethods.DID_KEY}`]: new SphereonKeyDidProvider({
-            defaultKms: KMS.LOCAL,
-        }),*/
-        [`${DID_PREFIX}:${DIDMethods.DID_ION}`]: new IonDIDProvider({
+        [`did:${DIDMethods.DID_ION}`]: new IonDIDProvider({
             defaultKms: KMS.LOCAL,
         }),
-        [`${DID_PREFIX}:${DIDMethods.DID_WEB}`]: new WebDIDProvider({
+        [`did:${DIDMethods.DID_WEB}`]: new WebDIDProvider({
             defaultKms: KMS.LOCAL,
         }),
-        [`${DID_PREFIX}:${DIDMethods.DID_JWK}`]: new JwkDIDProvider({
+        [`did:${DIDMethods.DID_JWK}`]: new JwkDIDProvider({
             defaultKms: KMS.LOCAL
         })
     }
@@ -60,9 +53,6 @@ export async function getIdentifier(did: string): Promise<IIdentifier | undefine
 }
 
 export async function getDefaultDID(): Promise<string | undefined> {
-    if (process.env.DEFAULT_DID) {
-        return process.env.DEFAULT_DID
-    }
     return agent.didManagerFind().then(ids => {
         if (!ids || ids.length === 0) {
             return
@@ -76,9 +66,6 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
     verificationMethodName?: DIDDocumentSection,
     verificationMethodFallback?: boolean
 }): Promise<string | undefined> {
-    if (!did && process.env.DEFAULT_KID) {
-        return process.env.DEFAULT_KID
-    }
     const targetDid = did ?? await getDefaultDID()
     if (!targetDid) {
         return undefined
@@ -100,55 +87,41 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
 
 export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
     const result = didOptConfigs.asArray.map(async opts => {
-            console.log(`DID config found for: ${opts.did}`)
-            const did = opts.did
-            let identifier = did ? await getIdentifier(did) : undefined
-            let privateKeyHex = opts.privateKeyHex
-            if (identifier) {
-                console.log(`Identifier exists for DID ${did}`)
-                console.log(`${JSON.stringify(identifier)}`)
-                identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
-            } else {
-                console.log(`No identifier for DID ${did} exists yet. Will create the DID...`)
+        console.log(`DID config found for: ${opts.did}`)
+        const did = opts.did
+        let identifier = did ? await getIdentifier(did) : undefined
 
-                let args = opts.createArgs
-                if (!args) {
-                    args = {options: {}}
-                }
+        if (identifier) {
+            console.log(`Identifier exists for DID ${did}`)
+            console.log(`${JSON.stringify(identifier)}`)
+            identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
+        } else {
+            console.log(`No identifier for DID ${did} exists yet. Will create the DID...`)
 
-                if (!privateKeyHex && !('privateKeyPem' in opts)) {
-                    // @ts-ignore
-                    privateKeyHex = generatePrivateKeyHex((args.options?.type ?? args.options.keyType ?? "Secp256k1") as TKeyType)
-                    console.log("This really is a demo and should not be used in production!")
-                    console.log(`privateKeyHex: ${privateKeyHex}`)
-                }
-
-                if (privateKeyHex) {
-                    if (args.options && !('key' in args.options)) {
-                        // @ts-ignore
-                        args.options['key'] = {privateKeyHex}
-                        // @ts-ignore
-                    } else if (args.options && 'key' in args.options && args.options.key && typeof args.options?.key === 'object' && !('privateKeyHex' in args.options.key)) {
-                        // @ts-ignore
-                        args.options.key['privateKeyHex'] = privateKeyHex
-                    }
-                }
-                identifier = await agent.didManagerCreate(args)
-                if (!did) {
-                    console.error('TODO: write did config object to did folder')
-                    console.error('Please adjust your did config file and add the "did" value to it: "did": "' + identifier.did + '"')
-                    console.error(JSON.stringify(identifier, null, 2))
-                    throw Error('Exit. Please see instructions')
-
-                }
-                identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
-
-                console.log(`Identifier created for DID ${did}`)
-                console.log(`${JSON.stringify(identifier, null, 2)}`)
+            let args = opts.createArgs
+            if (!args) {
+                args = {options: {}}
             }
 
-            return {...opts, did, identifier} as IDIDResult
+            // @ts-ignore
+            const privateKeyHex = generatePrivateKeyHex((args.options?.type ?? args.options.keyType ?? "Secp256k1") as TKeyType)
+            if (args.options && !('key' in args.options)) {
+                // @ts-ignore
+                args.options['key'] = {privateKeyHex}
+                // @ts-ignore
+            } else if (args.options && 'key' in args.options && args.options.key && typeof args.options?.key === 'object' && !('privateKeyHex' in args.options.key)) {
+                // @ts-ignore
+                args.options.key['privateKeyHex'] = privateKeyHex
+            }
+
+            identifier = await agent.didManagerCreate(args)
+            identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
+
+            console.log(`Identifier created for DID ${did}`)
+            console.log(`${JSON.stringify(identifier, null, 2)}`)
         }
-    )
+
+        return {...opts, did, identifier} as IDIDResult
+    });
     return Promise.all(result)
 }

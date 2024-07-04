@@ -1,9 +1,9 @@
 {
-  "correlationId": "sphereon",
+  "correlationId": "mbob",
   "overwriteExisting": true,
   "metadata": {
-    "credential_issuer": "http://192.168.100.1",
-    "credential_endpoint": "http://192.168.100.1/credentials",
+    "credential_issuer": "http://agent.muisit.nl/mbob",
+    "credential_endpoint": "http://agent.muisit.nl/mbob/credentials",
     "display": [
       {
         "name": "Sphereon International",

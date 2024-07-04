@@ -1,15 +1,15 @@
 import { createAgent, IAgentContext, TAgent } from '@veramo/core'
-import { configure, expressSupport } from './configuration'
+import { initialiseServer } from './server';
 import { plugins, TAgentTypes } from './plugins';
+import { getOrCreateDIDs} from "./utils";
 
-console.log('starting agent');
+console.log('Starting main agent');
 const agent = createAgent<TAgentTypes>({ plugins}) as TAgent<TAgentTypes>;
 export default agent
 export const context: IAgentContext<TAgentTypes> = {agent}
 
-console.log('configuring');
-await configure(agent, context);
+console.log('Loading and/or creating DIDs');
+await getOrCreateDIDs().catch(e => console.log(e))
 
-console.log("starting express server");
-expressSupport?.start();
-console.log("end of agent program");
+console.log("Starting Express Server");
+await initialiseServer(agent);

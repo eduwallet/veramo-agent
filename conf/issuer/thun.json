@@ -1,0 +1,12 @@
+{
+  "correlationId": "thun",
+  "definitionId": "thun",
+  "issuerOpts": {
+    "didOpts": {
+      "checkLinkedDomains": "if_present",
+      "identifierOpts": {
+        "kid": "did:web:thun.dev.eduwallet.nl"
+      }
+    }
+  }
+}

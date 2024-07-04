@@ -1,35 +1,38 @@
+import Debug from 'debug'
+const debug = Debug(`eduwallet:plugin`)
+
 import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStore, IDataStoreORM, IDIDManager, IKeyManager, IResolver} from '@veramo/core'
 import  {DataStore, DataStoreORM, DIDStore, KeyStore, PrivateKeyStore} from '@veramo/data-store'
-import {SecretBox} from '@veramo/kms-local'
+//import {SecretBox} from '@veramo/kms-local'
 import {DIDManager} from '@veramo/did-manager'
 import {DIDResolverPlugin} from '@veramo/did-resolver'
 import {CredentialPlugin} from '@veramo/credential-w3c'
 
-import {ISIOPv2RP} from '@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth'
 import {SphereonKeyManager} from '@sphereon/ssi-sdk-ext.key-manager'
 import {SphereonKeyManagementSystem} from '@sphereon/ssi-sdk-ext.kms-local'
-import {IPresentationExchange, PresentationExchange} from '@sphereon/ssi-sdk.presentation-exchange'
-import {PDStore} from '@sphereon/ssi-sdk.data-store'
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018, SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } 
     from '@sphereon/ssi-sdk.vc-handler-ld-local'
-import {IPDManager, PDManager} from '@sphereon/ssi-sdk.pd-manager'
-import {IOID4VCIStore, OID4VCIStore} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
-import {IOID4VCIIssuer} from "@sphereon/ssi-sdk.oid4vci-issuer";
+import {IOID4VCIStore, OID4VCIStore, IIssuerOptsImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
+import {IOID4VCIIssuer, OID4VCIIssuer} from "@sphereon/ssi-sdk.oid4vci-issuer";
 
-import { DID_PREFIX, IS_OID4VCI_ENABLED, IS_OID4VP_ENABLED } from "./environment";
+import { oid4vciMetadataOpts, OID4VCI_ISSUER_OPTIONS_PATH } from "./environment";
 import { DIDMethods } from './types';
 import { getDbConnection } from './database'
-import { createDidProviders, createDidResolver, createOID4VPRP } from "./utils";
-import { createOID4VCIIssuer, createOID4VCIStore } from "./utils/oid4vci";
+import { createDidProviders, createDidResolver, loadJsonFiles } from "./utils";
 
 const dbConnection = getDbConnection()
-const pdStore = new PDStore(dbConnection);
 const privateKeyStore: PrivateKeyStore = new PrivateKeyStore(dbConnection)
 export const resolver = createDidResolver()
 
+debug("importing options for all issuers");
+const issuerOptionsObjects = loadJsonFiles<IIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH})
+export const importIssuerOpts = issuerOptionsObjects.asArray;
+const defaultIssuerOptions = {userPinRequired: false, didOpts: {resolveOpts: {resolver}, identifierOpts: {identifier:'none'}}};
+
+debug("creating list of plugins");
 export const plugins: IAgentPlugin[] = [
-    new DataStore(dbConnection),
-    new DataStoreORM(dbConnection),
+    new DataStore(dbConnection), // Veramo
+    new DataStoreORM(dbConnection), // Veramo
     new SphereonKeyManager({
         store: new KeyStore(dbConnection),
         kms: {
@@ -38,14 +41,13 @@ export const plugins: IAgentPlugin[] = [
     }),
     new DIDManager({
         store: new DIDStore(dbConnection),
-        defaultProvider: `${DID_PREFIX}:${DIDMethods.DID_JWK}`,
+        defaultProvider: `did:${DIDMethods.DID_WEB}`,
         providers: createDidProviders(),
-    }),
+    }), // Veramo
     new DIDResolverPlugin({
         resolver,
-    }),
-    new PresentationExchange({pdStore}),
-    new CredentialPlugin(),
+    }), // Veramo
+    new CredentialPlugin(), // Veramo
     new CredentialHandlerLDLocal({
         contextMaps: [LdDefaultContexts],
         suites: [
@@ -59,28 +61,17 @@ export const plugins: IAgentPlugin[] = [
             ['createVerifiablePresentationLD', MethodNames.createVerifiablePresentationLDLocal],
         ]),
         keyStore: privateKeyStore,
-    }),
-    new PDManager({store: pdStore})
-]
+    }), // Sphereon
+    new OID4VCIStore({
+        defaultOpts: defaultIssuerOptions, 
+        defaultNamespace: 'eduwallet',
+        importIssuerOpts,
+        importMetadatas: oid4vciMetadataOpts.asArray}
+    ), // Sphereon
+    new OID4VCIIssuer({returnSessions: true, resolveOpts: {resolver}}), // Sphereon
+];
 
-export const oid4vpRP = IS_OID4VP_ENABLED ? await createOID4VPRP({resolver, pdStore}) : undefined;
-if (oid4vpRP) {
-    plugins.push(oid4vpRP)
-}
-
-export const oid4vciStore: OID4VCIStore | undefined = IS_OID4VCI_ENABLED ? await createOID4VCIStore() : undefined
-if (oid4vciStore) {
-    plugins.push(oid4vciStore)
-
-    const oid4vciIssuer = await createOID4VCIIssuer({resolver});
-    if (oid4vciIssuer) {
-        plugins.push(oid4vciIssuer)
-    }
-}
-
-export type TAgentTypes = ISIOPv2RP &
-    IPresentationExchange &
-    IOID4VCIStore &
+export type TAgentTypes = IOID4VCIStore &
     IOID4VCIIssuer &
     IDIDManager &
     IResolver &
@@ -88,5 +79,4 @@ export type TAgentTypes = ISIOPv2RP &
     IDataStore &
     IDataStoreORM &
     ICredentialVerifier &
-    ICredentialIssuer &
-    IPDManager;
+    ICredentialIssuer;
