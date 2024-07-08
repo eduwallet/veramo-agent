@@ -35,11 +35,11 @@ export function createCredentialOffer<DIDDoc extends object>(
           return sendErrorResponse(response, 400, { error: TokenErrorResponse.invalid_grant, error_description: 'No grant type supplied' })
         }
         const grants = request.body.grants as Grant
-        const credentialConfigIds = request.body.credential_configuration_ids as string[]
+        const credentialConfigIds = request.body.credentials as string[]
         if (!credentialConfigIds || credentialConfigIds.length === 0) {
           return sendErrorResponse(response, 400, {
             error: TokenErrorResponse.invalid_request,
-            error_description: 'credential_configuration_ids missing credential_configuration_ids in credential offer payload',
+            error_description: 'credentials missing in credential offer payload',
           })
         }
         const qrCodeOpts = request.body.qrCodeOpts ?? opts?.qrCodeOpts

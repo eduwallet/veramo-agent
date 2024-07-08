@@ -10,7 +10,7 @@
         "description": "Theed University of Naboo"
       }
     ],
-    "credential_configurations_supported": [
+    "credentials_supported": [
       {
         "display": [
           {

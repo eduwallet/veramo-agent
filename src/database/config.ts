@@ -2,7 +2,7 @@ import { Entities as VeramoDataStoreEntities, migrations as VeramoDataStoreMigra
 import {
   DataStoreContactEntities,
   DataStoreMigrations,
-  DataStorePresentationDefinitionItemEntities
+  //DataStorePresentationDefinitionItemEntities
 } from '@sphereon/ssi-sdk.data-store'
 //import { SqliteConnectionOptions } from 'typeorm/driver/sqlite/SqliteConnectionOptions'
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions'
@@ -25,7 +25,7 @@ const dbConfig: PostgresConnectionOptions = {
   entities: [
     ...VeramoDataStoreEntities,
     ...DataStoreContactEntities,
-    ...DataStorePresentationDefinitionItemEntities,
+    //...DataStorePresentationDefinitionItemEntities,
     KeyValueStoreEntity
   ],
   migrations: [

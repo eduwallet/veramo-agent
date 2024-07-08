@@ -45,7 +45,7 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
                     },
                     getCredentialOfferOpts: {
                         enabled: true,
-                        path: '/api/get-offer'
+                        path: '/api/get-offer/:id'
                     },
                     getStatusOpts: {
                         enabled: true,
