@@ -8,8 +8,8 @@
   "scripts": {
     "build": "tsc",
     "build:clean": "tsc --build --clean && tsc --build",
-    "start:prod": "node --experimental-specifier-resolution=node dist/index.js",
-    "start:dev": "node --experimental-specifier-resolution=node --loader ts-node/esm src/agent.ts",
+    "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/agent.js",
+    "start:dev": "tsx src/agent.ts",
     "postinstall": "patch-package"
   },
   "keywords": [],
@@ -17,6 +17,7 @@
   "license": "Apache-2.0",
   "private": false,
   "dependencies": {
+    "@noble/hashes": "^1.2.0",
     "@sphereon/oid4vci-client": "0.10.4-unstable.61",
     "@sphereon/oid4vci-issuer": "0.10.4-unstable.61",
     "@sphereon/oid4vci-issuer-server": "0.10.4-unstable.61",
@@ -57,11 +58,13 @@
     "dotenv-flow": "^4.1.0",
     "express": "^4.19.2",
     "handlebars": "^4.7.8",
+    "passport-http-bearer": "^1.0.1",
     "patch-package": "^8.0.0",
     "pg": "^8.12.0",
     "postinstall": "^0.10.3",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "web-did-resolver": "^2.0.27"
   },
   "files": [
@@ -90,6 +93,10 @@
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/express": "^4.17.21"
+    "@types/express": "^4.17.21",
+    "tsx": "^4.16.2"
+  },
+  "imports": {
+    "#root/*": "./src/*.ts"
   }
 }

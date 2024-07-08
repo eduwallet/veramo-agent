@@ -1,6 +1,7 @@
 import {IDIDManagerCreateArgs, IIdentifier} from "@veramo/core";
 import {IPEXInstanceOptions} from "@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth/src/types/ISIOPv2RP";
 import {CredentialSupplierConfig} from "@sphereon/oid4vci-common"
+import { IIssuerOptsImportArgs } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
 
 export enum KMS {
     LOCAL = 'local',
@@ -52,3 +53,9 @@ interface TemplateMapping {
     format?: string
 }
 
+export interface IEWIssuerOptsImportArgs {
+    options: IIssuerOptsImportArgs;
+    baseUrl: string
+    //credentialSupplier: string
+    enableCreateCredentials: boolean
+}

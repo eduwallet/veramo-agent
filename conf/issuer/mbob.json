@@ -1,11 +1,15 @@
 {
-  "correlationId": "mbob",
-  "definitionId": "mbob",
-  "issuerOpts": {
-    "didOpts": {
-      "checkLinkedDomains": "if_present",
-      "identifierOpts": {
-        "kid": "did:web:mbob.dev.eduwallet.nl"
+  "baseUrl": "http://agent.muisit.nl/mbob",
+  "enableCreateCredentials": true,
+  "options": {
+    "correlationId": "mbob",
+    "definitionId": "mbob",
+    "issuerOpts": {
+      "didOpts": {
+        "checkLinkedDomains": "if_present",
+        "identifierOpts": {
+          "kid": "did:web:mbob.dev.eduwallet.nl"
+        }
       }
     }
   }

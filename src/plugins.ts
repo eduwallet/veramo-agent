@@ -16,7 +16,7 @@ import {IOID4VCIStore, OID4VCIStore, IIssuerOptsImportArgs} from "@sphereon/ssi-
 import {IOID4VCIIssuer, OID4VCIIssuer} from "@sphereon/ssi-sdk.oid4vci-issuer";
 
 import { oid4vciMetadataOpts, OID4VCI_ISSUER_OPTIONS_PATH } from "./environment";
-import { DIDMethods } from './types';
+import { DIDMethods, IEWIssuerOptsImportArgs } from './types';
 import { getDbConnection } from './database'
 import { createDidProviders, createDidResolver, loadJsonFiles } from "./utils";
 
@@ -25,7 +25,7 @@ const privateKeyStore: PrivateKeyStore = new PrivateKeyStore(dbConnection)
 export const resolver = createDidResolver()
 
 debug("importing options for all issuers");
-const issuerOptionsObjects = loadJsonFiles<IIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH})
+const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH})
 export const importIssuerOpts = issuerOptionsObjects.asArray;
 const defaultIssuerOptions = {userPinRequired: false, didOpts: {resolveOpts: {resolver}, identifierOpts: {identifier:'none'}}};
 
@@ -65,7 +65,7 @@ export const plugins: IAgentPlugin[] = [
     new OID4VCIStore({
         defaultOpts: defaultIssuerOptions, 
         defaultNamespace: 'eduwallet',
-        importIssuerOpts,
+        importIssuerOpts: importIssuerOpts.map((e) => e.options),
         importMetadatas: oid4vciMetadataOpts.asArray}
     ), // Sphereon
     new OID4VCIIssuer({returnSessions: true, resolveOpts: {resolver}}), // Sphereon

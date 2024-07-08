@@ -1,11 +1,15 @@
 {
-  "correlationId": "thun",
-  "definitionId": "thun",
-  "issuerOpts": {
-    "didOpts": {
-      "checkLinkedDomains": "if_present",
-      "identifierOpts": {
-        "kid": "did:web:thun.dev.eduwallet.nl"
+  "baseUrl": "http://agent.muisit.nl/thun",
+  "enableCreateCredentials": true,
+  "options": {
+    "correlationId": "thun",
+    "definitionId": "thun",
+    "issuerOpts": {
+      "didOpts": {
+        "checkLinkedDomains": "if_present",
+        "identifierOpts": {
+          "kid": "did:web:thun.dev.eduwallet.nl"
+        }
       }
     }
   }

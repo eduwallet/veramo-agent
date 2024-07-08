@@ -1,6 +1,4 @@
 import Debug from 'debug'
-import { Request, Response } from 'express'
-
 import { TAgent } from '@veramo/core'
 
 import {ExpressBuilder, ExpressCorsConfigurer, StaticBearerAuth} from "@sphereon/ssi-express-support";
@@ -33,31 +31,32 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
     debug('creating routes for each issuer instance');
 
     for (const issuerOptions of importIssuerOpts) {
-        debug("optionsStore is ", issuerOptions);
-
         debug("initializing rest api using ", issuerOptions);
-        const routedApi = await Issuer.init({
+        await Issuer.init({
             context: {agent},
             expressSupport,
-            issuerOptions,
-            /*opts: {
-                // baseUrl: '',
+            issuerOptions: issuerOptions.options,
+            opts: {
+                baseUrl: issuerOptions.baseUrl,
                 endpointOpts: {
+                    createCredentialOfferOpts: {
+                        enabled: issuerOptions.enableCreateCredentials,
+                        path: '/api/create-offer'
+                    },
+                    getCredentialOfferOpts: {
+                        enabled: true,
+                        path: '/api/get-offer'
+                    },
+                    getStatusOpts: {
+                        enabled: true,
+                        path: '/api/check-offer'
+                    },
                     tokenEndpointOpts: {
-                        accessTokenSignerCallback:
+                        tokenEndpointDisabled: true
                     }
                 }
-
-                },*/
-            credentialDataSupplier: getCredentialDataSupplier(issuerOptions.correlationId)
-        })
-
-        const restApiServer = routedApi.restApi;
-        const router = restApiServer.router;
-        const path = `/.well-known/openid-credential-issuer`;
-        router.get(path, (request: Request, response: Response) => {
-            debug("override metadata path");
-            return response.send(restApiServer.issuer.issuerMetadata)
+            },
+            credentialDataSupplier: getCredentialDataSupplier(issuerOptions.options.correlationId)
         });
     }
 

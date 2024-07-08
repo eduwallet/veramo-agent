@@ -45,24 +45,62 @@ This script first creates a basic Veramo Agent instance with all the relevant pl
 
 ## Endpoints
 
-Routing and endpoints are set in various places.
+Routing and endpoints are set in various places. There are two kinds of endpoints: OpenID4VC endpoints and API endpoints.
 
-### PDManager interface
+### OpenID4VC endpoints
 
-The agent configuration from the Sphereon demo had an interface to the PDManager. The PDManager manages all Presentation-Definitions:
+The current setup supports the basic endpoints:
 
-- `pdmGetDefinition`
-- `pdmGetDefinitions`: lists all available presentations
-- `pdmAddDefinition`
-- `pdmUpdateDefinition`
-- `pdmRemoveDefinition`
+- `<base URL>/<institute>/.well-known/openid-credential-issuer`
+- `<base URL>/<institute>/credentials`
 
-You could address this interface as follows:
+The first URL serves the JSON metadata that configures the issuer. It publishes the available credential templates and the URI to the endpoint that issues the actual credential.
 
-***List all available definitions***
-`curl -v http://<host:port>/pdmGetDefinitions -d t=t | jq '.[].id'`
+The second URL serves the credential, provided the user can supply the required data (grant, authorization code, pin, credential reference, etc.). This follows the basic OpenID4VC specification.
 
-***Inspect a specific definition***
-`curl -v http://<host:port>/pdmGetDefinition -d id=43c0725e-3815-4a18-b007-9f5184cc000e | jq '.'`
+### API endpoints
 
-As interfacing like this with the PDManager is not required for this setup, no such interface is available.
+The setup has 3 endpoints for the back-end API:
+
+- POST `<base URL>/<institute>/api/create-offer`
+- GET `<base URL>/<institute>/api/get-offer/:id`
+- POST `<base URL>/<institute>/api/check-offer/`
+
+The first URL creates a credential offer in the agent database based on supplied credentials. The request contains a JSON object:
+```json
+{
+   "credential_issuer": "string",
+   "credential_configuration_ids": ["array of string"],
+   "grants": {
+      "authorization_code": {
+         "issuer_state": "string, optional",
+         "authorization_server": "string, optional"
+      },
+      "urn:ietf:params:oauth:grant-type:pre-authorized_code": {
+         "pre-authorized-code": "string",
+         "tx_code": {
+            "input_mode": "'numeric'|'text'",
+            "length": "numeric, optional",
+            "description": "string, optional"
+         },
+         "interval": "number, optional",
+         "authorization_server": "string, optional",
+         "user_pin_required": "optional, boolean"
+      }
+   },
+   "client_id": "string, optional",
+   "credential_offer_uri": "string, optional",
+   "baseUri": "string, optional",
+   "scheme": "string, optional",
+   "pinLength": "number, optional",
+   "qrCodeOpts": "optional",
+   "credentialDataSupplierInput": "object containing key-value pairs of the credentials"
+}
+```
+It returns a JSON object containing the following elements:
+
+- uri
+- userPin (optional, string)
+- tsCode (option, transaction code description containing information on the constitution of the transaction code for the wallet)
+
+

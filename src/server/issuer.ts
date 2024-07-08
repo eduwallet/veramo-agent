@@ -4,12 +4,13 @@ import { Express } from 'express'
 import { IAgentContext, ICredentialIssuer, ICredentialVerifier, IDataStore, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
 
 import { CredentialDataSupplier, VcIssuer } from '@sphereon/oid4vci-issuer'
-import { OID4VCIServer } from '@sphereon/oid4vci-issuer-server'
-import { IOID4VCIServerOpts } from '@sphereon/oid4vci-issuer-server/lib/OID4VCIServer'
 import { ExpressSupport } from '@sphereon/ssi-express-support'
 import { getAccessTokenKeyRef, getAccessTokenSignerCallback, IIssuerInstanceArgs, IssuerInstance } from '@sphereon/ssi-sdk.oid4vci-issuer'
 import { IOID4VCIIssuer } from '@sphereon/ssi-sdk.oid4vci-issuer'
 import { IOID4VCIStore, IIssuerOptsPersistArgs } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
+
+import { IssuerRestServer, IOID4VCIServerOpts } from './IssuerRestServer'
+import { getBasePath } from '@utils/getBasePath'
 
 export type IRequiredContext = IAgentContext<IPlugins>
 
@@ -29,7 +30,7 @@ export class Issuer {
   private readonly _expressSupport: ExpressSupport
   private readonly _context: IRequiredContext
   private readonly _opts?: IOID4VCIRestAPIOpts
-  private readonly _restApi: OID4VCIServer<DIDDocument>
+  private readonly _restApi: IssuerRestServer<DIDDocument>
   private readonly _instance: IssuerInstance
   private readonly _issuer: VcIssuer<DIDDocument>
 
@@ -92,7 +93,10 @@ export class Issuer {
     this._expressSupport = args.expressSupport
     this._issuer = args.issuer
     this._instance = args.instance
-    this._restApi = new OID4VCIServer<DIDDocument>(args.expressSupport, { ...opts, issuer: this._issuer })
+    this._restApi = new IssuerRestServer<DIDDocument>({ ...opts, issuer: this._issuer })
+
+    this._expressSupport.express.use(getBasePath(this._restApi.baseUrl), this.restApi.router)
+
   }
 
   get express(): Express {
@@ -107,7 +111,7 @@ export class Issuer {
     return this._opts
   }
 
-  get restApi(): OID4VCIServer<DIDDocument> {
+  get restApi(): IssuerRestServer<DIDDocument> {
     return this._restApi
   }
 
