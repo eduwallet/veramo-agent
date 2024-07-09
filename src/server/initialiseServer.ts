@@ -12,7 +12,7 @@ const debug = Debug(`eduwallet:server`)
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'
-const HOSTNAME = process.env.HOSTNAME ?? 'agent.dev.eduwallet.nl'
+const BASEURL = process.env.BASEURL ?? 'agent.dev.eduwallet.nl'
 const BEARER_TOKEN = process.env.BEARER_TOKEN ?? 'eduwallet'
 
 StaticBearerAuth.init('bearer-auth').addUser({name: 'admin', id: 'admin', token: BEARER_TOKEN}).connectPassport()
@@ -20,7 +20,7 @@ StaticBearerAuth.init('bearer-auth').addUser({name: 'admin', id: 'admin', token:
 const expressSupport = ExpressBuilder.fromServerOpts({
         hostname: LISTEN_ADDRESS,
         port: PORT,
-        basePath: new URL(HOSTNAME).toString()
+        basePath: new URL(BASEURL).toString()
     })
         .withCorsConfigurer(new ExpressCorsConfigurer({}).allowOrigin('*').allowCredentials(true))
         .withPassportAuth(true)
