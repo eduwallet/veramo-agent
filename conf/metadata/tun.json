@@ -1,9 +1,9 @@
 {
-  "correlationId": "thun",
+  "correlationId": "tun",
   "overwriteExisting": true,
   "metadata": {
-    "credential_issuer": "http://agent.muisit.nl/thun",
-    "credential_endpoint": "http://agent.muisit.nl/thun/credentials",
+    "credential_issuer": "http://agent.muisit.nl/tun",
+    "credential_endpoint": "http://agent.muisit.nl/tun/credentials",
     "display": [
       {
         "name": "Theed University of Naboo",
@@ -14,8 +14,8 @@
       {
         "display": [
           {
-            "name": "University Card",
-            "description": "Credential indicating enrollment or association with the Theed University of Naboo",
+            "name": "Base Academic Credential",
+            "description": "Basic credential indicating affiliation with an academic institute",
             "text_color": "#FFFFFF",
             "background_image": {
               "url": "https://i.ibb.co/kmfrH4F/tulips.png",
@@ -28,8 +28,8 @@
           },
           {
             "locale": "en-US",
-            "name": "University Card",
-            "description": "Theed University of Naboo",
+            "name": "Base Academic Credential",
+            "description": "Basic credential indicating affiliation with an academic institute",
             "text_color": "#FFFFFF",
             "background_image": {
               "url": "https://i.ibb.co/kmfrH4F/tulips.png",
@@ -42,8 +42,8 @@
           },
           {
             "locale": "nl-NL",
-            "name": "Universiteitskaart",
-            "description": "Theed Universiteit van Naboo",
+            "name": "Basis Academische Identiteit",
+            "description": "Basis identiteit in relatie tot een academisch instituut",
             "text_color": "#FFFFFF",
             "background_image": {
               "url": "https://i.ibb.co/kmfrH4F/tulips.png",
@@ -56,45 +56,63 @@
           }
         ],
         "order": [
-          "firstName",
-          "lastName",
-          "email",
-          "dateOfBirth"
+            "uid",
+            "organization",
+            "personName",
+            "emailAddress",
+            "affiliation",
+            "assurance"
         ],
         "credentialSubject": {
-          "firstName": {
+          "uid": {
             "value_type": "string",
             "display": [
               {
-                "name": "First Name"
+                "name": "User ID"
               },
               {
-                "name": "First Name",
+                "name": "User ID",
                 "locale": "en-US"
               },
               {
-                "name": "Voornaam",
+                "name": "Gebruikers ID",
                 "locale": "nl-NL"
               }
             ]
           },
-          "lastName": {
+          "organization": {
             "value_type": "string",
             "display": [
               {
-                "name": "Last Name"
+                "name": "Organization"
               },
               {
-                "name": "Last Name",
+                "name": "Organization",
                 "locale": "en-US"
               },
               {
-                "name": "Achternaam",
+                "name": "Organisatie",
                 "locale": "nl-NL"
               }
             ]
           },
-          "email": {
+          "personName": {
+            "value_type": "string",
+            "display": [
+              {
+                "name": "Organization"
+              },
+              {
+                "name": "Organization",
+                "locale": "en-US"
+              },
+              {
+                "name": "Organisatie",
+                "locale": "nl-NL"
+              }
+            ]
+          },
+          "emailAddress": {
             "value_type": "string",
             "display": [
               {
@@ -110,27 +128,43 @@
               }
             ]
           },
-          "dateOfBirth": {
+          "affiliation": {
             "value_type": "string",
             "display": [
               {
-                "name": "Date of Birth"
+                "name": "Affiliation"
               },
               {
-                "name": "Date of Birth",
+                "name": "Affiliation",
                 "locale": "en-US"
               },
               {
-                "name": "Geboortdatum",
+                "name": "Betrekking",
+                "locale": "nl-NL"
+              }
+            ]
+          },
+          "assurance": {
+            "value_type": "string",
+            "display": [
+              {
+                "name": "Assurance"
+              },
+              {
+                "name": "Assurance",
+                "locale": "en-US"
+              },
+              {
+                "name": "Bevestiging",
                 "locale": "nl-NL"
               }
             ]
           }
         },
-        "id": "ThunUniversityCard",
+        "id": "BaseAcademicCredential",
         "types": [
           "VerifiableCredential",
-          "ThunUniversityCard"
+          "BaseAcademicCredential"
         ],
         "format": "jwt_vc_json",
         "cryptographic_binding_methods_supported": [

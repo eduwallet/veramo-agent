@@ -1,0 +1,16 @@
+{
+  "baseUrl": "http://agent.muisit.nl/uvh",
+  "enableCreateCredentials": true,
+  "options": {
+    "correlationId": "uvh",
+    "definitionId": "uvh",
+    "issuerOpts": {
+      "didOpts": {
+        "checkLinkedDomains": "if_present",
+        "identifierOpts": {
+          "kid": "did:web:uvh.dev.eduwallet.nl"
+        }
+      }
+    }
+  }
+}

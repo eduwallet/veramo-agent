@@ -1,13 +1,13 @@
 {
-  "correlationId": "mbob",
+  "correlationId": "uvh",
   "overwriteExisting": true,
   "metadata": {
-    "credential_issuer": "http://agent.muisit.nl/mbob",
-    "credential_endpoint": "http://agent.muisit.nl/mbob/credentials",
+    "credential_issuer": "http://agent.muisit.nl/uvh",
+    "credential_endpoint": "http://agent.muisit.nl/uvh/credentials",
     "display": [
       {
-        "name": "MBO Beek",
-        "description": "MBO Beek"
+        "name": "University of Harderwijk",
+        "description": "University of Harderwijk"
       }
     ],
     "credentials_supported": [

@@ -1,14 +1,14 @@
 {
-  "baseUrl": "http://agent.muisit.nl/thun",
+  "baseUrl": "http://agent.muisit.nl/tun",
   "enableCreateCredentials": true,
   "options": {
-    "correlationId": "thun",
-    "definitionId": "thun",
+    "correlationId": "tun",
+    "definitionId": "tun",
     "issuerOpts": {
       "didOpts": {
         "checkLinkedDomains": "if_present",
         "identifierOpts": {
-          "kid": "did:web:thun.dev.eduwallet.nl"
+          "kid": "did:web:tun.dev.eduwallet.nl"
         }
       }
     }

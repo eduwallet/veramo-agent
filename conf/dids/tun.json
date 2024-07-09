@@ -1,0 +1,12 @@
+{
+  "did": "did:web:tun.dev.eduwallet.nl",
+  "did_vm": "did:ion:tun.dev.eduwallet.nl#auth-key",
+  "createArgs": {
+    "provider": "did:web",
+    "alias": "tun.dev.eduwallet.nl",
+    "options": {
+      "kid": "auth-key",
+      "keyType": "Secp256r1"
+    }
+  }
+}
