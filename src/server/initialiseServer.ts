@@ -12,7 +12,7 @@ const debug = Debug(`eduwallet:server`)
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'
-const BASEURL = process.env.BASEURL ?? 'agent.dev.eduwallet.nl'
+const BASEURL = process.env.BASEURL ?? 'https://agent.dev.eduwallet.nl'
 const BEARER_TOKEN = process.env.BEARER_TOKEN ?? 'eduwallet'
 
 StaticBearerAuth.init('bearer-auth').addUser({name: 'admin', id: 'admin', token: BEARER_TOKEN}).connectPassport()
@@ -52,7 +52,11 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
                         path: '/api/check-offer'
                     },
                     tokenEndpointOpts: {
-                        tokenEndpointDisabled: true
+                        //enabled: true,
+                        tokenEndpointDisabled: false,
+                        // override the access-token-issuer, by default set to the credential-issuer
+                        // accessTokenIssuer:
+                        tokenPath: '/token'
                     }
                 }
             },

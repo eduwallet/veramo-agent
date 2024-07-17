@@ -5,6 +5,7 @@ import {
 } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
 import { HasEndpointOpts, ISingleEndpointOpts } from '@sphereon/ssi-express-support'
+import { IIssuerInstanceArgs } from '@sphereon/ssi-sdk.oid4vci-issuer'
 import express from 'express'
 
 import {
@@ -14,6 +15,7 @@ import {
   getCredentialOffer,
   getIssueStatus,
   getMetadata,
+  getDidSpec,
   pushedAuthorization,
 } from './endpoints'
 
@@ -51,16 +53,18 @@ export class IssuerRestServer<DIDDoc extends object> {
   private readonly _baseUrl: URL
   // private readonly _server?: http.Server
   private readonly _router: express.Router
+  private readonly _instanceArgs: IIssuerInstanceArgs;
 
   constructor(
-    opts: IOID4VCIServerOpts & { issuer: VcIssuer<DIDDoc> } /*If not supplied as argument, it will be fully configured from environment variables*/,
+    opts: IOID4VCIServerOpts & { issuer: VcIssuer<DIDDoc>, instanceArgs:IIssuerInstanceArgs }
   ) {
     this._baseUrl = new URL(opts?.baseUrl ?? opts?.issuer?.issuerMetadata?.credential_issuer ?? 'http://localhost')
     this._router = express.Router()
     this._issuer = opts.issuer;
+    this._instanceArgs = opts.instanceArgs;
 
     // assert that we either refer to an external AS, or that we handle tokens ourselves
-    this.assertAccessTokenHandling()
+    this.assertAccessTokenHandling(opts?.endpointOpts?.tokenEndpointOpts);
 
     if (!this.isTokenEndpointDisabled(opts?.endpointOpts?.tokenEndpointOpts)) {
       // OAuth endpoint to handle the consumation of an access token
@@ -79,6 +83,9 @@ export class IssuerRestServer<DIDDoc extends object> {
 
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(this.router, this.issuer)
+
+    // This endpoint serves the /.well-known/did.json document
+    getDidSpec(this.router, this.issuer, this._instanceArgs);
 
     // OpenID4VC endpoint to retrieve a specific credential
     getCredential(this.router, this.issuer, this.baseUrl, opts?.endpointOpts?.tokenEndpointOpts)
@@ -116,7 +123,7 @@ export class IssuerRestServer<DIDDoc extends object> {
   }
 
   private assertAccessTokenHandling(tokenEndpointOpts?: ITokenEndpointOpts) {
-    const authServer = this.issuer.issuerMetadata.authorization_servers
+    const authServer = this.issuer.issuerMetadata.authorization_server
     if (this.isTokenEndpointDisabled(tokenEndpointOpts)) {
       if (!authServer) {
         throw Error(

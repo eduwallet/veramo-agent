@@ -5,3 +5,4 @@ export { createCredentialOffer } from './createCredentialOffer';
 export { pushedAuthorization } from './pushedAuthorization'
 export { getMetadata } from './getMetadata';
 export { getIssueStatus } from './getIssueStatus';
+export { getDidSpec } from './getDidSpec';

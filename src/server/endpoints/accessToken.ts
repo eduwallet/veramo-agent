@@ -16,7 +16,7 @@ export function accessToken<DIDDoc extends object>(
     opts?: ITokenEndpointOpts & ISingleEndpointOpts,
   ) {
     const tokenEndpoint = issuer.issuerMetadata.token_endpoint
-    const externalAS = issuer.issuerMetadata.authorization_servers
+    const externalAS = issuer.issuerMetadata.authorization_server
     if (externalAS) {
       console.log(`[OID4VCI] External Authorization Server ${tokenEndpoint} is being used. Not enabling issuer token endpoint`)
       return
@@ -24,7 +24,7 @@ export function accessToken<DIDDoc extends object>(
       console.log(`[OID4VCI] Token endpoint is not enabled`)
       return
     }
-    const accessTokenIssuer = opts?.accessTokenIssuer ?? process.env.ACCESS_TOKEN_ISSUER ?? issuer.issuerMetadata.credential_issuer
+    const accessTokenIssuer = opts?.accessTokenIssuer ?? issuer.issuerMetadata.credential_issuer
   
     const preAuthorizedCodeExpirationDuration =
       opts?.preAuthorizedCodeExpirationDuration ?? getNumberOrUndefined(process.env.PRE_AUTHORIZED_CODE_EXPIRATION_DURATION) ?? 300
@@ -41,7 +41,7 @@ export function accessToken<DIDDoc extends object>(
     const baseUrl = getBaseUrl(baseUrlParameter)
   
     // issuer is also AS
-    const path = determinePath(baseUrl, opts?.tokenPath ?? process.env.TOKEN_PATH ?? '/token', {
+    const path = determinePath(baseUrl, opts?.tokenPath ?? '/token', {
       skipBaseUrlCheck: false,
       stripBasePath: true,
     })

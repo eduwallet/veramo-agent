@@ -33,6 +33,7 @@ export class Issuer {
   private readonly _restApi: IssuerRestServer<DIDDocument>
   private readonly _instance: IssuerInstance
   private readonly _issuer: VcIssuer<DIDDocument>
+  private readonly _issuerInstanceArgs: IIssuerInstanceArgs;
 
   static async init(args: {
     context: IRequiredContext
@@ -76,7 +77,7 @@ export class Issuer {
         args.context,
       )
     }
-    return new Issuer({ context, issuerInstanceArgs: { credentialIssuer: issuerOptions.correlationId}, expressSupport, opts, instance, issuer })
+    return new Issuer({ context, issuerInstanceArgs: { credentialIssuer: issuerOptions.correlationId}, expressSupport, opts, instance, issuer})
   }
 
   private constructor(args: {
@@ -93,10 +94,9 @@ export class Issuer {
     this._expressSupport = args.expressSupport
     this._issuer = args.issuer
     this._instance = args.instance
-    this._restApi = new IssuerRestServer<DIDDocument>({ ...opts, issuer: this._issuer })
-
+    this._restApi = new IssuerRestServer<DIDDocument>({ ...opts, issuer: this._issuer, instanceArgs: args.issuerInstanceArgs })
     this._expressSupport.express.use(getBasePath(this._restApi.baseUrl), this.restApi.router)
-
+    this._issuerInstanceArgs = args.issuerInstanceArgs;
   }
 
   get express(): Express {
@@ -121,6 +121,10 @@ export class Issuer {
 
   get issuer(): VcIssuer<DIDDocument> {
     return this._issuer
+  }
+
+  get issuerInstanceArgs(): IIssuerInstanceArgs {
+    return this._issuerInstanceArgs;
   }
 
   async stop(): Promise<boolean> {
