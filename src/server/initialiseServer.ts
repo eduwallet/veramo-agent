@@ -56,6 +56,9 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
                         tokenEndpointDisabled: false,
                         // override the access-token-issuer, by default set to the credential-issuer
                         // accessTokenIssuer:
+                        preAuthorizedCodeExpirationDuration: 300000, // max time between creation of the offer and the token request in ms
+                        interval: 300000, // interval between requesting new credential tokens, in seconds
+                        tokenExpiresIn: 300, // time of life of the access token, in seconds
                         tokenPath: '/token'
                     }
                 }
