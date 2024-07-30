@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express'
-import { CredentialRequestV1_0_13 } from '@sphereon/oid4vci-common'
+import { CredentialRequestV1_0_11 } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 import { determinePath } from '@utils/determinePath';
@@ -25,7 +25,7 @@ export function getCredential<DIDDoc extends object>(
     console.log(`[OID4VCI] getCredential endpoint enabled at ${path}`)
     router.post(path, async (request: Request, response: Response) => {
       try {
-        const credentialRequest = request.body as CredentialRequestV1_0_13
+        const credentialRequest = request.body as CredentialRequestV1_0_11
         const credential = await issuer.issueCredential({
           credentialRequest: credentialRequest,
           tokenExpiresIn: opts?.tokenExpiresIn ?? 300,

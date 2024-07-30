@@ -21,14 +21,7 @@ export function createCredentialOffer<DIDDoc extends object>(
       try {
         const specVersion = determineSpecVersionFromOffer(request.body.original_credential_offer)
         debug("specVersion is ", specVersion);
-        if (specVersion < OpenId4VCIVersion.VER_1_0_13) {
-          debug("version is too old");
-          return sendErrorResponse(response, 400, {
-            error: TokenErrorResponse.invalid_client,
-            error_description: 'credential offer request should be of spec version 1.0.13 or above',
-          })
-        }
- 
+
         debug("determining grant types on body", request.body.grants);
         const grantTypes = determineGrantTypes(request.body)
         if (grantTypes.length === 0) {

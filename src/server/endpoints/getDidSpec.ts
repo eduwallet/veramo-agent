@@ -2,7 +2,7 @@ import { Request, Router } from 'express'
 import { VcIssuer } from '@sphereon/oid4vci-issuer'
 import { context } from '../../agent';
 import { IIssuerInstanceArgs } from '@sphereon/ssi-sdk.oid4vci-issuer';
-import { IIdentifier, IDIDManager, TAgent, TKeyType } from '@veramo/core'
+import { IIdentifier, IDIDManager, TAgent, TKeyType, DIDDocument } from '@veramo/core'
 import { didDocEndpoint } from '@veramo/remote-server';
 
 interface RequestWithAgentDIDManager extends Request {
@@ -19,7 +19,7 @@ const keyMapping: Record<TKeyType, string> = {
   RSA: 'RsaVerificationKey2018'
 }
 
-const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDoc>) => {
+const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDocument>) => {
   const allKeys = identifier.keys.map((key) => ({
     id: identifier.did + '#' + key.kid,
     type: keyMapping[key.type],
@@ -54,7 +54,7 @@ const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDoc>) 
   return didDoc
 }
 
-export function getDidSpec<DIDDoc extends object>(router: Router, issuer: VcIssuer<DIDDoc>, instanceArgs:IIssuerInstanceArgs) {
+export function getDidSpec(router: Router, issuer: VcIssuer<DIDDocument>, instanceArgs:IIssuerInstanceArgs) {
     router.get(didDocEndpoint, async (req: RequestWithAgentDIDManager, res) => {
       const storeId = instanceArgs.storeId ?? await context?.agent.oid4vciStoreDefaultStoreId();
       const namespace = instanceArgs.namespace ?? await context?.agent.oid4vciStoreDefaultNamespace();

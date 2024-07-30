@@ -3,7 +3,6 @@ import { TAgent } from '@veramo/core'
 
 import {ExpressBuilder, ExpressCorsConfigurer, StaticBearerAuth} from "@sphereon/ssi-express-support";
 
-import {getCredentialDataSupplier} from "../utils/oid4vciCredentialSuppliers";
 import { TAgentTypes, importIssuerOpts } from '../plugins';
 import { Issuer } from "./issuer";
 import { dumpExpressRoutes } from '../utils/dumpExpressRoutes';
@@ -62,8 +61,7 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
                         tokenPath: '/token'
                     }
                 }
-            },
-            credentialDataSupplier: getCredentialDataSupplier(issuerOptions.options.correlationId)
+            }
         });
     }
 

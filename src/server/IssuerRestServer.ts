@@ -1,7 +1,7 @@
+import { DIDDocument } from '@veramo/core'
 import {
   AuthorizationRequest,
-  QRCodeOpts,
-  TxCode,
+  QRCodeOpts
 } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
 import { HasEndpointOpts, ISingleEndpointOpts } from '@sphereon/ssi-express-support'
@@ -22,7 +22,6 @@ import {
 export type ICreateCredentialOfferURIResponse = {
   uri: string
   userPin?: string
-  tsCode?: TxCode
 }
 
 export interface IGetCredentialOfferEndpointOpts extends ISingleEndpointOpts {
@@ -47,8 +46,8 @@ export interface IOID4VCIServerOpts extends HasEndpointOpts {
   baseUrl?: string
 }
 
-export class IssuerRestServer<DIDDoc extends object> {
-  private readonly _issuer: VcIssuer<DIDDoc>
+export class IssuerRestServer {
+  private readonly _issuer: VcIssuer<DIDDocument>
   private authRequestsData: Map<string, AuthorizationRequest> = new Map()
   private readonly _baseUrl: URL
   // private readonly _server?: http.Server
@@ -56,7 +55,7 @@ export class IssuerRestServer<DIDDoc extends object> {
   private readonly _instanceArgs: IIssuerInstanceArgs;
 
   constructor(
-    opts: IOID4VCIServerOpts & { issuer: VcIssuer<DIDDoc>, instanceArgs:IIssuerInstanceArgs }
+    opts: IOID4VCIServerOpts & { issuer: VcIssuer<DIDDocument>, instanceArgs:IIssuerInstanceArgs }
   ) {
     this._baseUrl = new URL(opts?.baseUrl ?? opts?.issuer?.issuerMetadata?.credential_issuer ?? 'http://localhost')
     this._router = express.Router()
@@ -110,7 +109,7 @@ export class IssuerRestServer<DIDDoc extends object> {
     return this._router
   }
 
-  get issuer(): VcIssuer<DIDDoc> {
+  get issuer(): VcIssuer<DIDDocument> {
     return this._issuer
   }
 
