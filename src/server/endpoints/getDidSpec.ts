@@ -65,7 +65,13 @@ export function getDidSpec(router: Router, issuer: VcIssuer<DIDDocument>, instan
       });
       if (options?.didOpts?.identifierOpts?.kid && context.agent) {
         try {
-          const serverIdentifier = await context?.agent.didManagerGet({did: options?.didOpts?.identifierOpts?.kid});
+          var serverIdentifier:IIdentifier;
+          if (typeof options?.didOpts?.identifierOpts?.identifier == 'string') {
+            serverIdentifier = await context?.agent.didManagerGet({did: options?.didOpts?.identifierOpts?.identifier});
+          }
+          else {
+            serverIdentifier = options?.didOpts?.identifierOpts?.identifier;
+          }
           const didDoc = didDocForIdentifier(serverIdentifier, issuer);
           return res.json(didDoc);
         } catch (e) {
