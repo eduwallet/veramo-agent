@@ -4,6 +4,7 @@ import { context } from '../../agent';
 import { IIssuerInstanceArgs } from '@sphereon/ssi-sdk.oid4vci-issuer';
 import { IIdentifier, IDIDManager, TAgent, TKeyType, DIDDocument } from '@veramo/core'
 import { didDocEndpoint } from '@veramo/remote-server';
+import { IEWIssuerOptsImportArgs } from 'types';
 
 interface RequestWithAgentDIDManager extends Request {
   agent?: TAgent<IDIDManager>
@@ -54,16 +55,10 @@ const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDocume
   return didDoc
 }
 
-export function getDidSpec(router: Router, issuer: VcIssuer<DIDDocument>, instanceArgs:IIssuerInstanceArgs) {
+export function getDidSpec(router: Router, issuer: VcIssuer<DIDDocument>, issuerOptions:IEWIssuerOptsImportArgs) {
     router.get(didDocEndpoint, async (req: RequestWithAgentDIDManager, res) => {
-      const storeId = instanceArgs.storeId ?? await context?.agent.oid4vciStoreDefaultStoreId();
-      const namespace = instanceArgs.namespace ?? await context?.agent.oid4vciStoreDefaultNamespace();
-      const options = await context.agent.oid4vciStoreGetIssuerOpts({
-        correlationId: instanceArgs.credentialIssuer,
-        storeId,
-        namespace,
-      });
-      if (options?.didOpts?.identifierOpts?.kid && context.agent) {
+      const options = issuerOptions.options?.issuerOpts;
+      if (options?.didOpts?.identifierOpts?.identifier && context.agent) {
         try {
           var serverIdentifier:IIdentifier;
           if (typeof options?.didOpts?.identifierOpts?.identifier == 'string') {

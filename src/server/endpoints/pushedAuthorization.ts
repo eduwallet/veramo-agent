@@ -5,11 +5,13 @@ import { VcIssuer } from '@sphereon/oid4vci-issuer'
 import { AuthorizationRequest } from '@sphereon/oid4vci-common'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 import { validateRequestBody } from '@utils/validateRequestBody'
+import { IEWIssuerOptsImportArgs } from 'types'
 
 export function pushedAuthorization<DIDDoc extends object>(
     router: Router,
     issuer: VcIssuer<DIDDoc>,
     authRequestsData: Map<string, AuthorizationRequest>,
+    issuerOptions:IEWIssuerOptsImportArgs,
     opts?: ISingleEndpointOpts,
   ) {
     const handleHttpStatus400 = async (req: Request, res: Response, next: NextFunction) => {
@@ -30,7 +32,6 @@ export function pushedAuthorization<DIDDoc extends object>(
     }
   
     router.post('/par', handleHttpStatus400, (req: Request, res: Response) => {
-      // FIXME Fake client for testing, it needs to come from a registered client
       const client = {
         scope: ['openid', 'test'],
         redirectUris: ['http://localhost:8080/*', 'https://www.test.com/*', 'https://test.nl', 'http://*/chart', 'http:*'],

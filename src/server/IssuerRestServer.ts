@@ -18,6 +18,7 @@ import {
   getDidSpec,
   pushedAuthorization,
 } from './endpoints'
+import { IEWIssuerOptsImportArgs } from 'types'
 
 export type ICreateCredentialOfferURIResponse = {
   uri: string
@@ -46,52 +47,49 @@ export interface IOID4VCIServerOpts extends HasEndpointOpts {
   baseUrl?: string
 }
 
+//instanceArgs: { credentialIssuer: args.issuerOptions.options.correlationId }
 export class IssuerRestServer {
   private readonly _issuer: VcIssuer<DIDDocument>
   private authRequestsData: Map<string, AuthorizationRequest> = new Map()
   private readonly _baseUrl: URL
   // private readonly _server?: http.Server
   private readonly _router: express.Router
-  private readonly _instanceArgs: IIssuerInstanceArgs;
+  private readonly _issuerOptions: IEWIssuerOptsImportArgs;
 
   constructor(
-    opts: IOID4VCIServerOpts & { issuer: VcIssuer<DIDDocument>, instanceArgs:IIssuerInstanceArgs }
+    opts: IOID4VCIServerOpts & { issuer: VcIssuer<DIDDocument>, issuerOptions:IEWIssuerOptsImportArgs }
   ) {
     this._baseUrl = new URL(opts?.baseUrl ?? opts?.issuer?.issuerMetadata?.credential_issuer ?? 'http://localhost')
     this._router = express.Router()
     this._issuer = opts.issuer;
-    this._instanceArgs = opts.instanceArgs;
-
-    // assert that we either refer to an external AS, or that we handle tokens ourselves
-    this.assertAccessTokenHandling(opts?.endpointOpts?.tokenEndpointOpts);
+    this._issuerOptions = opts.issuerOptions;
 
     if (!this.isTokenEndpointDisabled(opts?.endpointOpts?.tokenEndpointOpts)) {
       // OAuth endpoint to handle the consumation of an access token
       accessToken(this.router, this.issuer, this.baseUrl, opts?.endpointOpts?.tokenEndpointOpts)
-    }
 
-    /*
-     * The Pushed Authorization endpoint allows sending authorization parameters directly to the
-     * authorization server using a back channel instead of going through the front channel.
-     * This endpoint should return a URL to the authorization server, which would directly
-     * show the consent screen and not request authorization parameters.
-     * 
-     * We are not implementing an authorization server, so we skip this endpoint
-     */
-    //pushedAuthorization(this.router, this.issuer, this.authRequestsData)
+      /*
+      * The Pushed Authorization endpoint allows sending authorization parameters directly to the
+      * AS from the RP using a back channel instead of going through the front channel.
+      * This endpoint should return a URL to the authorization server, which would redirect the client.
+      * This would only be implemented if this REST server implements the Authorization Server,
+      * which we currently do not.
+      */
+      pushedAuthorization(this.router, this.issuer, this.authRequestsData, this._issuerOptions)
+    }
 
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(this.router, this.issuer)
 
     // This endpoint serves the /.well-known/did.json document
-    getDidSpec(this.router, this.issuer, this._instanceArgs);
+    getDidSpec(this.router, this.issuer, this._issuerOptions);
 
     // OpenID4VC endpoint to retrieve a specific credential
     getCredential(this.router, this.issuer, this.baseUrl, opts?.endpointOpts?.tokenEndpointOpts)
 
     // Enable the back channel interface to create a new credential offer
     if (opts?.endpointOpts?.createCredentialOfferOpts?.enabled !== false) {
-      createCredentialOffer(this.router, this.issuer, opts?.baseUrl, opts?.endpointOpts?.createCredentialOfferOpts)
+      createCredentialOffer(this.router, this.issuer, opts?.baseUrl || '', opts?.endpointOpts?.createCredentialOfferOpts || {}, this._issuerOptions)
     }
 
     // enable the back channel interface to get a specific credential offer JSON object
@@ -121,23 +119,6 @@ export class IssuerRestServer {
     return statusEndpointOpts?.enabled !== false
   }
 
-  private assertAccessTokenHandling(tokenEndpointOpts?: ITokenEndpointOpts) {
-    const authServer = this.issuer.issuerMetadata.authorization_server
-    if (this.isTokenEndpointDisabled(tokenEndpointOpts)) {
-      if (!authServer) {
-        throw Error(
-          `No Authorization Server (AS) is defined in the issuer metadata and the token endpoint is disabled. An AS or token endpoints needs to be present`,
-        )
-      }
-      console.log('Token endpoint disabled by configuration')
-    } else {
-      if (authServer) {
-        throw Error(
-          `A Authorization Server (AS) was already enabled in the issuer metadata (${authServer}). Cannot both have an AS and enable the token endpoint at the same time `,
-        )
-      }
-    }
-  }
   get baseUrl(): URL {
     return this._baseUrl
   }

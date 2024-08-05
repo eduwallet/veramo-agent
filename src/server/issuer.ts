@@ -12,6 +12,7 @@ import { IOID4VCIStore, IIssuerOptsPersistArgs } from '@sphereon/ssi-sdk.oid4vci
 import { IssuerRestServer, IOID4VCIServerOpts } from './IssuerRestServer'
 import { getBasePath } from '@utils/getBasePath'
 import {getCredentialDataSupplier} from "@utils/oid4vciCredentialSuppliers";
+import { IEWIssuerOptsImportArgs } from 'types'
 
 export type IRequiredContext = IAgentContext<IPlugins>
 
@@ -34,19 +35,19 @@ export class Issuer {
   private readonly _restApi: IssuerRestServer;
   private readonly _instance: IssuerInstance
   private readonly _issuer: VcIssuer<DIDDocument>
-  private readonly _issuerInstanceArgs: IIssuerInstanceArgs;
+  private readonly _issuerOptions: IEWIssuerOptsImportArgs;
 
   static async init(args: {
     context: IRequiredContext
-    issuerOptions: IIssuerOptsPersistArgs
+    issuerOptions: IEWIssuerOptsImportArgs
     expressSupport: ExpressSupport
     opts?: IOID4VCIServerOpts
   }): Promise<Issuer> {
     const { issuerOptions, context, expressSupport } = args
     const opts = args.opts ?? {}
     // creates a new instance of the OID4VCI plugin based on the CredentialIssuer member
-    const instance = await context.agent.oid4vciGetInstance({ credentialIssuer: issuerOptions.correlationId})
-    const credentialDataSupplier = getCredentialDataSupplier(issuerOptions)
+    const instance = await context.agent.oid4vciGetInstance({ credentialIssuer: issuerOptions.options.correlationId})
+    const credentialDataSupplier = getCredentialDataSupplier(issuerOptions.options)
     const issuer = await instance.get({ context, credentialDataSupplier: credentialDataSupplier })
 
     if (!opts.endpointOpts) {
@@ -78,14 +79,15 @@ export class Issuer {
         args.context,
       )
     }
-    return new Issuer({ context, issuerInstanceArgs: { credentialIssuer: issuerOptions.correlationId}, expressSupport, opts, instance, issuer})
+    //issuerInstanceArgs: { credentialIssuer: issuerOptions.options.correlationId}
+    return new Issuer({ context, issuerOptions, expressSupport, opts, instance, issuer})
   }
 
   private constructor(args: {
     issuer: VcIssuer<DIDDocument>
     instance: IssuerInstance
     context: IRequiredContext
-    issuerInstanceArgs: IIssuerInstanceArgs
+    issuerOptions: IEWIssuerOptsImportArgs
     expressSupport: ExpressSupport
     opts: IOID4VCIRestAPIOpts
   }) {
@@ -95,9 +97,9 @@ export class Issuer {
     this._expressSupport = args.expressSupport
     this._issuer = args.issuer
     this._instance = args.instance
-    this._restApi = new IssuerRestServer({ ...opts, issuer: this._issuer, instanceArgs: args.issuerInstanceArgs })
+    this._restApi = new IssuerRestServer({ ...opts, issuer: this._issuer, issuerOptions: args.issuerOptions})
     this._expressSupport.express.use(getBasePath(this._restApi.baseUrl), this.restApi.router)
-    this._issuerInstanceArgs = args.issuerInstanceArgs;
+    this._issuerOptions = args.issuerOptions;
   }
 
   get express(): Express {
@@ -124,8 +126,8 @@ export class Issuer {
     return this._issuer
   }
 
-  get issuerInstanceArgs(): IIssuerInstanceArgs {
-    return this._issuerInstanceArgs;
+  get issuerOptions(): IEWIssuerOptsImportArgs {
+    return this._issuerOptions;
   }
 
   async stop(): Promise<boolean> {

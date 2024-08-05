@@ -28,13 +28,40 @@ const expressSupport = ExpressBuilder.fromServerOpts({
 
 export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
     debug('creating routes for each issuer instance');
+    const storeId = await agent.oid4vciStoreDefaultStoreId();
+    const nameSpace = await agent.oid4vciStoreDefaultNamespace();
 
+    /*
+     * ImportIssuerOpts is the list of JSON data under conf/issuer
+     * It's type definition is in types/index.ts as IEWIssuerOptsImportArgs
+     * 
+     * It contains an options field of type IIssuerOptsPersistArgs/Ioid4vciStorePersistArgs, which
+     * contains the persisted issuer options in the OIDVCIStore. This makes it hard to extend the
+     * data that is stored in the persisted database...
+     */
     for (const issuerOptions of importIssuerOpts) {
         debug("initializing rest api using ", issuerOptions);
+        const metadata = await agent.oid4vciStoreGetMetadata({correlationId: issuerOptions.options.correlationId, storeId: storeId, namespace: nameSpace});
+
+        var tokenEndpointOpts = {
+            //enabled: true,
+            tokenEndpointDisabled: false,
+            // override the access-token-issuer, by default set to the credential-issuer
+            // accessTokenIssuer:
+            preAuthorizedCodeExpirationDuration: 300000, // max time between creation of the offer and the token request in ms
+            interval: 300000, // interval between requesting new credential tokens, in seconds
+            tokenExpiresIn: 300, // time of life of the access token, in seconds
+            tokenPath: '/token'
+        };
+
+        if (metadata?.authorization_server || metadata?.authorization_servers) {
+            tokenEndpointOpts.tokenEndpointDisabled = true;
+        }
+
         await Issuer.init({
             context: {agent},
             expressSupport,
-            issuerOptions: issuerOptions.options,
+            issuerOptions: issuerOptions,
             opts: {
                 baseUrl: issuerOptions.baseUrl,
                 endpointOpts: {
@@ -50,16 +77,7 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
                         enabled: true,
                         path: '/api/check-offer'
                     },
-                    tokenEndpointOpts: {
-                        //enabled: true,
-                        tokenEndpointDisabled: false,
-                        // override the access-token-issuer, by default set to the credential-issuer
-                        // accessTokenIssuer:
-                        preAuthorizedCodeExpirationDuration: 300000, // max time between creation of the offer and the token request in ms
-                        interval: 300000, // interval between requesting new credential tokens, in seconds
-                        tokenExpiresIn: 300, // time of life of the access token, in seconds
-                        tokenPath: '/token'
-                    }
+                    tokenEndpointOpts
                 }
             }
         });

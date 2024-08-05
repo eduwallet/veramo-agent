@@ -58,4 +58,6 @@ export interface IEWIssuerOptsImportArgs {
     baseUrl: string
     //credentialSupplier: string
     enableCreateCredentials: boolean
+    clientId?:string;
+    clientSecret?:string;
 }

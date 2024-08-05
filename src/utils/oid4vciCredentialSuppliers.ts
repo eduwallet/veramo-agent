@@ -43,7 +43,9 @@ class BasicJWTCredentialSupplier {
         const credentialConfiguration = findCredentialDefinitionInMetadata(issuer.issuerMetadata, credentialName);
         const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration.display?.length ? credentialConfiguration.display[0] : undefined;
 
-        const credential:ICredential = {
+        // construction with a cast, because we do not yet know the actual issuer key id
+        // that is used to sign the ICredential, but the type definition requires it
+        const credential:ICredential = ({
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": types,
             "issuer": {
@@ -57,7 +59,7 @@ class BasicJWTCredentialSupplier {
             'description': credentialDisplay?.description ?? '',
             "issuanceDate": format(new Date(), isoTimeFormat),
             "credentialSubject": args.credentialDataSupplierInput
-        };
+        } as unknown) as ICredential;
         return ({
             format: 'jwt_vc_json',
             credential: credential
