@@ -8,7 +8,7 @@ import { determinePath } from '@utils/determinePath'
 
   export function getIssueStatus<DIDDoc extends object>(router: Router, issuer: VcIssuer<DIDDoc>, opts: IGetIssueStatusEndpointOpts) {
     const path = determinePath(opts.baseUrl, opts?.path ?? '/webapp/credential-offer-status', { stripBasePath: true })
-    console.log(`[OID4VCI] getIssueStatus endpoint enabled at ${path}`)
+    //console.log(`[OID4VCI] getIssueStatus endpoint enabled at ${path}`)
     router.post(path, async (request: Request, response: Response) => {
       try {
         const { id } = request.body
