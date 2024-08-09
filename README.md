@@ -7,7 +7,7 @@ For more details, please see: https://github.com/Sphereon-Opensource/OID4VC-demo
 
 ## Installation
 
-Run `npm install` to install all relevant node modules. Then run `npm run start:dev` to run the basic application.
+Run `yarn install` to install all relevant node modules. Then run `npm run start:dev` to run the basic application.
 
 To get all debugging messages, run using `DEBUG=*:* npm run start:dev`
 
