@@ -1,10 +1,9 @@
 import { Request, Response, Router } from 'express'
 import { VcIssuer } from '@sphereon/oid4vci-issuer'
-import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { IGetCredentialOfferEndpointOpts } from '../IssuerRestServer';
+import { sendErrorResponse, ISingleEndpointOpts } from '@sphereon/ssi-express-support'
 import { determinePath } from '@utils/determinePath';
 
-export function getCredentialOffer<DIDDoc extends object>(router: Router, issuer: VcIssuer<DIDDoc>, baseUrl?: string, opts?: IGetCredentialOfferEndpointOpts) {
+export function getCredentialOffer<DIDDoc extends object>(router: Router, issuer: VcIssuer<DIDDoc>, baseUrl?: string, opts?: ISingleEndpointOpts) {
     const path = determinePath(baseUrl, opts?.path ?? '/webapp/credential-offers/:id', { stripBasePath: true })
     console.log(`[OID4VCI] getCredentialOffer endpoint enabled at ${path}`)
     router.get(path, async (request: Request, response: Response) => {

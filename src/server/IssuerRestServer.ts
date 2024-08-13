@@ -1,11 +1,7 @@
 import { DIDDocument } from '@veramo/core'
-import {
-  AuthorizationRequest,
-  QRCodeOpts
-} from '@sphereon/oid4vci-common'
+import { AuthorizationRequest } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
 import { HasEndpointOpts, ISingleEndpointOpts } from '@sphereon/ssi-express-support'
-import { IIssuerInstanceArgs } from '@sphereon/ssi-sdk.oid4vci-issuer'
 import express from 'express'
 
 import {
@@ -17,6 +13,7 @@ import {
   getMetadata,
   getDidSpec,
   pushedAuthorization,
+  getOpenidConfiguration,
 } from './endpoints'
 import { IEWIssuerOptsImportArgs } from 'types'
 
@@ -25,26 +22,17 @@ export type ICreateCredentialOfferURIResponse = {
   userPin?: string
 }
 
-export interface IGetCredentialOfferEndpointOpts extends ISingleEndpointOpts {
-}
-
-export interface ICreateCredentialOfferEndpointOpts extends ISingleEndpointOpts {
-  getOfferPath?: string
-  qrCodeOpts?: QRCodeOpts
-}
-
-export interface IGetIssueStatusEndpointOpts extends ISingleEndpointOpts {
-}
-
 export interface IOID4VCIServerOpts extends HasEndpointOpts {
   endpointOpts?: {
     tokenEndpointOpts?: ITokenEndpointOpts
-    createCredentialOfferOpts?: ICreateCredentialOfferEndpointOpts
-    getCredentialOfferOpts?: IGetCredentialOfferEndpointOpts
-    getStatusOpts?: IGetIssueStatusEndpointOpts
-    parOpts?: ISingleEndpointOpts
+    createCredentialOfferOpts?: ISingleEndpointOpts
+    getCredentialOfferOpts?: ISingleEndpointOpts
+    getStatusOpts?: ISingleEndpointOpts
+    parOpts?: ISingleEndpointOpts    
   }
-  baseUrl?: string
+  baseUrl?: string;
+  tokenPath?: string;
+  credentialOfferPath: string;
 }
 
 //instanceArgs: { credentialIssuer: args.issuerOptions.options.correlationId }
@@ -84,12 +72,23 @@ export class IssuerRestServer {
     // This endpoint serves the /.well-known/did.json document
     getDidSpec(this.router, this.issuer, this._issuerOptions);
 
+    // This endpoint serves the /.well-known/openid-configuration document
+    var tokenPath = opts.tokenPath ? (this.baseUrl + opts.tokenPath) : undefined;
+    getOpenidConfiguration(this.router, this.issuer, this._issuerOptions, this._issuerOptions, tokenPath);
+
     // OpenID4VC endpoint to retrieve a specific credential
     getCredential(this.router, this.issuer, this.baseUrl, opts?.endpointOpts?.tokenEndpointOpts)
 
     // Enable the back channel interface to create a new credential offer
     if (opts?.endpointOpts?.createCredentialOfferOpts?.enabled !== false) {
-      createCredentialOfferResponse(this.router, this.issuer, opts?.baseUrl || '', opts?.endpointOpts?.createCredentialOfferOpts || {}, this._issuerOptions)
+      createCredentialOfferResponse(
+          this.router,
+          this.issuer,
+          opts?.baseUrl || '',
+          opts.credentialOfferPath,
+          opts?.endpointOpts?.createCredentialOfferOpts || {},
+          this._issuerOptions
+      );
     }
 
     // enable the back channel interface to get a specific credential offer JSON object

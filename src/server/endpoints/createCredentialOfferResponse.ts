@@ -16,11 +16,12 @@ export function createCredentialOfferResponse<DIDDoc extends object>(
     router: Router,
     issuer: VcIssuer<DIDDoc>,
     baseUrl: string,
+    offerPath: string,
     opts: ICreateCredentialOfferEndpointOpts,
     issuerOptions:IEWIssuerOptsImportArgs
   ) {
     const path = determinePath(baseUrl, opts?.path ?? '/webapp/credential-offers', { stripBasePath: true })
-    const getOfferPath = opts.getOfferPath ? determinePath(baseUrl, opts!.getOfferPath ?? '/webapp/credential-offers', { stripBasePath: true }) : undefined;
+    const getOfferPath = determinePath(baseUrl, offerPath, { stripBasePath: true });
     console.log(`[OID4VCI] createCredentialOffer endpoint enabled at ${path}`)
     router.post(path, async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       debug("received post", request.body);
@@ -52,7 +53,7 @@ export function createCredentialOfferResponse<DIDDoc extends object>(
         );
 
         const resultResponse: ICreateCredentialOfferURIResponse = {
-          uri: 'openid-credential-offer://?credential_offer_uri=' + baseUrl + removeTrailingSlash(getOfferPath ?? '') + '/' + offerData.id,
+          uri: 'openid-credential-offer://?credential_offer_uri=' + baseUrl + getOfferPath + '/' + offerData.id,
           userPin: offerData.userPin
         }
         return response.send(resultResponse)
