@@ -7,3 +7,4 @@ export { getMetadata } from './getMetadata';
 export { getIssueStatus } from './getIssueStatus';
 export { getDidSpec } from './getDidSpec';
 export { getOpenidConfiguration } from './getOpenidConfiguration';
+export { getOAuthConfiguration } from './getOAuthConfiguration';
