@@ -1,7 +1,7 @@
 export { accessToken }   from './accessToken'
 export { getCredential } from './getCredential'
 export { getCredentialOffer } from './getCredentialOffer';
-export { createCredentialOffer } from './createCredentialOffer';
+export { createCredentialOfferResponse } from './createCredentialOfferResponse';
 export { pushedAuthorization } from './pushedAuthorization'
 export { getMetadata } from './getMetadata';
 export { getIssueStatus } from './getIssueStatus';

@@ -4,8 +4,7 @@ dotenvConfig()
 
 import {resolve} from "path";
 import {loadJsonFiles} from "./utils";
-import {IPresentationDefinition} from "@sphereon/pex";
-import {IDIDOpts, OID4VPInstanceOpts} from "./types";
+import {IDIDOpts} from "./types";
 import { IIssuerOptsImportArgs, IMetadataImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 
 export const DB_CONNECTION_NAME = process.env.DB_CONNECTION_NAME ?? 'default'

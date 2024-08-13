@@ -10,6 +10,7 @@ import {format} from 'date-fns'
 
 import agent from '../agent';
 import { findCredentialDefinitionInMetadata } from "./findCredentialDefinitionInMetadata"
+import { IssuerMetadataV1_0_13 } from '@sphereon/oid4vci-common'
 
 export function getCredentialDataSupplier(opts: IIssuerOptsPersistArgs): CredentialDataSupplier {
     //const credentialDataSupplier = new TemplateCredentialDataSupplier(issuerCorrelationId)
@@ -34,7 +35,7 @@ class BasicJWTCredentialSupplier {
         const types: string[] = getTypesFromRequest(args.credentialRequest);
         const display = (issuer.issuerMetadata.display ?? [{}])[0];
         const credentialName = types.filter((v) => v != 'VerifiableCredential')[0];
-        const credentialConfiguration = findCredentialDefinitionInMetadata(issuer.issuerMetadata, credentialName);
+        const credentialConfiguration = findCredentialDefinitionInMetadata(issuer.issuerMetadata as IssuerMetadataV1_0_13, credentialName);
         const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration.display?.length ? credentialConfiguration.display[0] : undefined;
 
         // construction with a cast, because we do not yet know the actual issuer key id

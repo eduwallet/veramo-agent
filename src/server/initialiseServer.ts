@@ -67,11 +67,12 @@ export const initialiseServer = async (agent:TAgent<TAgentTypes>) => {
                 endpointOpts: {
                     createCredentialOfferOpts: {
                         enabled: issuerOptions.enableCreateCredentials,
-                        path: '/api/create-offer'
+                        path: '/api/create-offer',
+                        getOfferPath: '/get-credential-offer'
                     },
                     getCredentialOfferOpts: {
                         enabled: true,
-                        path: '/api/get-offer/:id'
+                        path: '/get-credential-offer/:id'
                     },
                     getStatusOpts: {
                         enabled: true,

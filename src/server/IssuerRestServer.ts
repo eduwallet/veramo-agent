@@ -10,7 +10,7 @@ import express from 'express'
 
 import {
   accessToken,
-  createCredentialOffer,
+  createCredentialOfferResponse,
   getCredential,
   getCredentialOffer,
   getIssueStatus,
@@ -89,7 +89,7 @@ export class IssuerRestServer {
 
     // Enable the back channel interface to create a new credential offer
     if (opts?.endpointOpts?.createCredentialOfferOpts?.enabled !== false) {
-      createCredentialOffer(this.router, this.issuer, opts?.baseUrl || '', opts?.endpointOpts?.createCredentialOfferOpts || {}, this._issuerOptions)
+      createCredentialOfferResponse(this.router, this.issuer, opts?.baseUrl || '', opts?.endpointOpts?.createCredentialOfferOpts || {}, this._issuerOptions)
     }
 
     // enable the back channel interface to get a specific credential offer JSON object
