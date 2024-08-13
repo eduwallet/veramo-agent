@@ -23,7 +23,6 @@ export async function createCredentialOffer<DIDDoc extends object>(
 
     const credentialOfferPayload: CredentialOfferPayloadV1_0_13 = {
       ...(grants && { grants }),
-      ...(credentials && { credentials }),
       ...(credentials && { credential_configuration_ids: credentials }),
       credential_issuer: metadata.credential_issuer,
     } as CredentialOfferPayloadV1_0_13
