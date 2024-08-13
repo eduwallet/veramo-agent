@@ -14,6 +14,7 @@ import {
   getDidSpec,
   pushedAuthorization,
   getOpenidConfiguration,
+  getOAuthConfiguration,
 } from './endpoints'
 import { IEWIssuerOptsImportArgs } from 'types'
 
@@ -74,7 +75,8 @@ export class IssuerRestServer {
 
     // This endpoint serves the /.well-known/openid-configuration document
     var tokenPath = opts.tokenPath ? (this.baseUrl + opts.tokenPath) : undefined;
-    getOpenidConfiguration(this.router, this.issuer, this._issuerOptions, this._issuerOptions, tokenPath);
+    getOpenidConfiguration(this.router, this.issuer, this._issuerOptions, this.baseUrl.toString(), tokenPath);
+    getOAuthConfiguration(this.router, this.issuer, this._issuerOptions, this.baseUrl.toString(), tokenPath);
 
     // OpenID4VC endpoint to retrieve a specific credential
     getCredential(this.router, this.issuer, this.baseUrl, opts?.endpointOpts?.tokenEndpointOpts)
