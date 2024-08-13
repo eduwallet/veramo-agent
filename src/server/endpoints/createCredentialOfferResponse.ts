@@ -6,19 +6,22 @@ import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { ICreateCredentialOfferEndpointOpts, ICreateCredentialOfferURIResponse } from '../IssuerRestServer';
 import { determinePath } from '@utils/determinePath';
 
-import { createCredentialOfferURI } from '@utils/credentialOffer/createCredentialOfferURI';
+import { createCredentialOffer} from '@utils/credentialOffer/createCredentialOffer';
+import { removeTrailingSlash } from '@utils/removeTrailingSlash';
 import { IEWIssuerOptsImportArgs } from 'types';
 
 const debug = Debug("api:createCredentialOffer");
 
-export function createCredentialOffer<DIDDoc extends object>(
+export function createCredentialOfferResponse<DIDDoc extends object>(
     router: Router,
     issuer: VcIssuer<DIDDoc>,
     baseUrl: string,
+    offerPath: string,
     opts: ICreateCredentialOfferEndpointOpts,
     issuerOptions:IEWIssuerOptsImportArgs
   ) {
     const path = determinePath(baseUrl, opts?.path ?? '/webapp/credential-offers', { stripBasePath: true })
+    const getOfferPath = determinePath(baseUrl, offerPath, { stripBasePath: true });
     console.log(`[OID4VCI] createCredentialOffer endpoint enabled at ${path}`)
     router.post(path, async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       debug("received post", request.body);
@@ -38,16 +41,21 @@ export function createCredentialOffer<DIDDoc extends object>(
             error_description: 'credentials missing in credential offer payload',
           })
         }
-        const result = await createCredentialOfferURI(
+
+        const offerData = await createCredentialOffer(
           request.body.grants,
           request.body.credentialDataSupplierInput,
           request.body.credentials,
-          request.body.pinLength,
+          request.body.pinLength ?? 4,
           issuer.issuerMetadata,
           issuerOptions,
           issuer
         );
-        const resultResponse: ICreateCredentialOfferURIResponse = result
+
+        const resultResponse: ICreateCredentialOfferURIResponse = {
+          uri: 'openid-credential-offer://?credential_offer_uri=' + baseUrl + getOfferPath + '/' + offerData.id,
+          userPin: offerData.userPin
+        }
         return response.send(resultResponse)
       } catch (e) {
         return sendErrorResponse(

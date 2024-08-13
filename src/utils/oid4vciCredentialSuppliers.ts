@@ -8,14 +8,9 @@ import {getTypesFromRequest, CredentialsSupportedDisplay} from "@sphereon/oid4vc
 import { IIssuerOptsPersistArgs } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
 import {format} from 'date-fns'
 
-import {TemplateVCGenerator} from "./templateManager"
-import {CONF_PATH} from "../environment"
-import {CredentialSupplierConfigWithTemplateSupport } from '../types';
-import {normalizeFilePath } from '../utils';
 import agent from '../agent';
 import { findCredentialDefinitionInMetadata } from "./findCredentialDefinitionInMetadata"
-
-const templateVCGenerator = new TemplateVCGenerator()
+import { IssuerMetadataV1_0_13 } from '@sphereon/oid4vci-common'
 
 export function getCredentialDataSupplier(opts: IIssuerOptsPersistArgs): CredentialDataSupplier {
     //const credentialDataSupplier = new TemplateCredentialDataSupplier(issuerCorrelationId)
@@ -40,7 +35,7 @@ class BasicJWTCredentialSupplier {
         const types: string[] = getTypesFromRequest(args.credentialRequest);
         const display = (issuer.issuerMetadata.display ?? [{}])[0];
         const credentialName = types.filter((v) => v != 'VerifiableCredential')[0];
-        const credentialConfiguration = findCredentialDefinitionInMetadata(issuer.issuerMetadata, credentialName);
+        const credentialConfiguration = findCredentialDefinitionInMetadata(issuer.issuerMetadata as IssuerMetadataV1_0_13, credentialName);
         const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration.display?.length ? credentialConfiguration.display[0] : undefined;
 
         // construction with a cast, because we do not yet know the actual issuer key id
@@ -67,33 +62,3 @@ class BasicJWTCredentialSupplier {
     }
 }
 
-class TemplateCredentialDataSupplier {
-    private readonly issuerCorrelationId: string
-
-    constructor(correlationId: string) {
-        this.issuerCorrelationId = correlationId
-    }
-
-    public async generateCredentialData(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-        const types: string[] = getTypesFromRequest(args.credentialRequest)
-        const credentialSupplierConfig = args.credentialSupplierConfig as CredentialSupplierConfigWithTemplateSupport
-        if (credentialSupplierConfig.template_mappings) {
-            const templateMapping = credentialSupplierConfig.template_mappings
-                .find(mapping => mapping.credential_types.some(type => type !== 'VerifiableCredential' && types.includes(type)))
-            if (templateMapping) {
-                const templatePath = normalizeFilePath(CONF_PATH, credentialSupplierConfig?.templates_base_dir, templateMapping.template_path)
-                const credential = templateVCGenerator.generateCredential(templatePath, args.credentialDataSupplierInput)
-                if(!credential) {
-                    throw new Error(`Credential generation failed for template ${templatePath}`)
-                }
-                return Promise.resolve({
-                    format: templateMapping.format || args.credentialRequest.format,
-                    credential: credential
-                } as unknown as CredentialDataSupplierResult)
-            } else {
-                throw new Error(`No template mapping could be found for types ${types.join(', ')}`)
-            }
-        }
-        throw new Error(`The credential supplier could not find a match for the requested credential types ${types.join(', ')}. The issuer correlationId is ${this.issuerCorrelationId}`)
-    }
-}
