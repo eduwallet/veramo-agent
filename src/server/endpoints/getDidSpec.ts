@@ -1,7 +1,7 @@
 import { Request, Router } from 'express'
 import { VcIssuer } from '@sphereon/oid4vci-issuer'
 import { context } from '../../agent';
-import { IIssuerInstanceArgs } from '@sphereon/ssi-sdk.oid4vci-issuer';
+import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { IIdentifier, IDIDManager, TAgent, TKeyType, DIDDocument } from '@veramo/core'
 import { didDocEndpoint } from '@veramo/remote-server';
 import { IEWIssuerOptsImportArgs } from 'types';
@@ -25,7 +25,7 @@ const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDocume
     id: identifier.did + '#' + key.kid,
     type: keyMapping[key.type],
     controller: identifier.did,
-    publicKeyHex: key.publicKeyHex,
+    publicKeyJwk: toJwk(key.publicKeyHex, key.type, { use: JwkKeyUse.Signature, key: key}),
   }));
 
   const services = identifier.keys.map((key) => ({
