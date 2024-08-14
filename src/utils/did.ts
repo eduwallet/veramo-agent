@@ -1,32 +1,23 @@
 import {Resolver} from "did-resolver";
 import {getDidIonResolver, IonDIDProvider} from "@veramo/did-provider-ion";
-import {getDidKeyResolver, KeyDIDProvider} from "@veramo/did-provider-key";
+import {KeyDIDProvider} from "@veramo/did-provider-key";
 import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";
 import {getResolver as getDidWebResolver} from "web-did-resolver";
 import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
 import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
 import agent, {context} from "../agent";
 import {DIDDocumentSection, IIdentifier} from "@veramo/core";
-import {didOptConfigs, UNIVERSAL_RESOLVER_RESOLVE_URL} from "../environment";
+import {didOptConfigs} from "../environment";
 import { IDIDResult, KMS } from '../types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
 import {generatePrivateKeyHex, TKeyType, toJwk} from "@sphereon/ssi-sdk-ext.key-utils";
-import {getUniResolver} from "@sphereon/did-uni-client";
 import {DIDMethods} from '../types';
+import { getDidKeyResolver } from "./didKeyResolver";
 
 export function createDidResolver() {
     return new Resolver({
-        // ...getUniResolver('ethr', {
-        //     resolveUrl: UNIVERSAL_RESOLVER_RESOLVE_URL,
-        // }),
-         ...getDidKeyResolver(),
         ...getDidJwkResolver(),
-        ...getUniResolver('key', {
-            resolveUrl: UNIVERSAL_RESOLVER_RESOLVE_URL,
-        }),
-        /*...getUniResolver('jwk', {
-            resolveUrl: UNIVERSAL_RESOLVER_RESOLVE_URL,
-        }),*/
+        ...getDidKeyResolver(),
         ...getDidIonResolver(),
         ...getDidWebResolver()
     })
@@ -78,9 +69,9 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
     if (!identifier) {
         return undefined
     }
-    let keys = await mapIdentifierKeysToDocWithJwkSupport(identifier, verificationMethodName ?? 'assertionMethod', context)
+    let keys = await mapIdentifierKeysToDocWithJwkSupport({identifier, vmRelationship: verificationMethodName ?? 'assertionMethod'}, context)
     if (keys.length === 0 && (verificationMethodFallback === undefined || verificationMethodFallback)) {
-        keys = await mapIdentifierKeysToDocWithJwkSupport(identifier, 'verificationMethod', context)
+        keys = await mapIdentifierKeysToDocWithJwkSupport({identifier, vmRelationship:'verificationMethod'}, context)
     }
     if (keys.length === 0) {
         return undefined
