@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response, Router } from 'express'
-import { getNumberOrUndefined, JWT_SIGNER_CALLBACK_REQUIRED_ERROR, ACCESS_TOKEN_ISSUER_REQUIRED_ERROR,
+import { JWT_SIGNER_CALLBACK_REQUIRED_ERROR, ACCESS_TOKEN_ISSUER_REQUIRED_ERROR,
     GrantTypes, PRE_AUTHORIZED_CODE_REQUIRED_ERROR, TokenError, TokenErrorResponse
  } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts, VcIssuer, assertValidAccessTokenRequest, createAccessTokenResponse  } from '@sphereon/oid4vci-issuer'

@@ -1,5 +1,6 @@
 import {Resolver} from "did-resolver";
 import {getDidIonResolver, IonDIDProvider} from "@veramo/did-provider-ion";
+import {getDidKeyResolver, KeyDIDProvider} from "@veramo/did-provider-key";
 import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";
 import {getResolver as getDidWebResolver} from "web-did-resolver";
 import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
@@ -18,7 +19,7 @@ export function createDidResolver() {
         // ...getUniResolver('ethr', {
         //     resolveUrl: UNIVERSAL_RESOLVER_RESOLVE_URL,
         // }),
-        // ...getDidKeyResolver(),
+         ...getDidKeyResolver(),
         ...getDidJwkResolver(),
         ...getUniResolver('key', {
             resolveUrl: UNIVERSAL_RESOLVER_RESOLVE_URL,
@@ -40,6 +41,9 @@ export function createDidProviders() {
             defaultKms: KMS.LOCAL,
         }),
         [`did:${DIDMethods.DID_JWK}`]: new JwkDIDProvider({
+            defaultKms: KMS.LOCAL
+        }),
+        [`did:${DIDMethods.DID_KEY}`]: new KeyDIDProvider({
             defaultKms: KMS.LOCAL
         })
     }
