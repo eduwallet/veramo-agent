@@ -1,10 +1,9 @@
 import { Request, Router } from 'express'
-import { VcIssuer } from '@sphereon/oid4vci-issuer'
+import { Issuer } from 'issuer/Issuer';
 import { context } from '../../agent';
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { IIdentifier, IDIDManager, TAgent, TKeyType, DIDDocument } from '@veramo/core'
 import { didDocEndpoint } from '@veramo/remote-server';
-import { IEWIssuerOptsImportArgs } from 'types';
 
 interface RequestWithAgentDIDManager extends Request {
   agent?: TAgent<IDIDManager>
@@ -20,7 +19,7 @@ const keyMapping: Record<TKeyType, string> = {
   RSA: 'RsaVerificationKey2018'
 }
 
-const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDocument>) => {
+const didDocForIdentifier = (identifier: IIdentifier, credential_issuer:string) => {
   const allKeys = identifier.keys.map((key) => ({
     id: identifier.did + '#' + key.kid,
     type: keyMapping[key.type],
@@ -31,7 +30,7 @@ const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDocume
   const services = identifier.keys.map((key) => ({
     id: identifier.did + '#' + key.kid,
     type: "OID4VCI",
-    serviceEndpoint: issuer.issuerMetadata.credential_issuer
+    serviceEndpoint: credential_issuer
   }));
 
   // ed25519 keys can also be converted to x25519 for key agreement
@@ -55,9 +54,9 @@ const didDocForIdentifier = (identifier: IIdentifier, issuer: VcIssuer<DIDDocume
   return didDoc
 }
 
-export function getDidSpec(router: Router, issuer: VcIssuer<DIDDocument>, issuerOptions:IEWIssuerOptsImportArgs) {
-    router.get(didDocEndpoint, async (req: RequestWithAgentDIDManager, res) => {
-      const options = issuerOptions.options?.issuerOpts;
+export function getDidSpec(issuer:Issuer) {
+    issuer.router!.get(didDocEndpoint, async (req: RequestWithAgentDIDManager, res) => {
+      const options = issuer.options.options?.issuerOpts;
       if (options?.didOpts?.identifierOpts?.identifier && context.agent) {
         try {
           var serverIdentifier:IIdentifier;
@@ -67,7 +66,7 @@ export function getDidSpec(router: Router, issuer: VcIssuer<DIDDocument>, issuer
           else {
             serverIdentifier = options?.didOpts?.identifierOpts?.identifier;
           }
-          const didDoc = didDocForIdentifier(serverIdentifier, issuer);
+          const didDoc = didDocForIdentifier(serverIdentifier, issuer.metadata.credential_issuer);
           return res.json(didDoc);
         } catch (e) {
           return res.status(404).send(e)

@@ -1,25 +1,21 @@
-import { Request, Response, Router } from 'express'
-import { VcIssuer } from '@sphereon/oid4vci-issuer'
-import { IEWIssuerOptsImportArgs } from 'types';
+import { Request, Response } from 'express'
+import { Issuer } from 'issuer/Issuer';
 
-export function getOpenidConfiguration<DIDDoc extends object>(
-    router: Router,
-    issuer: VcIssuer<DIDDoc>,
-    issuerOptions:IEWIssuerOptsImportArgs,
-    baseUrl: string,
+export function getOpenidConfiguration(
+    issuer:Issuer,
     tokenpath: string|undefined) {
     const path = `/.well-known/openid-configuration`
-    router.get(path, (request: Request, response: Response) => {
+    issuer.router!.get(path, (request: Request, response: Response) => {
         var data:any = {
-            "issuer": issuer.issuerMetadata.credential_issuer,
-            "token_endpoint": tokenpath ?? baseUrl + '/token'
+            "issuer": issuer.metadata.credential_issuer,
+            "token_endpoint": tokenpath ?? issuer.options.baseUrl + '/token'
         };
 
-        if (issuerOptions.authorizationEndpoint) {
-            data.authorization_endpoint = issuerOptions.authorizationEndpoint;
+        if (issuer.options.authorizationEndpoint) {
+            data.authorization_endpoint = issuer.options.authorizationEndpoint;
         }
-        if (issuerOptions.tokenEndpoint) {
-            data.token_endpoint = issuerOptions.tokenEndpoint;
+        if (issuer.options.tokenEndpoint) {
+            data.token_endpoint = issuer.options.tokenEndpoint;
         }
 
         return response.send(data)

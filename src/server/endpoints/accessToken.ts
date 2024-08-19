@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from 'express'
+import { NextFunction, Request, Response} from 'express'
 import { JWT_SIGNER_CALLBACK_REQUIRED_ERROR, ACCESS_TOKEN_ISSUER_REQUIRED_ERROR,
     GrantTypes, PRE_AUTHORIZED_CODE_REQUIRED_ERROR, TokenError, TokenErrorResponse
  } from '@sphereon/oid4vci-common'
@@ -8,23 +8,19 @@ import { v4 } from 'uuid'
 
 import { determinePath } from '@utils/determinePath';
 import { getBaseUrl } from '@utils/getBaseUrl';
+import { Issuer } from 'issuer/Issuer'
 
-export function accessToken<DIDDoc extends object>(
-    router: Router,
-    issuer: VcIssuer<DIDDoc>,
-    baseUrlParameter: string|URL,
+export function accessToken(
+    issuer: Issuer,
     opts?: ITokenEndpointOpts & ISingleEndpointOpts,
   ) {
-    const tokenEndpoint = issuer.issuerMetadata.token_endpoint
-    const externalAS = issuer.issuerMetadata.authorization_servers
+    const tokenEndpoint = issuer.metadata.token_endpoint
+    const externalAS = issuer.metadata.authorization_servers
     if (externalAS) {
       console.log(`[OID4VCI] External Authorization Server ${tokenEndpoint} is being used. Not enabling issuer token endpoint`)
       return
-    } else if (opts?.enabled === false) {
-      console.log(`[OID4VCI] Token endpoint is not enabled`)
-      return
     }
-    const accessTokenIssuer = opts?.accessTokenIssuer ?? issuer.issuerMetadata.credential_issuer
+    const accessTokenIssuer = opts?.accessTokenIssuer ?? issuer.metadata.credential_issuer
   
     const preAuthorizedCodeExpirationDuration = opts?.preAuthorizedCodeExpirationDuration ?? 300
     const interval = opts?.interval ?? 300
@@ -37,7 +33,7 @@ export function accessToken<DIDDoc extends object>(
       throw new Error(ACCESS_TOKEN_ISSUER_REQUIRED_ERROR)
     }
   
-    const baseUrl = getBaseUrl(baseUrlParameter)
+    const baseUrl = getBaseUrl(issuer.options.baseUrl)
   
     // issuer is also AS
     const path = determinePath(baseUrl, opts?.tokenPath ?? '/token', {
@@ -45,22 +41,21 @@ export function accessToken<DIDDoc extends object>(
       stripBasePath: true,
     })
     // let's fix any baseUrl ending with a slash as path will always start with a slash, and we already removed it at the end of the base url
-  
     const url = new URL(`${baseUrl}${path}`)
   
     console.log(`[OID4VCI] Token endpoint enabled at ${url.toString()}`)
   
     // this.issuer.issuerMetadata.token_endpoint = url.toString()
-    router.post(
+    issuer.router!.post(
       determinePath(baseUrl, url.pathname, { stripBasePath: true }),
       verifyTokenRequest({
-        issuer,
+        issuer: issuer.vcIssuer,
         preAuthorizedCodeExpirationDuration,
       }),
       handleTokenRequest({
-        issuer,
+        issuer: issuer.vcIssuer,
         accessTokenSignerCallback: opts.accessTokenSignerCallback,
-        cNonceExpiresIn: issuer.cNonceExpiresIn,
+        cNonceExpiresIn: issuer.vcIssuer.cNonceExpiresIn,
         interval,
         tokenExpiresIn,
         accessTokenIssuer,

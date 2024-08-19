@@ -12,10 +12,8 @@ import {SphereonKeyManager} from '@sphereon/ssi-sdk-ext.key-manager'
 import {SphereonKeyManagementSystem} from '@sphereon/ssi-sdk-ext.kms-local'
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018, SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } 
     from '@sphereon/ssi-sdk.vc-handler-ld-local'
-import {IOID4VCIStore, OID4VCIStore, IIssuerOptsImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
-import {IOID4VCIIssuer, OID4VCIIssuer} from "@sphereon/ssi-sdk.oid4vci-issuer";
 
-import { oid4vciMetadataOpts, OID4VCI_ISSUER_OPTIONS_PATH } from "./environment";
+import { OID4VCI_ISSUER_OPTIONS_PATH } from "./environment";
 import { DIDMethods, IEWIssuerOptsImportArgs } from './types';
 import { getDbConnection } from './database'
 import { createDidProviders, createDidResolver, loadJsonFiles } from "./utils";
@@ -27,7 +25,6 @@ export const resolver = createDidResolver()
 debug("importing options for all issuers");
 const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH})
 export const importIssuerOpts = issuerOptionsObjects.asArray;
-const defaultIssuerOptions = {userPinRequired: false, didOpts: {resolveOpts: {resolver}, identifierOpts: {identifier:'none'}}};
 
 debug("creating list of plugins");
 export const plugins: IAgentPlugin[] = [
@@ -62,18 +59,9 @@ export const plugins: IAgentPlugin[] = [
         ]),
         keyStore: privateKeyStore,
     }), // Sphereon
-    new OID4VCIStore({
-        defaultOpts: defaultIssuerOptions, 
-        defaultNamespace: 'eduwallet',
-        importIssuerOpts: importIssuerOpts.map((e) => e.options),
-        importMetadatas: oid4vciMetadataOpts.asArray}
-    ), // Sphereon
-    new OID4VCIIssuer({returnSessions: true, resolveOpts: {resolver}}), // Sphereon
 ];
 
-export type TAgentTypes = IOID4VCIStore &
-    IOID4VCIIssuer &
-    IDIDManager &
+export type TAgentTypes = IDIDManager &
     IResolver &
     IKeyManager &
     IDataStore &
