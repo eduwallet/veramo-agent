@@ -1,18 +1,20 @@
 import { Request, Response } from 'express'
 import { CredentialOfferRESTRequest, determineGrantTypes, TokenErrorResponse } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { ICreateCredentialOfferURIResponse } from '../IssuerRestServer';
 import { determinePath } from '@utils/determinePath';
+import { ICreateCredentialOfferURIResponse } from '@sphereon/oid4vci-issuer-server';
 
 import { createCredentialOffer} from 'issuer/createCredentialOffer';
 import { Issuer } from 'issuer/Issuer'
+import passport from 'passport';
 
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
     const getOfferPath = determinePath(issuer.options.baseUrl, offerPath, { stripBasePath: true });
-    console.log(`[OID4VCI] createCredentialOffer endpoint enabled at ${path}`)
-    issuer.router!.post(path, async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
+    issuer.router!.post(path,
+      passport.authenticate(issuer.name + '-admin', { session: false }),
+      async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       try {
         const grantTypes = determineGrantTypes(request.body)
         if (grantTypes.length === 0) {

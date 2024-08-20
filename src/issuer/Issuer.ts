@@ -11,6 +11,7 @@ import { getCredentialDataSupplier } from "@utils/oid4vciCredentialSuppliers";
 
 export class Issuer
 {
+    public name:string;
     public metadata:IssuerMetadataV1_0_13;
     public options:IEWIssuerOptsImportArgs;
     public keyRef:string;
@@ -21,6 +22,7 @@ export class Issuer
         this.options = _options;
         this.metadata = _metadata;
         this.keyRef = '';
+        this.name = _options.options.correlationId;
 
         this.vcIssuer = this.buildVcIssuer();
     }

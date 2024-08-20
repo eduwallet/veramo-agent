@@ -1,12 +1,9 @@
 import Debug from 'debug'
-import { TAgent } from '@veramo/core'
 import {ExpressBuilder, ExpressCorsConfigurer} from "@sphereon/ssi-express-support";
-
-import { TAgentTypes } from '../plugins';
 import { dumpExpressRoutes } from '../utils/dumpExpressRoutes';
 import { getIssuerStore } from 'issuer/Store';
 import { createRoutesForIssuer } from './createRoutesForIssuer';
-
+import { bearerAdminForIssuer } from './bearerAdminForIssuer';
 
 const debug = Debug(`eduwallet:server`)
 
@@ -20,8 +17,7 @@ const expressSupport = ExpressBuilder.fromServerOpts({
         basePath: new URL(BASEURL).toString()
     })
         .withCorsConfigurer(new ExpressCorsConfigurer({}).allowOrigin('*').allowCredentials(true))
-        .withPassportAuth(true)
-        .withMorganLogging()
+        .withMorganLogging({format:'combined'})
         .build({startListening: false});
 
 export const initialiseServer = async () => {
@@ -29,6 +25,8 @@ export const initialiseServer = async () => {
     const store = getIssuerStore();
     Object.keys(store).forEach((key) => {
         const issuer = store[key];
+        // initialise the passport strategy
+        bearerAdminForIssuer(issuer);
         createRoutesForIssuer(issuer, expressSupport);
     })
 

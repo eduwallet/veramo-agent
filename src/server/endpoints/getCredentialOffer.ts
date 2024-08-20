@@ -5,7 +5,6 @@ import { Issuer } from 'issuer/Issuer';
 
 export function getCredentialOffer(issuer:Issuer, getPath:string) {
     const path = determinePath(issuer.options.baseUrl, getPath, { stripBasePath: true })
-    console.log(`[OID4VCI] getCredentialOffer endpoint enabled at ${path}`)
     issuer.router!.get(path, async (request: Request, response: Response) => {
       try {
         const { id } = request.params

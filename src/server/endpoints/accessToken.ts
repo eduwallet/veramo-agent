@@ -43,8 +43,6 @@ export function accessToken(
     // let's fix any baseUrl ending with a slash as path will always start with a slash, and we already removed it at the end of the base url
     const url = new URL(`${baseUrl}${path}`)
   
-    console.log(`[OID4VCI] Token endpoint enabled at ${url.toString()}`)
-  
     // this.issuer.issuerMetadata.token_endpoint = url.toString()
     issuer.router!.post(
       determinePath(baseUrl, url.pathname, { stripBasePath: true }),

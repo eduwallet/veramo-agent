@@ -55,6 +55,7 @@ export interface IEWIssuerOptsImportArgs {
     enableCreateCredentials: boolean
     clientId?:string;
     clientSecret?:string;
+    adminToken?:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
 }

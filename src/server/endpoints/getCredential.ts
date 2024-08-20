@@ -1,6 +1,6 @@
-import { Request, Response, Router } from 'express'
+import { Request, Response } from 'express'
 import { CredentialRequestV1_0_13 } from '@sphereon/oid4vci-common'
-import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
+import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 import { determinePath } from '@utils/determinePath';
 import { Issuer } from 'issuer/Issuer';
@@ -21,7 +21,6 @@ export function getCredential(
       path = determinePath(baseUrl, endpoint, { stripBasePath: true, skipBaseUrlCheck: false })
     }
     path = determinePath(baseUrl, path, { stripBasePath: true })
-    console.log(`[OID4VCI] getCredential endpoint enabled at ${path}`)
     issuer.router!.post(path, async (request: Request, response: Response) => {
       try {
         const credentialRequest = request.body as CredentialRequestV1_0_13
