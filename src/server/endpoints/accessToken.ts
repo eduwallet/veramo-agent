@@ -1,15 +1,16 @@
 import { NextFunction, Request, Response} from 'express'
 import { JWT_SIGNER_CALLBACK_REQUIRED_ERROR, ACCESS_TOKEN_ISSUER_REQUIRED_ERROR,
-    GrantTypes, PRE_AUTHORIZED_CODE_REQUIRED_ERROR, TokenError, TokenErrorResponse
+    GrantTypes, PRE_AUTHORIZED_CODE_REQUIRED_ERROR, TokenError, TokenErrorResponse, Alg
  } from '@sphereon/oid4vci-common'
-import { ITokenEndpointOpts, VcIssuer, assertValidAccessTokenRequest, createAccessTokenResponse  } from '@sphereon/oid4vci-issuer'
+import { ITokenEndpointOpts, VcIssuer, assertValidAccessTokenRequest } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 import { v4 } from 'uuid'
 
 import { determinePath } from '@utils/determinePath';
 import { getBaseUrl } from '@utils/getBaseUrl';
+import { createAccessTokenResponse } from '@utils/createAccessTokenResponse';
 import { Issuer } from 'issuer/Issuer'
-
+import { IIdentifier } from '@veramo/core'
 export function accessToken(
     issuer: Issuer,
     opts?: ITokenEndpointOpts & ISingleEndpointOpts,
@@ -20,8 +21,7 @@ export function accessToken(
       console.log(`[OID4VCI] External Authorization Server ${tokenEndpoint} is being used. Not enabling issuer token endpoint`)
       return
     }
-    const accessTokenIssuer = opts?.accessTokenIssuer ?? issuer.metadata.credential_issuer
-  
+    const accessTokenIssuer = (issuer.did as IIdentifier).did;
     const preAuthorizedCodeExpirationDuration = opts?.preAuthorizedCodeExpirationDuration ?? 300
     const interval = opts?.interval ?? 300
     const tokenExpiresIn = opts?.tokenExpiresIn ?? 300
@@ -51,7 +51,7 @@ export function accessToken(
         preAuthorizedCodeExpirationDuration,
       }),
       handleTokenRequest({
-        issuer: issuer.vcIssuer,
+        issuer: issuer,
         accessTokenSignerCallback: opts.accessTokenSignerCallback,
         cNonceExpiresIn: issuer.vcIssuer.cNonceExpiresIn,
         interval,
@@ -71,7 +71,7 @@ export function accessToken(
  * @param issuer
  * @param interval
  */
-const handleTokenRequest = <T extends object>({
+const handleTokenRequest = ({
   tokenExpiresIn, // expiration in seconds
   accessTokenSignerCallback,
   accessTokenIssuer,
@@ -79,7 +79,7 @@ const handleTokenRequest = <T extends object>({
   issuer,
   interval,
 }: Required<Pick<ITokenEndpointOpts, 'accessTokenIssuer' | 'cNonceExpiresIn' | 'interval' | 'accessTokenSignerCallback' | 'tokenExpiresIn'>> & {
-  issuer: VcIssuer<T>
+  issuer: Issuer
 }) => {
   return async (request: Request, response: Response) => {
     response.set({
@@ -97,14 +97,15 @@ const handleTokenRequest = <T extends object>({
 
     try {
       const responseBody = await createAccessTokenResponse(request.body, {
-        credentialOfferSessions: issuer.credentialOfferSessions,
+        credentialOfferSessions: issuer.vcIssuer.credentialOfferSessions,
         accessTokenIssuer,
-        cNonces: issuer.cNonces,
+        cNonces: issuer.vcIssuer.cNonces,
         cNonce: v4(),
         accessTokenSignerCallback,
         cNonceExpiresIn,
         interval,
         tokenExpiresIn,
+        alg: issuer.signingAlg()
       })
       return response.status(200).json(responseBody)
     } catch (error) {

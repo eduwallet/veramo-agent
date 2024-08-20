@@ -4,6 +4,7 @@ import { dumpExpressRoutes } from '../utils/dumpExpressRoutes';
 import { getIssuerStore } from 'issuer/Store';
 import { createRoutesForIssuer } from './createRoutesForIssuer';
 import { bearerAdminForIssuer } from './bearerAdminForIssuer';
+import { bearerTokenForCredential } from './bearerTokenForCredential';
 
 const debug = Debug(`eduwallet:server`)
 
@@ -21,13 +22,14 @@ const expressSupport = ExpressBuilder.fromServerOpts({
         .build({startListening: false});
 
 export const initialiseServer = async () => {
-    debug('creating routes for each issuer instance');
     const store = getIssuerStore();
-    Object.keys(store).forEach((key) => {
+    console.log('creating routes for each issuer instance', Object.keys(store));
+    Object.keys(store).forEach(async (key) => {
         const issuer = store[key];
         // initialise the passport strategy
         bearerAdminForIssuer(issuer);
-        createRoutesForIssuer(issuer, expressSupport);
+        bearerTokenForCredential(issuer);
+        await createRoutesForIssuer(issuer, expressSupport);
     })
 
     debug("starting express server");

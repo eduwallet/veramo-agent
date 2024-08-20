@@ -32,6 +32,9 @@ import { assertValidPinNumber } from '@sphereon/oid4vci-issuer'
             preAuthorizedCode = v4()
             grants['urn:ietf:params:oauth:grant-type:pre-authorized_code']['pre-authorized_code'] = preAuthorizedCode
         }
+        // replace any unwanted characters to keep a safe code
+        preAuthorizedCode.replace(/[\W_]+/g,"").replace(/\s+/g, "");
+
     }
 
     return { grants, issuerState, preAuthorizedCode, userPin };

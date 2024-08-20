@@ -8,6 +8,7 @@ import {DIDManager} from '@veramo/did-manager'
 import {DIDResolverPlugin} from '@veramo/did-resolver'
 import {CredentialPlugin} from '@veramo/credential-w3c'
 
+import { IOID4VCIStore } from '@sphereon/ssi-sdk.oid4vci-issuer-store';
 import {SphereonKeyManager} from '@sphereon/ssi-sdk-ext.key-manager'
 import {SphereonKeyManagementSystem} from '@sphereon/ssi-sdk-ext.kms-local'
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018, SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } 
@@ -61,7 +62,8 @@ export const plugins: IAgentPlugin[] = [
     }), // Sphereon
 ];
 
-export type TAgentTypes = IDIDManager &
+export type TAgentTypes = IOID4VCIStore &
+    IDIDManager &
     IResolver &
     IKeyManager &
     IDataStore &

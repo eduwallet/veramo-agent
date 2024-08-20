@@ -22,7 +22,7 @@ import {
 
 const debug = Debug(`eduwallet:server`)
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
-
+    console.log('creating routes for ', issuer.name);
     /*
      * The issuer.options is the object containing the configured issuer options from the conf
      * directory.
@@ -53,7 +53,7 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
     issuer.keyRef = await getAccessTokenKeyRef(tokenOpts, context);
     tokenEndpointOpts.accessTokenSignerCallback = getAccessTokenSignerCallback(
         {
-          ...tokenOpts,
+          iss: issuer.did!.did,
           keyRef: issuer.keyRef,
         },
         context,

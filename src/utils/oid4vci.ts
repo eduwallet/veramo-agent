@@ -9,11 +9,9 @@ import {
 } from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 import {IIssuerOptsImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store/src/types/IOID4VCIStore";
 
-
 export function toImportIssuerOptions(args?: { oid4vciInstanceOpts: IIssuerOptsImportArgs[] }): IIssuerOptsImportArgs[] {
     return args?.oid4vciInstanceOpts ?? oid4vciInstanceOpts.asArray
 }
-
 
 export async function getDefaultOID4VCIIssuerOptions(args?: { did?: string, resolver?: Resolvable }): Promise<IIssuerDefaultOpts | undefined> {
     const did = args?.did ?? await getDefaultDID()
@@ -32,7 +30,7 @@ export async function getDefaultOID4VCIIssuerOptions(args?: { did?: string, reso
             },
             identifierOpts: {
                 identifier,
-                kid: await getDefaultKid({did})
+                kmsKeyRef: await getDefaultKid({did})
             }
         }
     }

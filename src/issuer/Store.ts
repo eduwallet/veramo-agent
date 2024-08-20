@@ -17,13 +17,20 @@ export interface IssuerStore {
 var _issuerStore:IssuerStore = {};
 export const getIssuerStore = ():IssuerStore => _issuerStore;
 
-export function initialiseIssuerStore() {
+export async function initialiseIssuerStore() {
+    console.log('initialising issuer store, reading json files');
     const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH});
     const metadatas = loadJsonFiles<IMetadataImportArgs>({path: OID4VCI_ISSUER_METADATA_PATH});
-    issuerOptionsObjects.asArray.forEach((conf) => {
+
+    console.log('looping of ', issuerOptionsObjects.asArray.length,' objects');
+    for(const conf of issuerOptionsObjects.asArray) {
+        console.log('creating new issuer');
         const issuer = new Issuer(conf, findMetaDataForCorrelation(conf.options.correlationId, metadatas.asArray));
+        await issuer.setDid(); // do some asynchronous post-initialisation
+        console.log('setting issuer on store');
         _issuerStore[conf.options.correlationId] = issuer;
-    });
+    };
+    console.log('end of issuer store initialisation');
 }
 
 function findMetaDataForCorrelation(correlationId:string, metadatas: IMetadataImportArgs[]): IssuerMetadataV1_0_13

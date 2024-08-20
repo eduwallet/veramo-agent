@@ -2,7 +2,6 @@ import {Resolver} from "did-resolver";
 import {getDidIonResolver, IonDIDProvider} from "@veramo/did-provider-ion";
 import {KeyDIDProvider} from "@veramo/did-provider-key";
 import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";
-import {getResolver as getDidWebResolver} from "web-did-resolver";
 import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
 import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
 import agent, {context} from "../agent";
@@ -13,6 +12,7 @@ import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-ut
 import {generatePrivateKeyHex, TKeyType, toJwk} from "@sphereon/ssi-sdk-ext.key-utils";
 import {DIDMethods} from '../types';
 import { getDidKeyResolver } from "./didKeyResolver";
+import { getDidWebResolver } from './didWebResolver';
 
 export function createDidResolver() {
     return new Resolver({
