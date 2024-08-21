@@ -4,6 +4,6 @@ import { Issuer } from 'issuer/Issuer'
 export function getMetadata(issuer: Issuer) {
     const path = `/.well-known/openid-credential-issuer`
     issuer.router!.get(path, (request: Request, response: Response) => {
-      return response.send(issuer.metadata)
+      return response.send(issuer.generateMetadata())
     })
 }

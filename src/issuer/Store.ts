@@ -5,7 +5,7 @@
 
 import { IMetadataImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 import { IssuerMetadataV1_0_13 } from '@sphereon/oid4vci-common';
-import { OID4VCI_ISSUER_METADATA_PATH, OID4VCI_ISSUER_OPTIONS_PATH } from "../environment";
+import { METADATA_PATH, ISSUER_PATH } from "../environment";
 import { loadJsonFiles } from "@utils/generic";
 import { IEWIssuerOptsImportArgs } from "types";
 import { Issuer } from "./Issuer";
@@ -19,8 +19,8 @@ export const getIssuerStore = ():IssuerStore => _issuerStore;
 
 export async function initialiseIssuerStore() {
     console.log('initialising issuer store, reading json files');
-    const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH});
-    const metadatas = loadJsonFiles<IMetadataImportArgs>({path: OID4VCI_ISSUER_METADATA_PATH});
+    const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: ISSUER_PATH});
+    const metadatas = loadJsonFiles<IMetadataImportArgs>({path: METADATA_PATH});
 
     console.log('looping of ', issuerOptionsObjects.asArray.length,' objects');
     for(const conf of issuerOptionsObjects.asArray) {

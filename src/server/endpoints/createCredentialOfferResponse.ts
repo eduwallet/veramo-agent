@@ -29,6 +29,12 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             error_description: 'credentials missing in credential offer payload',
           })
         }
+        if (!issuer.hasCredential(credentialConfigIds)) {
+          return sendErrorResponse(response, 404, {
+            error: TokenErrorResponse.invalid_request,
+            error_description: 'no such credential available',
+          })
+        }
 
         const offerData = await createCredentialOffer(
           request.body.grants,

@@ -1,5 +1,5 @@
 import { IEWIssuerOptsImportArgs } from "types";
-import { IssuerMetadataV1_0_13, Alg } from '@sphereon/oid4vci-common';
+import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, CredentialConfigurationSupportedJwtVcJsonV1_0_13, Alg } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
 import { DIDDocument, IIdentifier, IKey, TKeyType } from '@veramo/core';
@@ -8,8 +8,9 @@ import { JWTVerifyOptions } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
 import { resolver } from '../plugins';
 import { context } from '../agent';
-import { getCredentialDataSupplier } from "@utils/oid4vciCredentialSuppliers";
+import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
+import { getCredentialStore } from "credentials/Store";
 
 // mapping key types to key output types in the DIDDocument
 const keyMapping: Record<TKeyType, string> = {
@@ -25,8 +26,10 @@ const keyMapping: Record<TKeyType, string> = {
 
 const algMapping: Record<TKeyType, Alg> = {
   Ed25519: Alg.EdDSA,
+  X25519: Alg.EdDSA,
   Secp256k1: Alg.ES256,
-  Secp256r1: Alg.ES256K
+  Secp256r1: Alg.ES256K,
+  RSA: Alg.RS512
 }
 
 export class Issuer
@@ -67,12 +70,12 @@ export class Issuer
           resolver,
           audience: this.metadata.credential_issuer,
         }
-        builder.withIssuerMetadata(this.metadata)
+        builder.withIssuerMetadata(this.generateMetadata())
             .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, context))
             .withJWTVerifyCallback(getJwtVerifyCallback({ verifyOpts: jwtVerifyOpts }, context))
             .withInMemoryCNonceState()
             .withInMemoryCredentialOfferState()
-            .withCredentialDataSupplier(getCredentialDataSupplier(this))
+            .withCredentialDataSupplier(credentialResolver(this))
             .withInMemoryCredentialOfferURIState();
       
         return builder.build();
@@ -125,5 +128,48 @@ export class Issuer
             }
         }
         return Alg.ES256;
+    }
+
+    public hasCredential(names:string[]):boolean {
+      // the list of names should contain only one name, but for the sake of argument/specification...
+      // the VerifiableCredential type should have been filtered out
+      for (const id of names) {
+          // just in case we forgot to filter out the VerifiableCredential type
+          if (id != 'VerifiableCredential') {
+              if (!this.metadata.credential_configurations_supported[id]) {
+                  return false;
+              }
+          }
+      }
+      return true;
+    }
+
+    public getCredentialConfiguration(id:string): CredentialConfigurationSupportedV1_0_13|null {
+        if (this.hasCredential([id])) {
+            return this.decorateCredentialConfiguration(id);
+        }
+        return null;
+    }
+
+    public generateMetadata() {
+        var metadata = this.metadata;
+        var credentials:Record<string, CredentialConfigurationSupportedV1_0_13> = {};
+        for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
+            const credentialConfiguration = this.decorateCredentialConfiguration(id);
+            credentials[id] = credentialConfiguration;
+        }
+        metadata.credential_configurations_supported = credentials;
+        return metadata;
+    }
+
+    private decorateCredentialConfiguration(id:string):CredentialConfigurationSupportedV1_0_13 {
+        const store = getCredentialStore();
+        if (this.metadata.credential_configurations_supported[id]) {
+            return Object.assign({}, store[id] ?? {}, this.metadata.credential_configurations_supported[id]) as CredentialConfigurationSupportedV1_0_13;
+        }
+        else if(store[id]) {
+          return store[id] as CredentialConfigurationSupportedV1_0_13;
+        }
+        return {} as CredentialConfigurationSupportedV1_0_13;
     }
 }

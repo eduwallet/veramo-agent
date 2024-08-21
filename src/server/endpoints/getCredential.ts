@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { CredentialRequestV1_0_13, extractBearerToken, IssueStatus } from '@sphereon/oid4vci-common'
+import { getTypesFromRequest, CredentialRequest, CredentialRequestV1_0_13, extractBearerToken, IssueStatus } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 
@@ -35,6 +35,16 @@ function validateCredentialRequest(issuer:Issuer) {
       )
     }
 
+    const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
+    if (!issuer.hasCredential(types)) {
+      return sendErrorResponse(
+        response,
+        404,
+        {
+          error: 'not found',
+        }
+      )
+    }
     return next();
   };
 }

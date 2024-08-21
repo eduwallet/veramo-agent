@@ -14,18 +14,13 @@ import {SphereonKeyManagementSystem} from '@sphereon/ssi-sdk-ext.kms-local'
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018, SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } 
     from '@sphereon/ssi-sdk.vc-handler-ld-local'
 
-import { OID4VCI_ISSUER_OPTIONS_PATH } from "./environment";
-import { DIDMethods, IEWIssuerOptsImportArgs } from './types';
+import { DIDMethods } from './types';
 import { getDbConnection } from './database'
-import { createDidProviders, createDidResolver, loadJsonFiles } from "./utils";
+import { createDidProviders, createDidResolver } from "./utils";
 
 const dbConnection = getDbConnection()
 const privateKeyStore: PrivateKeyStore = new PrivateKeyStore(dbConnection)
 export const resolver = createDidResolver()
-
-debug("importing options for all issuers");
-const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH})
-export const importIssuerOpts = issuerOptionsObjects.asArray;
 
 debug("creating list of plugins");
 export const plugins: IAgentPlugin[] = [

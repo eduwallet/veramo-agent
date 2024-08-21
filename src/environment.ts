@@ -19,10 +19,9 @@ export const DB_ENCRYPTION_KEY = process.env.DB_ENCRYPTION_KEY ?? '29739248cad1b
 //export const DID_PREFIX = 'did'
 export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) : resolve('../../conf')
 export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`
-export const OID4VCI_ISSUER_OPTIONS_PATH = `${CONF_PATH}/issuer`;
-export const OID4VCI_ISSUER_METADATA_PATH = `${CONF_PATH}/metadata`;
+export const ISSUER_PATH = `${CONF_PATH}/issuer`;
+export const METADATA_PATH = `${CONF_PATH}/metadata`;
+export const CREDENTIAL_PATH = `${CONF_PATH}/credentials`;
 export const UNIVERSAL_RESOLVER_RESOLVE_URL = process.env.UNIVERSAL_RESOLVER_RESOLVE_URL ?? 'https://dev.uniresolver.io/1.0/identifiers'
-export const oid4vciInstanceOpts = loadJsonFiles<IIssuerOptsImportArgs>({path: OID4VCI_ISSUER_OPTIONS_PATH})
-export const oid4vciMetadataOpts = loadJsonFiles<IMetadataImportArgs>({path: OID4VCI_ISSUER_METADATA_PATH})
 export const didOptConfigs = loadJsonFiles<IDIDOpts>({path: DID_OPTIONS_PATH})
 export const IS_OID4VCI_ENABLED = process.env.OID4VCI_ENABLED === undefined || process.env.OID4VCI_ENABLED
