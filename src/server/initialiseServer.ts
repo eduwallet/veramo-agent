@@ -4,7 +4,6 @@ import { dumpExpressRoutes } from '../utils/dumpExpressRoutes';
 import { getIssuerStore } from 'issuer/Store';
 import { createRoutesForIssuer } from './createRoutesForIssuer';
 import { bearerAdminForIssuer } from './bearerAdminForIssuer';
-import { bearerTokenForCredential } from './bearerTokenForCredential';
 
 const debug = Debug(`eduwallet:server`)
 
@@ -28,7 +27,6 @@ export const initialiseServer = async () => {
         const issuer = store[key];
         // initialise the passport strategy
         bearerAdminForIssuer(issuer);
-        bearerTokenForCredential(issuer);
         await createRoutesForIssuer(issuer, expressSupport);
     })
 
