@@ -16,6 +16,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
       passport.authenticate(issuer.name + '-admin', { session: false }),
       async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       try {
+        console.log('received request to issue a credential from ', issuer.name, request.body);
         const grantTypes = determineGrantTypes(request.body)
         if (grantTypes.length === 0) {
           return sendErrorResponse(response, 400, { error: TokenErrorResponse.invalid_grant, error_description: 'No grant type supplied' })
