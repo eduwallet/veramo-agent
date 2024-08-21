@@ -2,14 +2,13 @@ import { IssueStatusResponse } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Request, Response } from 'express'
 import { Issuer } from 'issuer/Issuer';
-import passport from 'passport';
 import { determinePath } from '@utils/determinePath'
 
   export function getIssueStatus(issuer:Issuer, checkPath:string) {
     const path = determinePath(issuer.options.baseUrl, checkPath, { stripBasePath: true })
     issuer.router!.post(
       path,
-      passport.authenticate(issuer.name + '-admin', { session: false }),
+      //passport.authenticate(issuer.name + '-admin', { session: false }),
       async (request: Request, response: Response) => {
         try {
           const { id } = request.body
