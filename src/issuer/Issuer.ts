@@ -29,7 +29,9 @@ const algMapping: Record<TKeyType, Alg> = {
   X25519: Alg.EdDSA,
   Secp256k1: Alg.ES256,
   Secp256r1: Alg.ES256K,
-  RSA: Alg.RS512
+  RSA: Alg.RS512,
+  Bls12381G1: Alg.ES256, // incorrect
+  Bls12381G2: Alg.ES256 // incorrect
 }
 
 export class Issuer
@@ -117,7 +119,7 @@ export class Issuer
     }
 
     public signingAlg():Alg {
-        var keys:IKey[] = (this.did?.keys ?? []).filter((key) => key.id == this.keyRef);
+        var keys:IKey[] = (this.did?.keys ?? []).filter((key) => key.kid == this.keyRef);
         if (keys.length == 0 && this.did!.keys) {
             keys = this.did!.keys;
         }

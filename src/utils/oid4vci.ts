@@ -1,4 +1,3 @@
-import { oid4vciInstanceOpts } from "../environment";
 import {createDidResolver, getDefaultDID, getDefaultKid, getIdentifier } from "../utils";
 import {IIssuerDefaultOpts } from "@sphereon/ssi-sdk.oid4vci-issuer";
 import {Resolvable} from "did-resolver";
@@ -7,11 +6,6 @@ import {
     IIssuerOptions,
     IIssuerOptsPersistArgs
 } from "@sphereon/ssi-sdk.oid4vci-issuer-store";
-import {IIssuerOptsImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store/src/types/IOID4VCIStore";
-
-export function toImportIssuerOptions(args?: { oid4vciInstanceOpts: IIssuerOptsImportArgs[] }): IIssuerOptsImportArgs[] {
-    return args?.oid4vciInstanceOpts ?? oid4vciInstanceOpts.asArray
-}
 
 export async function getDefaultOID4VCIIssuerOptions(args?: { did?: string, resolver?: Resolvable }): Promise<IIssuerDefaultOpts | undefined> {
     const did = args?.did ?? await getDefaultDID()

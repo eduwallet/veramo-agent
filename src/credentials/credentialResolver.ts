@@ -2,6 +2,7 @@ import { Issuer } from 'issuer/Issuer';
 import { getTypesFromRequest } from '@sphereon/oid4vci-common'
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult} from "@sphereon/oid4vci-issuer";
 import { AcademicBaseCredential } from './AcademicBaseCredential';
+import { PID } from './PID';
 
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
@@ -11,6 +12,8 @@ export function credentialResolver(issuer:Issuer) {
             switch (name[0]) {
                 case 'AcademicBaseCredential':
                     return AcademicBaseCredential(issuer, args);
+                case 'PID':
+                    return PID(issuer, args);
             }
         }
 
