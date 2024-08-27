@@ -15,21 +15,14 @@ To get all debugging messages, run using `DEBUG=*:* npm run start:dev`
 
 The script has been updated to use a Postgres database instead of a local SQLite file. Database encryption has been disabled to allow easier access to the database internals.
 
-Configure the database using the relevant values in the `.env` or `.env.local` configuration:
-
-- `DB_HOST` (`localhost`)
-- `DB_USER` (`postgres`)
-- `DB_PASSWORD`
-- `DB_NAME` (`postgres`)
-- `DB_SCHEMA` (`agent`)
+Configure the database using the relevant values in the `.env` or `.env.local` configuration. Copy the [`.env.example`](./.env.example) to `.env` and optionally change the values. The
+defaults should work for local development.
 
 You can run a local dockerised Postgres database using the following command:
 
 ```bash
 docker run -t -i \
-   -e POSTGRES_DB=postgres \
-   -e POSTGRES_USER=postgres \
-   -e POSTGRES_PASSWORD=postgres \
+   --env-file .env
    -v ./database:/var/lib/postgresql/data \
    -v <veramo-agent-path>/scripts/dbinit:/docker-entrypoint-initdb.d \
    -p 5432:5432 \
