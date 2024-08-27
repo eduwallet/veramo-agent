@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 .env.local
+tsconfig.tsbuildinfo
 database.sqlite
 conf
 

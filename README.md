@@ -15,8 +15,7 @@ To get all debugging messages, run using `DEBUG=*:* npm run start:dev`
 
 The script has been updated to use a Postgres database instead of a local SQLite file. Database encryption has been disabled to allow easier access to the database internals.
 
-Configure the database using the relevant values in the `.env` or `.env.local` configuration. Copy the [`.env.example`](./.env.example) to `.env` and optionally change the values. The
-defaults should work for local development.
+Configure the database using the relevant values in the `.env` or `.env.local` configuration. Copy the [`.env.example`](./.env.example) to `.env` and optionally change the values. The defaults should work for local development.
 
 You can run a local dockerised Postgres database using the following command:
 
@@ -97,5 +96,3 @@ It returns a JSON object containing the following elements:
 - uri
 - userPin (optional, string)
 - tsCode (option, transaction code description containing information on the constitution of the transaction code for the wallet)
-
-
