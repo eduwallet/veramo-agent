@@ -22,6 +22,4 @@ export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`
 export const ISSUER_PATH = `${CONF_PATH}/issuer`;
 export const METADATA_PATH = `${CONF_PATH}/metadata`;
 export const CREDENTIAL_PATH = `${CONF_PATH}/credentials`;
-export const UNIVERSAL_RESOLVER_RESOLVE_URL = process.env.UNIVERSAL_RESOLVER_RESOLVE_URL ?? 'https://dev.uniresolver.io/1.0/identifiers'
 export const didOptConfigs = loadJsonFiles<IDIDOpts>({path: DID_OPTIONS_PATH})
-export const IS_OID4VCI_ENABLED = process.env.OID4VCI_ENABLED === undefined || process.env.OID4VCI_ENABLED

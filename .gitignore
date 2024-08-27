@@ -1,10 +1,16 @@
-node_modules
-dist
+##
+# Secrets
 .env
 .env.local
 tsconfig.tsbuildinfo
-database.sqlite
 conf
 
+##
+# Runtime data
+database.sqlite
 
-
+##
+# Node, NPM and Yarn
+.yarn
+node_modules
+dist
