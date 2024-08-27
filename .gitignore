@@ -2,6 +2,7 @@
 # Secrets
 .env
 .env.local
+tsconfig.tsbuildinfo
 conf
 
 ##
