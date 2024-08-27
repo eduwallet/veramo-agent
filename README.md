@@ -21,9 +21,7 @@ You can run a local dockerised Postgres database using the following command:
 
 ```bash
 docker run -t -i \
-   -e POSTGRES_DB=postgres \
-   -e POSTGRES_USER=postgres \
-   -e POSTGRES_PASSWORD=postgres \
+   --env-file .env
    -v ./database:/var/lib/postgresql/data \
    -v <veramo-agent-path>/scripts/dbinit:/docker-entrypoint-initdb.d \
    -p 5432:5432 \
