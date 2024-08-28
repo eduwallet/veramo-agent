@@ -26,13 +26,13 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
         if (!credentialConfigIds || credentialConfigIds.length === 0) {
           return sendErrorResponse(response, 400, {
             error: TokenErrorResponse.invalid_request,
-            error_description: 'credentials missing in credential offer payload',
+            error_description: 'credentials configuration ids missing in credential offer payload',
           })
         }
-        if (!issuer.hasCredential(credentialConfigIds)) {
+        if (!issuer.hasCredentialConfiguration(credentialConfigIds)) {
           return sendErrorResponse(response, 404, {
             error: TokenErrorResponse.invalid_request,
-            error_description: 'no such credential available',
+            error_description: 'no such credential configuration available',
           })
         }
 
