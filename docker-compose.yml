@@ -1,0 +1,41 @@
+services:
+  veramo-agent:
+    build:
+      context: .
+    container_name: veramo-agent
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app:ro
+      - /dev/null:/app/.env:ro # Ensure we don't use the host's .env file but set env vars explicitly
+      - ./conf:/conf:ro
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=this-is-not-secure
+      - DB_NAME=postgres
+      - DB_SCHEMA=agent
+      - CONF_PATH=/conf
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-bookworm
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=this-is-not-secure
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./database:/var/lib/postgresql/data
+      - ./scripts/dbinit:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432" 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
