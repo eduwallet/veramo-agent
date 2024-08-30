@@ -8,7 +8,7 @@ import {format} from 'date-fns'
 const isoTimeFormat = 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'';
 
 export async function AcademicBaseCredential(issuer:Issuer, args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-    const types: string[] = getTypesFromRequest(args.credentialRequest);
+    const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
     const display = (issuer.metadata.display ?? [{}])[0];
 
     const credentialId = types[0];

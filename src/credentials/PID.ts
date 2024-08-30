@@ -10,7 +10,7 @@ const isoTimeFormat = 'YYYY-MM-DD[T]hh:mm:ss.SSS[Z]';
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
 export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-    const types: string[] = getTypesFromRequest(args.credentialRequest);
+    const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
     const display = (issuer.metadata.display ?? [{}])[0];
 
     const credentialId = types[0];
@@ -76,7 +76,10 @@ function convertDataToClaims(input:CredentialDataSupplierInput):any {
             case "age_over_13":
             case "age_over_18":
             case "sex":
-                retval[key] = parseFloat(toStringByJoin(input[key]));
+                const value = parseFloat(toStringByJoin(input[key]));
+                if (!isNaN(value) && value !== null) {
+                    retval[key] = value;
+                }                
                 break;
         }
     }
