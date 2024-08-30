@@ -21,5 +21,5 @@ export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) 
 export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`
 export const ISSUER_PATH = `${CONF_PATH}/issuer`;
 export const METADATA_PATH = `${CONF_PATH}/metadata`;
-export const CREDENTIAL_PATH = `${CONF_PATH}/credentials`;
+export const CREDENTIAL_CONFIGURATION_PATH = `${CONF_PATH}/credentials`;
 export const didOptConfigs = loadJsonFiles<IDIDOpts>({path: DID_OPTIONS_PATH})

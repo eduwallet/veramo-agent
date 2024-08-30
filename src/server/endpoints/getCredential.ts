@@ -36,7 +36,7 @@ function validateCredentialRequest(issuer:Issuer) {
     }
 
     const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
-    if (!issuer.hasCredential(types)) {
+    if (!issuer.hasCredentialConfiguration(types)) {
       return sendErrorResponse(
         response,
         404,
