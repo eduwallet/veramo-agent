@@ -5,7 +5,7 @@ import { normalizeGrants } from './normalizeGrants';
 
 export interface CredentialOfferData {
   id: string;
-  userPin: string|undefined;
+  txCode: string|undefined;
 }
 
 export async function createCredentialOffer(
@@ -62,9 +62,9 @@ export async function createCredentialOffer(
 
     // return the unique id with which to retrieve the offer from the session
     if (preAuthorizedCode) {
-      return { id: preAuthorizedCode, userPin: userPin };
+      return { id: preAuthorizedCode, txCode: userPin };
     }
     else {
-      return { id: issuerState ?? '', userPin: userPin };
+      return { id: issuerState ?? '', txCode: userPin };
     }
 }

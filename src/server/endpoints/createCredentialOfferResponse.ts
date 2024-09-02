@@ -46,7 +46,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
 
         const resultResponse: ICreateCredentialOfferURIResponse = {
           uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + getOfferPath + '/' + offerData.id,
-          userPin: offerData.userPin
+          txCode: offerData.txCode
         }
         return response.send(resultResponse)
       } catch (e) {

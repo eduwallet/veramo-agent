@@ -21,7 +21,7 @@ import { assertValidPinNumber } from '@sphereon/oid4vci-issuer'
         if (userPinRequiredObject) {
             const length = pinLength ?? 4;
             userPin = ('' + Math.round((Math.pow(10, length) - 1) * Math.random())).padStart(length, '0')
-            assertValidPinNumber(userPin)
+            assertValidPinNumber(userPin, length)
             grants['urn:ietf:params:oauth:grant-type:pre-authorized_code'].tx_code = {
                 input_mode: 'numeric',
                 length: length,
