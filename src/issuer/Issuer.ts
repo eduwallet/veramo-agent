@@ -10,7 +10,7 @@ import { resolver } from '../plugins';
 import { context } from '../agent';
 import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
-import { getCredentialStore } from "credentials/Store";
+import { getCredentialConfigurationStore } from "credentials/Store";
 
 // mapping key types to key output types in the DIDDocument
 const keyMapping: Record<TKeyType, string> = {
@@ -132,7 +132,7 @@ export class Issuer
         return Alg.ES256;
     }
 
-    public hasCredential(names:string[]):boolean {
+    public hasCredentialConfiguration(names:string[]):boolean {
       // the list of names should contain only one name, but for the sake of argument/specification...
       // the VerifiableCredential type should have been filtered out
       for (const id of names) {
@@ -147,7 +147,7 @@ export class Issuer
     }
 
     public getCredentialConfiguration(id:string): CredentialConfigurationSupportedV1_0_13|null {
-        if (this.hasCredential([id])) {
+        if (this.hasCredentialConfiguration([id])) {
             return this.decorateCredentialConfiguration(id);
         }
         return null;
@@ -165,7 +165,7 @@ export class Issuer
     }
 
     private decorateCredentialConfiguration(id:string):CredentialConfigurationSupportedV1_0_13 {
-        const store = getCredentialStore();
+        const store = getCredentialConfigurationStore();
         if (this.metadata.credential_configurations_supported[id]) {
             return Object.assign({}, store[id] ?? {}, this.metadata.credential_configurations_supported[id]) as CredentialConfigurationSupportedV1_0_13;
         }

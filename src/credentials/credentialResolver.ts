@@ -7,7 +7,7 @@ import { PID } from './PID';
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
         const name = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
-        if (issuer.hasCredential(name)) {
+        if (issuer.hasCredentialConfiguration(name)) {
             // only support single credential names here
             switch (name[0]) {
                 case 'AcademicBaseCredential':
