@@ -47,7 +47,7 @@ function convertDataToClaims(input:CredentialDataSupplierInput):any {
             case 'given_name':
             case 'family_name':
             case 'name':
-            case 'shac_home_organisation':
+            case 'schac_home_organisation':
             case 'email':
             case 'eduperson_affiliation':
             case 'eduperson_scoped_affiliation':
