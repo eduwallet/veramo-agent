@@ -80,26 +80,21 @@ export const assertValidAccessTokenRequest = async (
     the Authorization Server expects a PIN in the pre-authorized flow but the client provides the wrong PIN
     the End-User provides the wrong Pre-Authorized Code or the Pre-Authorized Code has expired
      */
-    if (request.tx_code) {
+    const txCode = request.tx_code || request.user_pin;
+    if (txCode) {
       const txCodeOffer = credentialOfferSession.credentialOffer.credential_offer?.grants?.[GrantTypes.PRE_AUTHORIZED_CODE]?.tx_code
       if (!txCodeOffer) {
         throw new TokenError(400, TokenErrorResponse.invalid_request, USER_PIN_NOT_REQUIRED_ERROR)
       } else if (txCodeOffer.input_mode === 'text') {
-        if (!RegExp(`[\\D]{${txCodeOffer.length}`).test(request.tx_code)) {
+        if (!RegExp(`[\\D]{${txCodeOffer.length}`).test(txCode)) {
           throw new TokenError(400, TokenErrorResponse.invalid_grant, `${PIN_VALIDATION_ERROR} ${txCodeOffer.length}`)
         }
       } else {
-        if (!RegExp(`[\\d]{${txCodeOffer.length}}`).test(request.tx_code)) {
+        if (!RegExp(`[\\d]{${txCodeOffer.length}}`).test(txCode)) {
           throw new TokenError(400, TokenErrorResponse.invalid_grant, `${PIN_VALIDATION_ERROR} ${txCodeOffer.length}`)
         }
       }
-      if (request.tx_code !== credentialOfferSession.txCode) {
-        throw new TokenError(400, TokenErrorResponse.invalid_grant, PIN_NOT_MATCH_ERROR)
-      }
-    } else if (request.user_pin) {
-      if (!/[\\d]{1,8}/.test(request.user_pin)) {
-        throw new TokenError(400, TokenErrorResponse.invalid_grant, `${PIN_VALIDATION_ERROR} 1-8`)
-      } else if (request.user_pin !== credentialOfferSession.txCode) {
+      if (txCode !== credentialOfferSession.txCode) {
         throw new TokenError(400, TokenErrorResponse.invalid_grant, PIN_NOT_MATCH_ERROR)
       }
     }
