@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { determinePath } from '@utils/determinePath';
 import { Issuer } from 'issuer/Issuer';
+import { IssueStatus } from '@sphereon/oid4vci-common'
 
 export function getCredentialOffer(issuer:Issuer, getPath:string) {
     const path = determinePath(issuer.options.baseUrl, getPath, { stripBasePath: true })
@@ -15,6 +16,9 @@ export function getCredentialOffer(issuer:Issuer, getPath:string) {
             error_description: `Credential offer ${id} not found`,
           })
         }
+        session.status = IssueStatus.OFFER_URI_RETRIEVED;
+        session.lastUpdatedAt = +new Date()
+        await issuer.vcIssuer.credentialOfferSessions.set(id, session);
         return response.send(JSON.stringify(session.credentialOffer.credential_offer))
       } catch (e) {
         return sendErrorResponse(
