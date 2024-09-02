@@ -2,13 +2,14 @@ import { NextFunction, Request, Response} from 'express'
 import { JWT_SIGNER_CALLBACK_REQUIRED_ERROR, ACCESS_TOKEN_ISSUER_REQUIRED_ERROR,
     GrantTypes, PRE_AUTHORIZED_CODE_REQUIRED_ERROR, TokenError, TokenErrorResponse, Alg
  } from '@sphereon/oid4vci-common'
-import { ITokenEndpointOpts, VcIssuer, assertValidAccessTokenRequest } from '@sphereon/oid4vci-issuer'
+import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 import { v4 } from 'uuid'
 
 import { determinePath } from '@utils/determinePath';
 import { getBaseUrl } from '@utils/getBaseUrl';
 import { createAccessTokenResponse } from '@utils/createAccessTokenResponse';
+import { assertValidAccessTokenRequest } from '@utils/assertValidAccessTokenRequest';
 import { Issuer } from 'issuer/Issuer'
 import { IIdentifier } from '@veramo/core'
 export function accessToken(

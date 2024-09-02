@@ -47,7 +47,7 @@ export async function createCredentialOffer(
       createdAt,
       lastUpdatedAt,
       status,
-      ...(userPin && { userPin }),
+      ...(userPin && { txCode: userPin }),
       ...(credentialData && { credentialDataSupplierInput: credentialData }),
       credentialOffer: { credential_offer: credentialOfferPayload },
     }
