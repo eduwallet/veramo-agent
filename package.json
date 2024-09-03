@@ -135,5 +135,6 @@
   },
   "imports": {
     "#root/*": "./src/*.ts"
-  }
+  },
+  "packageManager": "yarn@1.22.22"
 }
