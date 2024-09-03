@@ -5,8 +5,6 @@ import { ICredential } from "@sphereon/ssi-types"
 import { Issuer } from "issuer/Issuer";
 import moment from 'moment';
 
-// wrapping in square brackets escapes the character
-const isoTimeFormat = 'YYYY-MM-DD[T]hh:mm:ss.SSS[Z]';
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
 export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
@@ -30,7 +28,7 @@ export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Prom
         "iss": issuer.did!.did,
         'name': credentialDisplay?.name ?? '',
         'description': credentialDisplay?.description ?? '',
-        "issuanceDate": moment(issDate, pidIssuanceFormat).format(isoTimeFormat),
+        "issuanceDate": moment(issDate, pidIssuanceFormat).toISOString(),
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
     return ({
