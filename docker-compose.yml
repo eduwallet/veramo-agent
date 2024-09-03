@@ -31,7 +31,7 @@ services:
       - POSTGRES_PASSWORD=this-is-not-secure
       - POSTGRES_DB=postgres
     volumes:
-      - ./database:/var/lib/postgresql/data
+      - /tmp/database:/var/lib/postgresql/data
       - ./scripts/dbinit:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432" 
