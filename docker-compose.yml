@@ -17,6 +17,8 @@ services:
       - DB_NAME=postgres
       - DB_SCHEMA=agent
       - CONF_PATH=/conf
+      - DEBUG=*
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       postgres:
         condition: service_healthy
