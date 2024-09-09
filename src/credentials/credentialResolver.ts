@@ -3,6 +3,7 @@ import { getTypesFromRequest } from '@sphereon/oid4vci-common'
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult} from "@sphereon/oid4vci-issuer";
 import { AcademicBaseCredential } from './AcademicBaseCredential';
 import { PID } from './PID';
+import { OpenBadgeCredential } from './OpenBadgeCredential';
 
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
@@ -16,6 +17,9 @@ export function credentialResolver(issuer:Issuer) {
                 case 'PID':
                     const pid = new PID(issuer);
                     return pid.generate(args);
+                case 'OpenBadgeCredential':
+                    const openBadgeCredential = new OpenBadgeCredential(issuer);
+                    return openBadgeCredential.generate(args);
             }
         }
 

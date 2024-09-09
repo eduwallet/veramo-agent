@@ -35,6 +35,13 @@ const keyMapping: Record<TKeyType, string> = {
   RSA: 'RsaVerificationKey2018'
 }
 
+// TODO: OBV3 says the following:
+// > The signing algorithm MUST be "RS256" as a minimum as defined in [RFC7518]. Support for
+// > other algorithms is permitted but their use limits interoperability. Later versions of
+// > this specification MAY add OPTIONAL support for other algorithms. See Section 6.1 RSA Key
+// > of the IMS Global Security Framework v1.1.
+//
+// So we must support RS256 at least, and should remove the other algorithms.
 const algMapping: Record<TKeyType, Alg> = {
   Ed25519: Alg.EdDSA,
   X25519: Alg.EdDSA,
