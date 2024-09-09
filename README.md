@@ -30,6 +30,16 @@ docker run -t -i \
 
 Make sure to replace the `POSTGRES_PASSWORD` and the `<veramo-agent-path>` with proper values and in general match the vales with the `.env` or `.env.local` configuration.
 
+## Docker Compose
+
+Alternatively, just run `docker compose build` and then `docker compose up` to
+install and run both the agent and the database. 
+
+This *won't* install packages, so `yarn install` is still needed. The app
+directory is mounted read-only in docker. This way, we can inspect dependencies
+in intellisense/lsp while avoiding node_modules to get files and dirs that we
+cannot remove on the host.
+
 ## Basic Code Setup
 
 Main entry script is `src/agent.ts`
