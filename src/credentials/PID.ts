@@ -23,12 +23,11 @@ export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Prom
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         "type": types,
         "issuer": {
-            id: issuer.options.baseUrl,
-            // additional, not further specified data about the issuer
-            // This would be wallet-dependent
+            id: issuer.did!.did,
             name: display.name ?? issuer.options.baseUrl,
             description: display.description ?? ''
         },
+        "iss": issuer.did!.did,
         'name': credentialDisplay?.name ?? '',
         'description': credentialDisplay?.description ?? '',
         "issuanceDate": moment(issDate, pidIssuanceFormat).format(isoTimeFormat),
