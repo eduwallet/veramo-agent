@@ -19,23 +19,21 @@ export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Prom
 
     const issDate = args.credentialDataSupplierInput['issuance_date'];
 
-    // construction with a cast, because we do not yet know the actual issuer key id
-    // that is used to sign the ICredential, but the type definition requires it
-    const credential:ICredential = ({
+    const credential:ICredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         "type": types,
         "issuer": {
-            //id: this.issuer.metadata.credential_issuer,
+            id: issuer.options.baseUrl,
             // additional, not further specified data about the issuer
             // This would be wallet-dependent
-            name: display.name ?? issuer.metadata.credential_issuer,
+            name: display.name ?? issuer.options.baseUrl,
             description: display.description ?? ''
         },
         'name': credentialDisplay?.name ?? '',
         'description': credentialDisplay?.description ?? '',
         "issuanceDate": moment(issDate, pidIssuanceFormat).format(isoTimeFormat),
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
-    } as unknown) as ICredential;
+    };
     return ({
         format: 'jwt_vc_json',
         credential: credential

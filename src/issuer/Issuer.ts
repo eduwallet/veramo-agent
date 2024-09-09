@@ -161,6 +161,8 @@ export class Issuer
             credentials[id] = credentialConfiguration;
         }
         metadata.credential_configurations_supported = credentials;
+        metadata.credential_issuer = this.options.baseUrl;
+        metadata.credential_endpoint = this.options.baseUrl + '/credentials';
         return metadata;
     }
 
