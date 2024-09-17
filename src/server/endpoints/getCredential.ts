@@ -11,41 +11,53 @@ import { resolver } from 'plugins';
 
 function validateCredentialRequest(issuer:Issuer) {
   return async function (request:Request, response:Response, next:NextFunction) {
-    const jwt = extractBearerToken(request.header('Authorization'))
-    const data  = await verifyJWT(jwt || '', { resolver, proofPurpose: 'authentication'});
+    try {
+      const jwt = extractBearerToken(request.header('Authorization'))
+      const data  = await verifyJWT(jwt || '', { resolver, proofPurpose: 'authentication'});
 
-    if (data.issuer != issuer.did?.did) {
+      if (data.issuer != issuer.did?.did) {
+        return sendErrorResponse(
+          response,
+          403,
+          {
+            error: 'not authorized',
+          }
+        )
+      }
+
+      const sessionState = await issuer.vcIssuer.credentialOfferSessions.get(data.payload.preAuthorizedCode);
+      if (!sessionState || sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED) {
+        return sendErrorResponse(
+          response,
+          410,
+          {
+            error: 'not available',
+          }
+        )
+      }
+
+      const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
+      if (!issuer.hasCredentialConfiguration(types)) {
+        return sendErrorResponse(
+          response,
+          404,
+          {
+            error: 'not found',
+          }
+        )
+      }
+      return next();
+    }
+    catch (e) {
+      console.log('error response on body ', request.headers, request.body);
       return sendErrorResponse(
         response,
-        403,
+        500,
         {
-          error: 'not authorized',
+          error: 'invalid request',
         }
       )
-    }
-
-    const sessionState = await issuer.vcIssuer.credentialOfferSessions.get(data.payload.preAuthorizedCode);
-    if (!sessionState || sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED) {
-      return sendErrorResponse(
-        response,
-        410,
-        {
-          error: 'not available',
-        }
-      )
-    }
-
-    const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
-    if (!issuer.hasCredentialConfiguration(types)) {
-      return sendErrorResponse(
-        response,
-        404,
-        {
-          error: 'not found',
-        }
-      )
-    }
-    return next();
+    };
   };
 }
 
