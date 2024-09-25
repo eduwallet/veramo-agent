@@ -83,7 +83,7 @@ function convertDataToClaims(input:CredentialDataSupplierInput):any {
 
 function toStringByJoin(key:string|string[]):string {
     if (Array.isArray(key)) {
-        return key.join(',');
+        return key.join(', ');
     }
     return key;
 }
