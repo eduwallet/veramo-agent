@@ -53,7 +53,6 @@
     "@veramo/selective-disclosure": "4.2.0",
     "@veramo/url-handler": "4.2.0",
     "@veramo/utils": "4.2.0",
-    "date-fns": "^3.6.0",
     "debug": "4.3.5",
     "did-jwt": "^6.11.6",
     "dotenv-flow": "^4.1.0",

@@ -1,23 +1,24 @@
 import { createAgent, IAgentContext, TAgent } from '@veramo/core'
 import { initialiseServer } from './server';
 import { plugins, TAgentTypes } from './plugins';
-import { getOrCreateDIDs} from "./utils";
+import { getOrCreateDIDs } from "./utils";
 import { initialiseIssuerStore } from './issuer/Store';
 import { initialiseCredentialConfigurationStore } from 'credentials/Store';
+import { debug } from '@utils/logger';
 
-console.log('Starting main agent');
-const agent = createAgent<TAgentTypes>({ plugins}) as TAgent<TAgentTypes>;
+debug('Starting main agent');
+const agent = createAgent<TAgentTypes>({ plugins }) as TAgent<TAgentTypes>;
 export default agent
-export const context: IAgentContext<TAgentTypes> = {agent}
+export const context: IAgentContext<TAgentTypes> = { agent }
 
-console.log('Loading and/or creating DIDs');
-await getOrCreateDIDs().catch(e => console.log(e))
+debug('Loading and/or creating DIDs');
+await getOrCreateDIDs().catch(e => console.error(e))
 
-console.log('Loading credential configurations');
+debug('Loading credential configurations');
 await initialiseCredentialConfigurationStore();
 
-console.log('Creating Issuer instances');
+debug('Creating Issuer instances');
 await initialiseIssuerStore();
 
-console.log("Starting Express Server");
+debug("Starting Express Server");
 await initialiseServer();

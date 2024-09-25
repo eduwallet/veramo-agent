@@ -6,6 +6,7 @@ import { getAccessTokenKeyRef, getAccessTokenSignerCallback } from '@sphereon/ss
 import { context } from 'agent';
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer';
 import { getBasePath } from '@utils/getBasePath'
+import { debug } from '@utils/logger'
 
 import {
     accessToken,
@@ -20,9 +21,8 @@ import {
     getOAuthConfiguration,
   } from './endpoints'
 
-const debug = Debug(`eduwallet:server`)
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
-    console.log('creating routes for ', issuer.name);
+    debug('creating routes for ', issuer.name);
     /*
      * The issuer.options is the object containing the configured issuer options from the conf
      * directory.

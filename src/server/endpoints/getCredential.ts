@@ -88,6 +88,7 @@ export function getCredential(
           });
           return response.send(credential)
         } catch (e) {
+          console.error((e as Error).stack);
           return sendErrorResponse(
             response,
             500,

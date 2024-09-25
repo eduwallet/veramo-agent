@@ -1,3 +1,4 @@
+import { debug } from "@utils/logger";
 import {Resolver} from "did-resolver";
 import {getDidIonResolver, IonDIDProvider} from "@veramo/did-provider-ion";
 import {KeyDIDProvider} from "@veramo/did-provider-key";
@@ -42,7 +43,7 @@ export function createDidProviders() {
 
 export async function getIdentifier(did: string): Promise<IIdentifier | undefined> {
     return await agent.didManagerGet({did}).catch(e => {
-        console.log(e)
+        console.error(e)
         return undefined
     })
 }
@@ -82,7 +83,7 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
 
 export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
     const result = didOptConfigs.asArray.map(async opts => {
-        console.log(`DID config found for: ${opts.did}`)
+        debug(`DID config found for: ${opts.did}`)
         const did = opts.did
         let identifier = did ? await getIdentifier(did) : undefined
 

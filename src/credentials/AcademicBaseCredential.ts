@@ -3,9 +3,6 @@ import { getTypesFromRequest, CredentialsSupportedDisplay, CredentialDataSupplie
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@sphereon/oid4vci-issuer";
 import { ICredential } from "@sphereon/ssi-types"
 import { Issuer } from "issuer/Issuer";
-import {format} from 'date-fns'
-
-const isoTimeFormat = 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'';
 
 export async function AcademicBaseCredential(issuer:Issuer, args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
     const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
@@ -26,7 +23,7 @@ export async function AcademicBaseCredential(issuer:Issuer, args: CredentialData
         "iss": issuer.did!.did,
         'name': credentialDisplay?.name ?? '',
         'description': credentialDisplay?.description ?? '',
-        "issuanceDate": format(new Date(), isoTimeFormat),
+        "issuanceDate": new Date().toISOString(),
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
     return ({

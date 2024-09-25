@@ -15,3 +15,7 @@ node_modules
 dist
 .yarn/*
 !.yarn/releases
+
+##
+# IDEs ad editors
+.vscode

@@ -8,6 +8,7 @@ import { createCredentialOffer} from 'issuer/createCredentialOffer';
 import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
 
+import { debug } from '@utils/logger';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
@@ -16,8 +17,8 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
       passport.authenticate(issuer.name + '-admin', { session: false }),
       async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       try {
-        console.log('received request to issue a credential from ', issuer.name, request.body);
-        const grantTypes = determineGrantTypes(request.body)
+        debug('createCredentialOfferResponse to issue credential from', issuer.name, request.body);
+        const grantTypes = determineGrantTypes(request.body);
         if (grantTypes.length === 0) {
           return sendErrorResponse(response, 400, { error: TokenErrorResponse.invalid_grant, error_description: 'No grant type supplied' })
         }
@@ -29,6 +30,10 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             error_description: 'credentials configuration ids missing in credential offer payload',
           })
         }
+
+        debug('credentialConfigIds', credentialConfigIds);
+        debug('issuer', issuer.metadata.credential_configurations_supported);
+
         if (!issuer.hasCredentialConfiguration(credentialConfigIds)) {
           return sendErrorResponse(response, 404, {
             error: TokenErrorResponse.invalid_request,
