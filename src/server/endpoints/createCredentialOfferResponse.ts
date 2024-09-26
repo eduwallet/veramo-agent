@@ -7,8 +7,8 @@ import { ICreateCredentialOfferURIResponse } from '@sphereon/oid4vci-issuer-serv
 import { createCredentialOffer} from 'issuer/createCredentialOffer';
 import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
-
 import { debug } from '@utils/logger';
+import { openObserverLog } from '@utils/openObserverLog';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
@@ -48,11 +48,13 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           request.body.pinLength ?? 4,
           issuer
         );
+        await openObserverLog(offerData.id, "createoffer-request", request.body);
 
         const resultResponse: ICreateCredentialOfferURIResponse = {
           uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + getOfferPath + '/' + offerData.id,
           txCode: offerData.txCode
         }
+        await openObserverLog(offerData.id, "createoffer-response", resultResponse);
         return response.send(resultResponse)
       } catch (e) {
         return sendErrorResponse(

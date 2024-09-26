@@ -16,7 +16,6 @@ export async function createCredentialOffer(
     issuer: Issuer
   ):Promise<CredentialOfferData> {
     let { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(configuredGrants, pinLength);
-
     const credentialOfferPayload: CredentialOfferPayloadV1_0_13 = {
       ...(grants && { grants }),
       ...(credentials && { credential_configuration_ids: credentials }),

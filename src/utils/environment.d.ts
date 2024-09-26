@@ -19,7 +19,8 @@ declare global {
             DB_ENCRYPTION_KEY?: string
             CONF_PATH?: string
             UNIVERSAL_RESOLVER_RESOLVE_URL?: string
-
+            LOG_SERVICE: string
+            LOG_USER: string
         }
     }
 }

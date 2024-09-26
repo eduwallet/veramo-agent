@@ -5,6 +5,7 @@ import { getOrCreateDIDs } from "./utils";
 import { initialiseIssuerStore } from './issuer/Store';
 import { initialiseCredentialConfigurationStore } from 'credentials/Store';
 import { debug } from '@utils/logger';
+import { openObserverLog } from '@utils/openObserverLog';
 
 debug('Starting main agent');
 const agent = createAgent<TAgentTypes>({ plugins }) as TAgent<TAgentTypes>;
@@ -22,3 +23,6 @@ await initialiseIssuerStore();
 
 debug("Starting Express Server");
 await initialiseServer();
+
+debug("Sending initial log message");
+openObserverLog("none", "init", {message:"Started issuer agent"});

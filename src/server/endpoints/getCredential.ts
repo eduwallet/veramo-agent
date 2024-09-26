@@ -8,6 +8,7 @@ import { Issuer } from 'issuer/Issuer';
 import { getBaseUrl } from '@utils/getBaseUrl';
 import { verifyJWT } from 'did-jwt';
 import { resolver } from 'plugins';
+import { openObserverLog } from '@utils/openObserverLog';
 
 function validateCredentialRequest(issuer:Issuer) {
   return async function (request:Request, response:Response, next:NextFunction) {
@@ -16,6 +17,7 @@ function validateCredentialRequest(issuer:Issuer) {
       const data  = await verifyJWT(jwt || '', { resolver, proofPurpose: 'authentication'});
 
       if (data.issuer != issuer.did?.did) {
+        await openObserverLog("none", "credential-error", "incorrect bearer token");
         return sendErrorResponse(
           response,
           403,
@@ -27,6 +29,7 @@ function validateCredentialRequest(issuer:Issuer) {
 
       const sessionState = await issuer.vcIssuer.credentialOfferSessions.get(data.payload.preAuthorizedCode);
       if (!sessionState || sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED) {
+        await openObserverLog("none", "credential-error", "access token already used");
         return sendErrorResponse(
           response,
           410,
@@ -38,6 +41,7 @@ function validateCredentialRequest(issuer:Issuer) {
 
       const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
       if (!issuer.hasCredentialConfiguration(types)) {
+        await openObserverLog("none", "credential-error", "request credential type not available");
         return sendErrorResponse(
           response,
           404,
@@ -49,7 +53,8 @@ function validateCredentialRequest(issuer:Issuer) {
       return next();
     }
     catch (e) {
-      console.log('error response on body ', request.headers, request.body);
+      console.error('error response on body ', request.headers, request.body);
+      await openObserverLog("none", "credential-error", "internal error");
       return sendErrorResponse(
         response,
         500,
@@ -79,6 +84,7 @@ export function getCredential(
       path,
       validateCredentialRequest(issuer),
       async (request: Request, response: Response) => {
+        await openObserverLog("none", "credential-request", request.body);
         try {
           const credentialRequest = request.body as CredentialRequestV1_0_13
           const credential = await issuer.vcIssuer.issueCredential({
@@ -86,9 +92,11 @@ export function getCredential(
             tokenExpiresIn: 300,
             cNonceExpiresIn: 5000
           });
+          await openObserverLog("none", "credential-response", credential);
           return response.send(credential)
         } catch (e) {
           console.error((e as Error).stack);
+          await openObserverLog("none", "credential-error", "internal error");
           return sendErrorResponse(
             response,
             500,
