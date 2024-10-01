@@ -48,6 +48,18 @@ interface TemplateMapping {
     format?: string
 }
 
+interface StatusList {
+    url: string;
+    size: number;
+    purpose: string;
+    token: string;
+    revocationUrl: string;
+}
+
+interface StatusLists {
+    [x:string]: StatusList;
+}
+
 export interface IEWIssuerOptsImportArgs {
     options: IIssuerOptsImportArgs;
     baseUrl: string
@@ -58,4 +70,5 @@ export interface IEWIssuerOptsImportArgs {
     adminToken?:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
+    statusLists?:StatusLists;
 }

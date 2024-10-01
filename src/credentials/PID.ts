@@ -4,6 +4,8 @@ import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@spher
 import { ICredential } from "@sphereon/ssi-types"
 import { Issuer } from "issuer/Issuer";
 import moment from 'moment';
+import { basicCredentialAttributes } from "./basicCredentialAttributes";
+import { toStringByJoin } from "@utils/toStringByJoin";
 
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
@@ -32,14 +34,10 @@ export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Prom
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
 
-    if (args.credentialDataSupplierInput._exp) {
-        credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
-    }
-
-    return ({
+    return basicCredentialAttributes(issuer, args, types, ({
         format: 'jwt_vc_json',
         credential: credential
-    } as unknown) as CredentialDataSupplierResult;
+    } as unknown) as CredentialDataSupplierResult);
 }
 
 function convertDataToClaims(input:CredentialDataSupplierInput):any {
@@ -86,9 +84,3 @@ function convertDataToClaims(input:CredentialDataSupplierInput):any {
     return retval;
 }
 
-function toStringByJoin(key:string|string[]):string {
-    if (Array.isArray(key)) {
-        return key.join(', ');
-    }
-    return key;
-}

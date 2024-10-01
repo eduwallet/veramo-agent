@@ -1,5 +1,5 @@
 import { IEWIssuerOptsImportArgs } from "types";
-import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, CredentialConfigurationSupportedJwtVcJsonV1_0_13, Alg } from '@sphereon/oid4vci-common';
+import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
 import { DIDDocument, IIdentifier, IKey, TKeyType } from '@veramo/core';
