@@ -3,6 +3,7 @@ import { getTypesFromRequest, CredentialsSupportedDisplay, CredentialDataSupplie
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@sphereon/oid4vci-issuer";
 import { ICredential } from "@sphereon/ssi-types"
 import { Issuer } from "issuer/Issuer";
+import moment from 'moment';
 
 export async function AcademicBaseCredential(issuer:Issuer, args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
     const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
@@ -23,9 +24,14 @@ export async function AcademicBaseCredential(issuer:Issuer, args: CredentialData
         "iss": issuer.did!.did,
         'name': credentialDisplay?.name ?? '',
         'description': credentialDisplay?.description ?? '',
-        "issuanceDate": new Date().toISOString(),
+        "issuanceDate": moment().toISOString(),
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
+
+    if (args.credentialDataSupplierInput._exp) {
+        credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
+    }
+
     return ({
         format: 'jwt_vc_json',
         credential: credential

@@ -31,6 +31,11 @@ export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Prom
         "issuanceDate": moment(issDate, pidIssuanceFormat).toISOString(),
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
+
+    if (args.credentialDataSupplierInput._exp) {
+        credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
+    }
+
     return ({
         format: 'jwt_vc_json',
         credential: credential
