@@ -8,6 +8,9 @@ export function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSup
     if (args.credentialDataSupplierInput._exp) {
         result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
     }
+    if (args.credentialDataSupplierInput._ttl) {
+        result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._ttl), 's').toISOString();
+    }
 
     const statusses:ICredentialStatus[] = [];
     if (issuer.options.statusLists) {
