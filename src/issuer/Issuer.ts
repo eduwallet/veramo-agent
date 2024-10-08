@@ -88,7 +88,7 @@ export class Issuer
             const repo = dbConnection.getRepository(Credential);
             const credData:CredentialIssuanceInput = session.credential.credential;
             const dbCred = new Credential();
-            dbCred.uuid = session.state;
+            dbCred.state = session.state;
             dbCred.issuanceDate = moment((credData.issuanceDate as string) || '').toDate();
             dbCred.claims = credData.credentialSubject as Claims;
             dbCred.expirationDate = moment((credData.expirationDate as string) || '').toDate();

@@ -1,12 +1,8 @@
 import {
     Entity,
     Column,
-    Connection,
-    PrimaryColumn,
+    PrimaryGeneratedColumn,
     BaseEntity,
-    OneToMany,
-    ManyToMany,
-    Index,
     BeforeInsert,
     BeforeUpdate,
 } from 'typeorm'
@@ -25,9 +21,13 @@ export interface StatusLists {
 
 @Entity('credential')
 export class Credential extends BaseEntity {
-    @PrimaryColumn('varchar')
+    @PrimaryGeneratedColumn('increment')
     //@ts-ignore
-    uuid: string
+    id: number;
+    
+    @Column('varchar')
+    //@ts-ignore
+    state: string
 
     @Column('varchar')
     //@ts-ignore

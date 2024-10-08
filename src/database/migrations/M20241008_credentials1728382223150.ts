@@ -16,7 +16,8 @@ export class M20241008_credentials1728382223150 implements MigrationInterface {
         new Table({
           name: getTableName('credential'),
           columns: [
-            { name: 'uuid', type: 'varchar', isPrimary: true },
+            { name: 'id', type: "int", isPrimary: true, isGenerated: true, generationStrategy: "increment" },
+            { name: 'state', type: 'varchar', isPrimary: true },
             { name: 'holder', type: 'varchar', length: '2048', isNullable: false},
             { name: 'metadata', type: 'text', isNullable: true },
             { name: 'claims', type: 'text', isNullable: true },
