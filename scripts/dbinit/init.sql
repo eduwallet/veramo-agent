@@ -1,3 +1,4 @@
 CREATE SCHEMA IF NOT EXISTS agent;
 CREATE SCHEMA IF NOT EXISTS verifier;
+CREATE SCHEMA IF NOT EXISTS statuslist;
 ALTER DATABASE postgres SET search_path="agent";
