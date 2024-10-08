@@ -1,11 +1,6 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
 import { debug } from '@utils/logger';
 
-/**
- * Create the database layout for Veramo 3.0
- *
- * @public
- */
 export class M20241008_cleanup1728382223149 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     debug("running cleanup migration");

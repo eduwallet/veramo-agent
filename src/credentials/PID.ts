@@ -34,7 +34,7 @@ export async function PID(issuer:Issuer, args: CredentialDataSupplierArgs): Prom
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
 
-    return basicCredentialAttributes(issuer, args, types, ({
+    return await basicCredentialAttributes(issuer, args, types, ({
         format: 'jwt_vc_json',
         credential: credential
     } as unknown) as CredentialDataSupplierResult);

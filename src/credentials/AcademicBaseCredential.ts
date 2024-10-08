@@ -30,7 +30,7 @@ export async function AcademicBaseCredential(issuer:Issuer, args: CredentialData
         "credentialSubject": convertDataToClaims(args.credentialDataSupplierInput)
     };
 
-    return basicCredentialAttributes(issuer, args, types, ({
+    return await basicCredentialAttributes(issuer, args, types, ({
         format: 'jwt_vc_json',
         credential: credential
     } as unknown) as CredentialDataSupplierResult);

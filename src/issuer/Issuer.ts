@@ -1,9 +1,12 @@
 import { IEWIssuerOptsImportArgs } from "types";
-import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg } from '@sphereon/oid4vci-common';
-import { VcIssuer, VcIssuerBuilder } from '@sphereon/oid4vci-issuer';
+import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
+  CredentialRequest, CredentialResponse, CredentialRequestV1_0_13
+ } from '@sphereon/oid4vci-common';
+import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
-import { DIDDocument, IIdentifier, IKey, TKeyType } from '@veramo/core';
+import { DIDDocument, IIdentifier, IKey } from '@veramo/core';
 import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
+import { ICredential } from "@sphereon/ssi-types"
 import { JWTVerifyOptions } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
 import { resolver } from '../plugins';
@@ -11,6 +14,11 @@ import { context } from '../agent';
 import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getCredentialConfigurationStore } from "credentials/Store";
+import { Credential, getDbConnection } from "database";
+import moment from "moment";
+import { Claims, StatusList } from "database/entities/Credential";
+
+type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
 
 // mapping key types to key output types in the DIDDocument
 const keyMapping: Record<TKeyType, string> = {
@@ -34,6 +42,12 @@ const algMapping: Record<TKeyType, Alg> = {
   Bls12381G2: Alg.ES256 // incorrect
 }
 
+interface IssuerSessionData extends StateType {
+  state: string;
+  credential?: CredentialDataSupplierResult;
+  holder?:string;
+}
+
 export class Issuer
 {
     public name:string;
@@ -43,6 +57,7 @@ export class Issuer
     public keyRef:string;
     public router:Router|undefined;
     public vcIssuer:VcIssuer<DIDDocument>;
+    public sessionData:MemoryStates<IssuerSessionData>;
 
     public constructor(_options:IEWIssuerOptsImportArgs, _metadata: IssuerMetadataV1_0_13) {
         this.options = _options;
@@ -51,6 +66,76 @@ export class Issuer
         this.did = null;
         this.name = _options.options.correlationId;
         this.vcIssuer = this.buildVcIssuer();
+        this.sessionData = new MemoryStates<IssuerSessionData>();
+    }
+
+    public async getSessionById(id: string): Promise<IssuerSessionData> {
+      var retval = await this.sessionData.get(id);
+      if (!retval) {
+        retval = {
+          state: id,
+          createdAt: +new Date()
+        }
+      }
+      return retval;
+    }
+
+    public async storeCredential(id:string)
+    {
+        const session = await this.sessionData.getAsserted(id);
+        if (session && session.credential) {
+            const dbConnection = await getDbConnection();
+            const repo = dbConnection.getRepository(Credential);
+            const credData:CredentialIssuanceInput = session.credential.credential;
+            const dbCred = new Credential();
+            dbCred.uuid = session.state;
+            dbCred.issuanceDate = moment((credData.issuanceDate as string) || '').toDate();
+            dbCred.claims = credData.credentialSubject as Claims;
+            dbCred.expirationDate = moment((credData.expirationDate as string) || '').toDate();
+            dbCred.holder = session.holder || '';
+            if (credData.credentialStatus && typeof(credData.credentialStatus) == 'object') {
+                dbCred.statuslists = credData.credentialStatus;
+            }
+            await repo.save(dbCred);
+        }
+    }
+
+    public async clearExpired()
+    {
+        // do some random state cleanup to keep memory use down
+        await this.sessionData.clearExpired();
+        await this.vcIssuer.cNonces.clearExpired();
+        await this.vcIssuer.uris?.clearExpired();
+        await this.vcIssuer.credentialOfferSessions.clearExpired();
+    }
+
+    public async issueCredential(credentialRequest:CredentialRequestV1_0_13): Promise<{response:CredentialResponse, state:string}>
+    {
+        var stateId = '';
+        const response = await this.vcIssuer.issueCredential({
+            credentialRequest,
+            tokenExpiresIn: 300,
+            cNonceExpiresIn: 5000,
+            jwtVerifyCallback: async (args: { jwt: string; kid?: string }) => {
+                if (this.vcIssuer.jwtVerifyCallback) {
+                    // jump through some loops to get data about the holder into our session state
+                    const result = await this.vcIssuer.jwtVerifyCallback(args);
+                    const holder = result.did;
+                    const nonce = result.jwt.payload.nonce;
+                    const cNonceState = await this.vcIssuer.cNonces.getAsserted(nonce || '')
+                    stateId = cNonceState.preAuthorizedCode || cNonceState.issuerState || '';
+                    var sessionState = await this.getSessionById(stateId);
+                    sessionState.holder = holder;
+                    await this.sessionData.set(stateId, sessionState);
+                    return result;
+                }
+                throw new Error('no jwtVerifyCallback defined');
+            }
+        });
+        return {
+          response,
+          state: stateId
+        };
     }
 
     public async setDid()

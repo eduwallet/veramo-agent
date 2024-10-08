@@ -17,6 +17,8 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
       passport.authenticate(issuer.name + '-admin', { session: false }),
       async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       try {
+        // before we enter a new request, clean up the memory a bit
+        issuer.clearExpired();
         debug('createCredentialOfferResponse to issue credential from', issuer.name, request.body);
         const grantTypes = determineGrantTypes(request.body);
         if (grantTypes.length === 0) {

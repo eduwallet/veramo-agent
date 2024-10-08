@@ -87,13 +87,10 @@ export function getCredential(
         await openObserverLog("none", "credential-request", request.body);
         try {
           const credentialRequest = request.body as CredentialRequestV1_0_13
-          const credential = await issuer.vcIssuer.issueCredential({
-            credentialRequest,
-            tokenExpiresIn: 300,
-            cNonceExpiresIn: 5000
-          });
-          await openObserverLog("none", "credential-response", credential);
-          return response.send(credential)
+          const credentialResponse = await issuer.issueCredential(credentialRequest);
+          await openObserverLog("none", "credential-response", credentialResponse.response);
+          await issuer.storeCredential(credentialResponse.state);
+          return response.send(credentialResponse.response)
         } catch (e) {
           console.error((e as Error).stack);
           await openObserverLog("none", "credential-error", "internal error");

@@ -3,7 +3,7 @@ import { ICredentialStatus } from '@sphereon/ssi-types';
 import { Issuer } from "issuer/Issuer";
 import moment from 'moment';
 
-export function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSupplierArgs, types:string[], result:CredentialDataSupplierResult): CredentialDataSupplierResult
+export async function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSupplierArgs, types:string[], result:CredentialDataSupplierResult): CredentialDataSupplierResult
 {
     if (args.credentialDataSupplierInput._exp) {
         result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
@@ -12,8 +12,9 @@ export function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSup
         result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._ttl), 's').toISOString();
     }
 
-    const statusses:ICredentialStatus[] = [];
-    if (issuer.options.statusLists) {
+    const metadata = JSON.parse(args.credentialDataSupplierInput._meta || '{}');
+    if (issuer.options.statusLists && (metadata.enableStatusLists || typeof(metadata.enableStatusLists) == 'undefined')) {
+        const statusses:ICredentialStatus[] = [];
         for(const cid of types) {
             if (issuer.options.statusLists[cid]) {
                 const slist = issuer.options.statusLists[cid];
@@ -28,16 +29,19 @@ export function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSup
                 statusses.push(entry);
             }
         }
-    }
-    if (statusses.length > 0) {
-        if (statusses.length > 1) {
-            // we need the cast because ICredentialStatus does not allow an array of statusses (yet)
-            result.credential.credentialStatus = (statusses as unknown) as ICredentialStatus;
-        }
-        else {
-            result.credential.credentialStatus = statusses[0];
+        if (statusses.length > 0) {
+            if (statusses.length > 1) {
+                // we need the cast because ICredentialStatus does not allow an array of statusses (yet)
+                result.credential.credentialStatus = (statusses as unknown) as ICredentialStatus;
+            }
+            else {
+                result.credential.credentialStatus = statusses[0];
+            }
         }
     }
 
+    var session = await issuer.getSessionById(args.issuerState || args.preAuthorizedCode || '');
+    session.credential = result;
+    issuer.sessionData.set(session.state, session);
     return result;
 }
