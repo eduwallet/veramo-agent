@@ -16,8 +16,8 @@ export const DB_USER = process.env.DB_USER ?? 'postgres'
 export const DB_PASSWORD = process.env.DB_PASSWORD ?? 'topsecret'
 export const DB_ENCRYPTION_KEY = process.env.DB_ENCRYPTION_KEY ?? '29739248cad1bd1a0fc4d9b75cd4d2990de535baf5caadfdf8d8f86664aa830c'
 
-export const LOG_SERVICE = process.env.LOG_SERVICE ?? '';
-export const LOG_USER = process.env.LOG_USER ?? '';
+export const LOG_SERVICE = process.env.LOG_SERVICE;
+export const LOG_USER = process.env.LOG_USER;
 
 //export const DID_PREFIX = 'did'
 export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) : resolve('../../conf')
