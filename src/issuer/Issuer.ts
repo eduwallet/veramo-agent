@@ -16,7 +16,7 @@ import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getCredentialConfigurationStore } from "credentials/Store";
 import { Credential, getDbConnection } from "database";
 import moment from "moment";
-import { Claims, StatusList } from "database/entities/Credential";
+import { Claims } from "database/entities/Credential";
 
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
 

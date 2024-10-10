@@ -3,7 +3,7 @@ import { ICredentialStatus } from '@sphereon/ssi-types';
 import { Issuer } from "issuer/Issuer";
 import moment from 'moment';
 
-export async function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSupplierArgs, types:string[], result:CredentialDataSupplierResult): CredentialDataSupplierResult
+export async function basicCredentialAttributes(issuer:Issuer, args: CredentialDataSupplierArgs, types:string[], result:CredentialDataSupplierResult): Promise<CredentialDataSupplierResult>
 {
     if (args.credentialDataSupplierInput._exp) {
         result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
@@ -18,13 +18,25 @@ export async function basicCredentialAttributes(issuer:Issuer, args: CredentialD
         for(const cid of types) {
             if (issuer.options.statusLists[cid]) {
                 const slist = issuer.options.statusLists[cid];
-                const randomIndex = Math.floor(Math.random() * slist.size);
+                const listData = await fetch(slist.url, {
+                    method: 'POST',
+                    body: JSON.stringify({ expirationDate: result.credential.expirationDate }),
+                    headers: {
+                        'Content-type': 'application/json',
+                        'Authorization': 'Bearer ' + slist.token,
+                      }
+                }).then((r) => r.json()).catch((e) => { console.log(e); return null;});
+
+                if (!listData || !listData.url) {
+                    throw new Error("Unable to contact status server");
+                }
+
                 const entry:ICredentialStatus = {
-                    id: slist.url + '#' + randomIndex,
+                    id: listData.id,
                     type: 'StatusList2021Entry', // should be: 'BitstringStatusListEntry'
-                    statusPurpose: slist.purpose,
-                    statusListIndex: randomIndex,
-                    statusListCredential: slist.url
+                    statusPurpose: listData.purpose,
+                    statusListIndex: listData.index,
+                    statusListCredential: listData.url
                 } as ICredentialStatus; // we need the cast because ICredentialStatus does not define the purpose, etc.
                 statusses.push(entry);
             }

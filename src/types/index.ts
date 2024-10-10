@@ -50,10 +50,7 @@ interface TemplateMapping {
 
 interface StatusList {
     url: string;
-    size: number;
-    purpose: string;
     token: string;
-    revocationUrl: string;
 }
 
 interface StatusLists {
