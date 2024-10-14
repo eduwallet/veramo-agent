@@ -31,6 +31,10 @@ export class Credential extends BaseEntity {
 
     @Column('varchar')
     //@ts-ignore
+    credpid: string
+
+    @Column('varchar')
+    //@ts-ignore
     holder: string
 
     @Column({ type: 'simple-json' })

@@ -43,6 +43,13 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           })
         }
 
+        if (!issuer.checkCredentialData(credentialConfigIds, request.body.credentialDataSupplierInput)) {
+          return sendErrorResponse(response, 400, {
+            error: TokenErrorResponse.invalid_request,
+            error_description: 'missing required claims',
+          })
+        }
+
         const offerData = await createCredentialOffer(
           request.body.grants,
           request.body.credentialDataSupplierInput,

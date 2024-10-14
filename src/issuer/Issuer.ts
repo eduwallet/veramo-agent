@@ -1,12 +1,11 @@
 import { IEWIssuerOptsImportArgs } from "types";
 import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
-  CredentialRequest, CredentialResponse, CredentialRequestV1_0_13
+  CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13
  } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
 import { DIDDocument, IIdentifier, IKey } from '@veramo/core';
 import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
-import { ICredential } from "@sphereon/ssi-types"
 import { JWTVerifyOptions } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
 import { resolver } from '../plugins';
@@ -17,6 +16,7 @@ import { getCredentialConfigurationStore } from "credentials/Store";
 import { Credential, getDbConnection } from "database";
 import moment from "moment";
 import { Claims } from "database/entities/Credential";
+import { credentialDataChecker } from "credentials/credentialDataChecker";
 
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
 
@@ -46,6 +46,7 @@ interface IssuerSessionData extends StateType {
   state: string;
   credential?: CredentialDataSupplierResult;
   holder?:string;
+  principalCredentialId?: string;
 }
 
 export class Issuer
@@ -93,6 +94,7 @@ export class Issuer
             dbCred.claims = credData.credentialSubject as Claims;
             dbCred.expirationDate = moment((credData.expirationDate as string) || '').toDate();
             dbCred.holder = session.holder || '';
+            dbCred.credpid = session.principalCredentialId || '';
             if (credData.credentialStatus && typeof(credData.credentialStatus) == 'object') {
                 dbCred.statuslists = credData.credentialStatus;
             }
@@ -107,6 +109,11 @@ export class Issuer
         await this.vcIssuer.cNonces.clearExpired();
         await this.vcIssuer.uris?.clearExpired();
         await this.vcIssuer.credentialOfferSessions.clearExpired();
+    }
+
+    public checkCredentialData(credentialIds:string[], credentialData: CredentialDataSupplierInput)
+    {
+        return credentialDataChecker(this, credentialIds[0], credentialData);
     }
 
     public async issueCredential(credentialRequest:CredentialRequestV1_0_13): Promise<{response:CredentialResponse, state:string}>
