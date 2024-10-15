@@ -43,6 +43,7 @@ export class BaseCredential
         const metadata = JSON.parse(args.credentialDataSupplierInput._meta || '{}');
         if (this.issuer.options.statusLists && (metadata.enableStatusLists || typeof(metadata.enableStatusLists) == 'undefined')) {
             const statusses:ICredentialStatus[] = [];
+            // types is a string-array, but we only factually support a list of size 1...
             for(const cid of types) {
                 if (this.issuer.options.statusLists[cid]) {
                     const slist = this.issuer.options.statusLists[cid];
@@ -83,6 +84,7 @@ export class BaseCredential
         var session = await this.issuer.getSessionById(args.issuerState || args.preAuthorizedCode || '');
         session.credential = result;
         session.principalCredentialId = (result.credential.credentialSubject as AdditionalClaims)[principalCredentialId] || '';
+        session.credentialId = types[0];
         this.issuer.sessionData.set(session.state, session);
         return result;
     }

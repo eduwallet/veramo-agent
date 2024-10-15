@@ -47,6 +47,7 @@ interface IssuerSessionData extends StateType {
   credential?: CredentialDataSupplierResult;
   holder?:string;
   principalCredentialId?: string;
+  credentialId?: string;
 }
 
 export class Issuer
@@ -95,6 +96,8 @@ export class Issuer
             dbCred.expirationDate = moment((credData.expirationDate as string) || '').toDate();
             dbCred.holder = session.holder || '';
             dbCred.credpid = session.principalCredentialId || '';
+            dbCred.issuer = this.name;
+            dbCred.credentialId = session.credentialId || '';
             if (credData.credentialStatus && typeof(credData.credentialStatus) == 'object') {
                 dbCred.statuslists = credData.credentialStatus;
             }

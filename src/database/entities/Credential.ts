@@ -37,6 +37,14 @@ export class Credential extends BaseEntity {
     //@ts-ignore
     holder: string
 
+    @Column('varchar')
+    //@ts-ignore
+    issuer: string
+
+    @Column('varchar')
+    //@ts-ignore
+    credentialId: string
+
     @Column({ type: 'simple-json' })
     //@ts-ignore
     metadata: Metadata

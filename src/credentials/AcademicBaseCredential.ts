@@ -18,7 +18,7 @@ export class AcademicBaseCredential extends BaseCredential
 
         const credential:ICredential = {
             "@context": ["https://www.w3.org/2018/credentials/v1"],
-            "type": types,
+            "type": ['VerifiableCredential', ...types], // reinsert the filtered-out VerifiableCredential
             "issuer": {
                 id: this.issuer.did!.did,
                 name: display.name ?? this.issuer.options.baseUrl,
