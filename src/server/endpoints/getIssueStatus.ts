@@ -2,7 +2,7 @@ import { IssueStatusResponse } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Request, Response } from 'express'
 import { Issuer } from 'issuer/Issuer';
-import { determinePath } from '@utils/determinePath'
+import { determinePath } from 'utils/determinePath'
 
   export function getIssueStatus(issuer:Issuer, checkPath:string) {
     const path = determinePath(issuer.options.baseUrl, checkPath, { stripBasePath: true })

@@ -8,8 +8,8 @@ import { DIDDocument, IIdentifier, IKey } from '@veramo/core';
 import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
 import { JWTVerifyOptions } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
-import { resolver } from '../plugins';
-import { context } from '../agent';
+import { resolver } from 'resolver';
+import { getAgent } from 'agent';
 import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getCredentialConfigurationStore } from "credentials/Store";
@@ -151,7 +151,7 @@ export class Issuer
     public async setDid()
     {
       if (typeof this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier == 'string') {
-        this.did = await context?.agent.didManagerGet({did: this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier});
+        this.did = await getAgent().didManagerGet({did: this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier});
       }
       else {
         this.did = this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier;
@@ -168,8 +168,8 @@ export class Issuer
           audience: this.metadata.credential_issuer,
         }
         builder.withIssuerMetadata(this.generateMetadata())
-            .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, context))
-            .withJWTVerifyCallback(getJwtVerifyCallback({ verifyOpts: jwtVerifyOpts }, context))
+            .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, { agent: getAgent() }))
+            .withJWTVerifyCallback(getJwtVerifyCallback({ verifyOpts: jwtVerifyOpts }, { agent: getAgent() }))
             .withInMemoryCNonceState()
             .withInMemoryCredentialOfferState()
             .withCredentialDataSupplier(credentialResolver(this))

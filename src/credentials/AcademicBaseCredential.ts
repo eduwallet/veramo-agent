@@ -3,7 +3,7 @@ import { getTypesFromRequest, CredentialsSupportedDisplay, CredentialDataSupplie
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@sphereon/oid4vci-issuer";
 import { ICredential } from "@sphereon/ssi-types"
 import moment from 'moment';
-import { toStringByJoin } from "@utils/toStringByJoin";
+import { toStringByJoin } from "utils/toStringByJoin";
 import { BaseCredential } from './BaseCredential';
 
 export class AcademicBaseCredential extends BaseCredential

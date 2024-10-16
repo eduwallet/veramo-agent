@@ -1,17 +1,16 @@
-import { debug } from "@utils/logger";
+import { debug } from "utils/logger";
 import {Resolver} from "did-resolver";
 import {getDidIonResolver, IonDIDProvider} from "@veramo/did-provider-ion";
 import {KeyDIDProvider} from "@veramo/did-provider-key";
 import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";
 import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
 import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
-import agent, {context} from "../agent";
+import { getAgent } from "agent";
 import {DIDDocumentSection, IIdentifier} from "@veramo/core";
-import {didOptConfigs} from "../environment";
-import { IDIDResult, KMS } from '../types';
+import {didOptConfigs} from "environment";
+import { IDIDResult, KMS, DIDMethods } from 'types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
 import {generatePrivateKeyHex, TKeyType, toJwk} from "@sphereon/ssi-sdk-ext.key-utils";
-import {DIDMethods} from '../types';
 import { getDidKeyResolver } from "./didKeyResolver";
 import { getDidWebResolver } from './didWebResolver';
 
@@ -42,14 +41,14 @@ export function createDidProviders() {
 }
 
 export async function getIdentifier(did: string): Promise<IIdentifier | undefined> {
-    return await agent.didManagerGet({did}).catch(e => {
+    return await getAgent().didManagerGet({did}).catch((e:any) => {
         console.error(e)
         return undefined
     })
 }
 
 export async function getDefaultDID(): Promise<string | undefined> {
-    return agent.didManagerFind().then(ids => {
+    return getAgent().didManagerFind().then((ids:any) => {
         if (!ids || ids.length === 0) {
             return
         }
@@ -70,9 +69,9 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
     if (!identifier) {
         return undefined
     }
-    let keys = await mapIdentifierKeysToDocWithJwkSupport({identifier, vmRelationship: verificationMethodName ?? 'assertionMethod'}, context)
+    let keys = await mapIdentifierKeysToDocWithJwkSupport({identifier, vmRelationship: verificationMethodName ?? 'assertionMethod'}, { agent: getAgent() })
     if (keys.length === 0 && (verificationMethodFallback === undefined || verificationMethodFallback)) {
-        keys = await mapIdentifierKeysToDocWithJwkSupport({identifier, vmRelationship:'verificationMethod'}, context)
+        keys = await mapIdentifierKeysToDocWithJwkSupport({identifier, vmRelationship:'verificationMethod'}, { agent: getAgent() })
     }
     if (keys.length === 0) {
         return undefined
@@ -110,8 +109,8 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
                 args.options.key['privateKeyHex'] = privateKeyHex
             }
 
-            identifier = await agent.didManagerCreate(args)
-            identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
+            identifier = await getAgent().didManagerCreate(args)
+            identifier!.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
 
             console.log(`Identifier created for DID ${did}`)
             console.log(`${JSON.stringify(identifier, null, 2)}`)

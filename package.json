@@ -10,6 +10,7 @@
     "build:clean": "tsc --build --clean && tsc --build",
     "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/agent.js",
     "start:dev": "tsx --watch src/agent.ts",
+    "cli": "tsx src/cli.ts",
     "postinstall": "patch-package"
   },
   "keywords": [],
@@ -103,10 +104,8 @@
     "**/@veramo/did-jwt": "4.2.0"
   },
   "files": [
-    "dist/**/*",
     "src/**/*",
     "README.md",
-    "plugin.schema.json",
     "LICENSE"
   ],
   "engines": {

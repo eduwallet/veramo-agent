@@ -3,10 +3,10 @@ import express from 'express'
 import { ExpressSupport } from "@sphereon/ssi-express-support";
 import { Issuer } from "issuer/Issuer";
 import { getAccessTokenKeyRef, getAccessTokenSignerCallback } from '@sphereon/ssi-sdk.oid4vci-issuer'
-import { context } from 'agent';
+import { getAgent } from 'agent';
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer';
-import { getBasePath } from '@utils/getBasePath'
-import { debug } from '@utils/logger'
+import { getBasePath } from 'utils/getBasePath'
+import { debug } from 'utils/logger'
 
 import {
     accessToken,
@@ -50,13 +50,13 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
         didOpts: issuer.options.options.issuerOpts.didOpts,
     };
 
-    issuer.keyRef = await getAccessTokenKeyRef(tokenOpts, context);
+    issuer.keyRef = await getAccessTokenKeyRef(tokenOpts, { agent: getAgent() });
     tokenEndpointOpts.accessTokenSignerCallback = getAccessTokenSignerCallback(
         {
           iss: issuer.did!.did,
           keyRef: issuer.keyRef,
         },
-        context,
+        { agent: getAgent() },
     )
 
     issuer.router = express.Router();

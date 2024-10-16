@@ -1,10 +1,10 @@
 import {config as dotenvConfig} from "dotenv-flow";
-import { debug } from "@utils/logger";
+import { debug } from "utils/logger";
 debug('reading dot env file');
 dotenvConfig()
 
 import {resolve} from "path";
-import {loadJsonFiles} from "./utils";
+import {loadJsonFiles} from "utils/generic";
 import {IDIDOpts} from "./types";
 
 export const DB_CONNECTION_NAME = process.env.DB_CONNECTION_NAME ?? 'default'

@@ -5,14 +5,14 @@ import { JWT_SIGNER_CALLBACK_REQUIRED_ERROR, ACCESS_TOKEN_ISSUER_REQUIRED_ERROR,
 import { ITokenEndpointOpts, VcIssuer } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 import { v4 } from 'uuid'
-import { determinePath } from '@utils/determinePath';
-import { getBaseUrl } from '@utils/getBaseUrl';
-import { createAccessTokenResponse } from '@utils/createAccessTokenResponse';
-import { assertValidAccessTokenRequest } from '@utils/assertValidAccessTokenRequest';
+import { determinePath } from 'utils/determinePath';
+import { getBaseUrl } from 'utils/getBaseUrl';
+import { createAccessTokenResponse } from 'utils/createAccessTokenResponse';
+import { assertValidAccessTokenRequest } from 'utils/assertValidAccessTokenRequest';
 import { Issuer } from 'issuer/Issuer'
 import { IIdentifier } from '@veramo/core';
-import { openObserverLog } from '@utils/openObserverLog';
-import { debug } from '@utils/logger'
+import { openObserverLog } from 'utils/openObserverLog';
+import { debug } from 'utils/logger'
 
 export function accessToken(
     issuer: Issuer,

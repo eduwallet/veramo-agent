@@ -1,14 +1,14 @@
 import { Request, Response } from 'express'
 import { CredentialOfferRESTRequest, determineGrantTypes, TokenErrorResponse } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { determinePath } from '@utils/determinePath';
+import { determinePath } from 'utils/determinePath';
 import { ICreateCredentialOfferURIResponse } from '@sphereon/oid4vci-issuer-server';
 
 import { createCredentialOffer} from 'issuer/createCredentialOffer';
 import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
-import { debug } from '@utils/logger';
-import { openObserverLog } from '@utils/openObserverLog';
+import { debug } from 'utils/logger';
+import { openObserverLog } from 'utils/openObserverLog';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
