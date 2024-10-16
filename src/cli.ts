@@ -4,7 +4,9 @@ const debug = Debug('agent:cli');
 debug('start of cli.ts');
 import { getArgs } from "utils/args";
 debug('cli.ts: importing getDbConnection');
-import { getDbConnection } from "database/databaseService";
+import { getDbConnection, Credential } from "database";
+import { determineFieldLengths, FieldSettings } from 'utils/cli/determineFieldLengths';
+import { printField, printHeader } from 'utils/cli/printField';
 
 function printHelp()
 {
@@ -39,6 +41,64 @@ async function rollback()
     await dataSource.undoLastMigration();
 }
 
+async function inspectCredential(idOpt?:string)
+{
+    if (!idOpt || !idOpt.length) {
+        console.log('Please provide an id=... option');
+        return;
+    }
+    const dbConnection = await getDbConnection();
+    var qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
+    const res = await qb.select('*').where('id=:id', {id: idOpt}).getRawOne();
+    console.log(res);
+}
+
+async function listCredentials(options:any[])
+{
+    const dbConnection = await getDbConnection();
+    var qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
+    qb = qb.select('*').where('id > 0');
+    for (var opt of options) {
+        const kv = opt.split('=');
+        switch (kv[0]) {
+            case 'issuer':
+                qb = qb.andWhere('c.issuer=:issuer', {issuer: kv[1]});
+                break;
+            case 'credpid':
+                qb = qb.andWhere('c.credpid=:credpid', {credpid: kv[1]});
+                break;
+            case 'credentialId':
+                qb = qb.andWhere('c.credentialId=:credentialId', {credentialId: kv[1]});
+                break;
+            case 'issuanceDate':
+                qb = qb.andWhere('c."issuanceDate" > :issuanceDate', {issuanceDate: kv[1]});
+                break;
+            case 'state':
+                qb = qb.andWhere('c.state=:state', {state: kv[1]});
+                break;
+            case 'holder':
+                qb = qb.andWhere('c.holder=:holder', {holder: kv[1]});
+                break;
+            default:
+                console.log('Filter option ', kv[0], ' not supported');
+                break;
+        }
+    }
+    const credentials = await qb.orderBy('c.id', 'ASC').getRawMany();
+    var fieldSettings:FieldSettings = {
+        id: { length: 6, type: 'number' },
+        issuer: { length: 10, type: 'string'},
+        credentialId: { length: 20, type: 'string' },
+        issuanceDate: {length: 10,type: 'datetime'}
+    }
+    fieldSettings = determineFieldLengths(credentials, fieldSettings);
+    printHeader(fieldSettings);
+    for (var cred of credentials) {
+        printField(cred, fieldSettings);
+    }
+    console.log('');
+}
+
 async function main()
 {
     const {options, files} = getArgs([{
@@ -60,9 +120,21 @@ async function main()
         return;
     }
 
+    if (files.includes('list-credentials')) {
+        await listCredentials(files.filter((f) => f != 'list-credentials'));
+        return;
+    }
+
+    if (files.includes('inspect-credential')) {
+        await inspectCredential(files.filter((f) => f != 'inspect-credential').join());
+        return;
+    }
+
     console.log('No supported command found. Please use the "help" command to get a list of supported commands.');
 }
 
-main().catch(console.log)
+await main().catch(console.log)
 
-  
+// destroy the connection so we can exit immediately
+const dbConnection = await getDbConnection();
+await dbConnection.destroy();

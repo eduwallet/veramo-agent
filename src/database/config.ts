@@ -31,4 +31,5 @@ export const dbConfig: PostgresConnectionOptions = {
   migrationsTransactionMode: 'each', // protect every migration with a separate transaction
   logging: 'all', //['info', 'error'], // 'all' means to enable all logging
   logger: 'advanced-console',
+  
 }

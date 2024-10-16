@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { CredentialOfferRESTRequest, determineGrantTypes, TokenErrorResponse } from '@sphereon/oid4vci-common'
+import { CredentialOfferPayloadV1_0_13, QRCodeOpts, CredentialDataSupplierInput, determineGrantTypes, TokenErrorResponse } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { determinePath } from 'utils/determinePath';
 import { ICreateCredentialOfferURIResponse } from '@sphereon/oid4vci-issuer-server';
@@ -10,12 +10,23 @@ import passport from 'passport';
 import { debug } from 'utils/logger';
 import { openObserverLog } from 'utils/openObserverLog';
 
+export interface CredentialOfferRequest {
+  credential_offer?: CredentialOfferPayloadV1_0_13;
+  credential_offer_uri?: string;
+  baseUri?: string;
+  scheme?: string;
+  pinLength?: number;
+  qrCodeOpts?: QRCodeOpts;
+  credentialDataSupplierInput?: CredentialDataSupplierInput;
+}
+
+
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
     const getOfferPath = determinePath(issuer.options.baseUrl, offerPath, { stripBasePath: true });
     issuer.router!.post(path,
       passport.authenticate(issuer.name + '-admin', { session: false }),
-      async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
+      async (request: Request<CredentialOfferRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       try {
         // before we enter a new request, clean up the memory a bit
         issuer.clearExpired();

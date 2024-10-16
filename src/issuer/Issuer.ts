@@ -13,9 +13,9 @@ import { getAgent } from 'agent';
 import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getCredentialConfigurationStore } from "credentials/Store";
-import { Credential, getDbConnection } from "database";
+import { getDbConnection } from "database";
+import { Credential, Claims } from "database/entities/Credential";
 import moment from "moment";
-import { Claims } from "database/entities/Credential";
 import { credentialDataChecker } from "credentials/credentialDataChecker";
 
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -270,5 +270,28 @@ export class Issuer
           return store[id] as CredentialConfigurationSupportedV1_0_13;
         }
         return {} as CredentialConfigurationSupportedV1_0_13;
+    }
+
+    public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
+    {
+      const dbConnection = await getDbConnection();
+      var qb = dbConnection.createQueryBuilder().select('c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(Credential, 'c').where('c.id > 0');
+      if (primaryId && primaryId.length) {
+          qb = qb.andWhere('c.credpid=:credpid', {credpid: primaryId});
+      }
+      if (credential && credential.length) {
+          qb = qb.andWhere('c.credentialId=:credentialId', {credentialId:credential});
+      }
+      if (issuanceDate && issuanceDate.length) {
+          qb = qb.andWhere('c."issuanceDate" > :issuanceDate', {issuanceDate});
+      }
+      if (state && state.length) {
+          qb = qb.andWhere('c.state=:state', {state});
+      }
+      if (holder && holder.length) {
+          qb = qb.andWhere('c.holder=:holder', {holder});
+      }
+
+      return await qb.orderBy('c.id', 'ASC').getRawMany();
     }
 }

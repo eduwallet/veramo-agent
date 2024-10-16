@@ -19,6 +19,7 @@ import {
     pushedAuthorization,
     getOpenidConfiguration,
     getOAuthConfiguration,
+    listCredentials,
   } from './endpoints'
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
@@ -96,5 +97,8 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
   
     // enable the back channel interface to poll the status of an credential offer and see if it was already issued
     getIssueStatus(issuer, '/api/check-offer');
+
+    // allow the front-end issuer to list credentials for further processing
+    listCredentials(issuer, '/api/list-credentials');
 }
 
