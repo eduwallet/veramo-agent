@@ -18,9 +18,11 @@ function printHelp()
     console.log('    npm run cli <command> <options>');
     console.log('');
     console.log('Available commands:');
-    console.log('    help      Print this help text');
-    console.log('    migrate   Execute pending database migrations');
-    console.log('    rollback  Revert the last executed migration');
+    console.log('    help               Print this help text');
+    console.log('    inspect-credential Inspect a specific credential, add the id as option');
+    console.log('    list-credentials   List a selection of the database credentials. Add key=value options to filter');
+    console.log('    migrate            Execute pending database migrations');
+    console.log('    rollback           Revert the last executed migration');
     console.log('');
     console.log('Available options:');
     console.log('--help/-?   Print this help text');
@@ -44,7 +46,7 @@ async function rollback()
 async function inspectCredential(idOpt?:string)
 {
     if (!idOpt || !idOpt.length) {
-        console.log('Please provide an id=... option');
+        console.log('Please provide an id option');
         return;
     }
     const dbConnection = await getDbConnection();
