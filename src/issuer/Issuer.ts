@@ -1,4 +1,5 @@
-import { IEWIssuerOptsImportArgs } from "types";
+import Debug from 'debug';
+import { IEWIssuerOptsImportArgs, StatusList } from "types";
 import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
   CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13
  } from '@sphereon/oid4vci-common';
@@ -18,6 +19,7 @@ import { Credential, Claims } from "database/entities/Credential";
 import moment from "moment";
 import { credentialDataChecker } from "credentials/credentialDataChecker";
 
+const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
 
 // mapping key types to key output types in the DIDDocument
@@ -48,6 +50,15 @@ interface IssuerSessionData extends StateType {
   holder?:string;
   principalCredentialId?: string;
   credentialId?: string;
+}
+
+
+export enum StatusListRevocationState {
+  UNKNOWN = 'UNKNOWN',
+  REVOKED = 'REVOKED',
+  WAS_REVOKED = 'WAS_REVOKED',
+  UNREVOKED = 'UNREVOKED',
+  WAS_UNREVOKED = 'WAS_UNREVOKED'
 }
 
 export class Issuer
@@ -293,5 +304,81 @@ export class Issuer
       }
 
       return await qb.orderBy('c.id', 'ASC').getRawMany();
+    }
+
+    public async revokeCredential(id:number, doRevoke:boolean, listName?:string): Promise<StatusListRevocationState>
+    {
+        debug("revoking specific credential " + id);
+        const dbConnection = await getDbConnection();
+        const userRepository = dbConnection.getRepository(Credential);
+        const credential = await userRepository.findOneBy({id});
+        if (!credential) {
+            debug("credential not found in database");
+            throw new Error("No such credential");
+        }
+        if (!credential.statuslists) {
+            debug("credential has no statuslists associated");
+            throw new Error("No statuslist available");
+        }
+        // convert the if-only-one-than-not-an-array spec to an always-array-even-if-only-one implementation
+        var retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
+        const statuslists = Array.isArray(credential.statuslists) ? credential.statuslists : [credential.statuslists];
+        debug("looping over " + statuslists.length + " statuslists");
+        for (const statlist of statuslists) {
+            if (!listName || listName == statlist.id) {
+                retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+            }
+        }
+        return retval;
+    }
+
+    private mergeStatusListStates(oldState:StatusListRevocationState, newState:StatusListRevocationState)
+    {
+        debug("merging old state " + oldState + " with " + newState);
+        // if we had no state, use the new state
+        if (oldState == StatusListRevocationState.UNKNOWN) {
+            oldState = newState;
+        }
+        // if something had changed, do not update
+        if (oldState != StatusListRevocationState.REVOKED && oldState != StatusListRevocationState.UNREVOKED) {
+            // this updates to REVOKED and UNREVOKED, or resets WAS_REVOKED and WAS_UNREVOKED
+            oldState = newState;
+        }
+        debug("returning state " + oldState);
+        return oldState;
+    }
+
+    private async revokeCredentialFromList(credential:Credential, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
+    {
+        debug("revoking credential of type " + credential.credentialId);
+        const slist = this.options.statusLists![credential.credentialId];
+        if (slist) {
+            debug("invoking " + slist.revoke + " with " + statlist.statusListIndex + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
+            const returnValue:any = await fetch(slist.revoke, {
+                method: 'POST',
+                body: JSON.stringify({
+                    list: statlist.statusListCredential,
+                    index: statlist.statusListIndex,
+                    state: doRevoke ? 'revoke' : 'unrevoke'
+                }),
+                headers: {
+                    'Content-type': 'application/json',
+                    'Authorization': 'Bearer ' + slist.token,
+                }
+            }).then((r) => r.json());
+            debug("return value is " + JSON.stringify(returnValue));
+            // an error in the call will cause an exception which is caught upstairs
+            switch (returnValue.state) {
+                case 'REVOKED': return StatusListRevocationState.REVOKED;
+                case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
+                case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
+                default: return StatusListRevocationState.UNKNOWN;
+            }
+        }
+        else {
+            // else we ignore a statuslist that is no longer configured
+            debug("no status list associated with this credential type in the configuration (anymore). Ignoring request");
+        }
+        return StatusListRevocationState.UNKNOWN;
     }
 }

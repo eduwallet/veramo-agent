@@ -48,13 +48,23 @@ interface TemplateMapping {
     format?: string
 }
 
-interface StatusList {
+// https://w3c.github.io/vc-bitstring-status-list/#examples
+export interface StatusList {
+    id: string;
+    type: string;
+    statusPurpose: string;
+    statusListIndex: string
+    statusListCredential: string;
+}
+
+interface StatusListOption {
     url: string;
+    revoke: string;
     token: string;
 }
 
-interface StatusLists {
-    [x:string]: StatusList;
+interface StatusListsOption {
+    [x:string]: StatusListOption;
 }
 
 export interface IEWIssuerOptsImportArgs {
@@ -67,5 +77,5 @@ export interface IEWIssuerOptsImportArgs {
     adminToken?:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
-    statusLists?:StatusLists;
+    statusLists?:StatusListsOption;
 }

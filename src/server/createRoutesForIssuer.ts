@@ -20,6 +20,7 @@ import {
     getOpenidConfiguration,
     getOAuthConfiguration,
     listCredentials,
+    revokeCredential,
   } from './endpoints'
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
@@ -100,5 +101,8 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
 
     // allow the front-end issuer to list credentials for further processing
     listCredentials(issuer, '/api/list-credentials');
+
+    // allow the front-end issuer to revoke or unrevoke specific credentials based on an id
+    revokeCredential(issuer, '/api/revoke-credential');
 }
 
