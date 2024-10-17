@@ -29,6 +29,12 @@ export class M20241014_credpid1728908115914 implements MigrationInterface {
                 new TableColumn({ name: 'credentialId', type: 'varchar', isNullable: true})
             );
         }
+        if (!await queryRunner.hasColumn(this.getTableName(queryRunner, 'credential'), 'uuid')) {
+            await queryRunner.addColumn(
+                this.getTableName(queryRunner, 'credential'),
+                new TableColumn({ name: 'uuid', type: 'varchar', isNullable: true})
+            );
+        }
     }
 
     async down(queryRunner: QueryRunner): Promise<void>
@@ -41,6 +47,9 @@ export class M20241014_credpid1728908115914 implements MigrationInterface {
         }
         if (await queryRunner.hasColumn(this.getTableName(queryRunner, 'credential'), 'credentialId')) {
             await queryRunner.dropColumn(this.getTableName(queryRunner, 'credential'), 'credentialId');
+        }
+        if (await queryRunner.hasColumn(this.getTableName(queryRunner, 'credential'), 'uuid')) {
+            await queryRunner.dropColumn(this.getTableName(queryRunner, 'credential'), 'uuid');
         }
     }
 }

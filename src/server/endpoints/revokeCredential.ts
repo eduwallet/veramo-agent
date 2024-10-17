@@ -6,7 +6,7 @@ import { determinePath } from 'utils/determinePath'
 import passport from 'passport';
 
 interface RevokeCredentialRequest {
-    id: number;
+    uuid: string;
     state: string;
     listName?: string;
 }
@@ -18,7 +18,7 @@ export function revokeCredential(issuer:Issuer, configPath:string) {
       passport.authenticate(issuer.name + '-admin', { session: false }),
       async (request: Request<RevokeCredentialRequest>, response: Response) => {
         try {
-            const state = await issuer.revokeCredential(request.body.id, request.body.state == 'revoke', request.body.listName);
+            const state = await issuer.revokeCredential(request.body.uuid, request.body.state == 'revoke', request.body.listName);
             return response.send(JSON.stringify({state}));
         }
         catch (e) {

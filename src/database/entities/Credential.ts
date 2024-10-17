@@ -27,6 +27,10 @@ export class Credential extends BaseEntity {
     
     @Column('varchar')
     //@ts-ignore
+    uuid: string
+
+    @Column('varchar')
+    //@ts-ignore
     state: string
 
     @Column('varchar')

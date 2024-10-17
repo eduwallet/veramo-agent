@@ -148,9 +148,13 @@ This returns an object as follows:
 {
    "createdAt":1725356725408,
    "lastUpdatedAt":1725356725408,
-   "status":"OFFER_CREATED"
+   "status":"CREDENTIAL_ISSUED",
+   "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9"
 }
 ```
+
+The `uuid` attribute is only available when an actual credential was issued to the wallet. This `uuid` can be used by the issuing front-end
+to interface with the revocation api as defined below.
 
 The following statuses are currently supported:
 
@@ -181,5 +185,31 @@ is optional):
 }
 ```
 
-The endpoint returns a JSON array containing all the database rows, including the id, claims, status-list information
+The endpoint returns a JSON array containing all the database rows, including the database id, the uuid, claims, status-list information
 and saved-updated dates. This data can be used in further interactions.
+
+#### Revoke Credential
+
+POST `<base URL>/<institute>/api/revoke-credential`
+
+This endpoint allows an issuer to list the credentials it has previously issued. This can be used in use cases where
+users want to revoke or re-issue/refresh credentials. The POST data field can contain filtering options (each field
+is optional):
+
+```
+{
+   uuid: <credential uuid>,
+   state: <set to 'revoke' to set the bit in the statuslist, or another value to unset it>,
+   list: <optional URI of a specific statuslist for which to set/unset the status>
+}
+```
+
+The endpoint returns a JSON array containing a `state` value indicating the result of the operation:
+
+```
+REVOKED: credential was revoked (bit is set)
+WAS_REVOKED: credential was already set to revoked, status has not changed
+UNREVOKED: credential was unrevoked (bit not set)
+WAS_UNREVOKED: credential was not revoked, status has not changed
+UNKNOWN: status list cannot be determined, bit was never reserved, etc.
+```

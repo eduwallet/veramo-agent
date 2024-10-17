@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import { v4 } from 'uuid'
 import { IEWIssuerOptsImportArgs, StatusList } from "types";
 import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
   CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13
@@ -50,6 +51,7 @@ interface IssuerSessionData extends StateType {
   holder?:string;
   principalCredentialId?: string;
   credentialId?: string;
+  uuid?: string;
 }
 
 
@@ -101,6 +103,7 @@ export class Issuer
             const repo = dbConnection.getRepository(Credential);
             const credData:CredentialIssuanceInput = session.credential.credential;
             const dbCred = new Credential();
+            dbCred.uuid = v4();
             dbCred.state = session.state;
             dbCred.issuanceDate = moment((credData.issuanceDate as string) || '').toDate();
             dbCred.claims = credData.credentialSubject as Claims;
@@ -113,6 +116,7 @@ export class Issuer
                 dbCred.statuslists = credData.credentialStatus;
             }
             await repo.save(dbCred);
+            session.uuid = dbCred.uuid;
         }
     }
 
@@ -306,12 +310,12 @@ export class Issuer
       return await qb.orderBy('c.id', 'ASC').getRawMany();
     }
 
-    public async revokeCredential(id:number, doRevoke:boolean, listName?:string): Promise<StatusListRevocationState>
+    public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string): Promise<StatusListRevocationState>
     {
-        debug("revoking specific credential " + id);
+        debug("revoking specific credential " + uuid);
         const dbConnection = await getDbConnection();
         const userRepository = dbConnection.getRepository(Credential);
-        const credential = await userRepository.findOneBy({id});
+        const credential = await userRepository.findOneBy({uuid});
         if (!credential) {
             debug("credential not found in database");
             throw new Error("No such credential");

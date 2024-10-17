@@ -51,7 +51,7 @@ async function inspectCredential(idOpt?:string)
     }
     const dbConnection = await getDbConnection();
     var qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
-    const res = await qb.select('*').where('id=:id', {id: idOpt}).getRawOne();
+    const res = await qb.select('*').where('uuid=:id', {id: idOpt}).getRawOne();
     console.log(res);
 }
 
@@ -89,6 +89,7 @@ async function listCredentials(options:any[])
     const credentials = await qb.orderBy('c.id', 'ASC').getRawMany();
     var fieldSettings:FieldSettings = {
         id: { length: 6, type: 'number' },
+        uuid: { length: 6, type: 'string' },
         issuer: { length: 10, type: 'string'},
         credentialId: { length: 20, type: 'string' },
         issuanceDate: {length: 10,type: 'datetime'}
