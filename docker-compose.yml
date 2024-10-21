@@ -23,6 +23,7 @@ services:
       - DB_SCHEMA=agent
       - CONF_PATH=/conf
       - DEBUG=*
+      - DEBUG_DEPTH=10
       - CHOKIDAR_USEPOLLING=true
     depends_on:
       db:

@@ -41,6 +41,8 @@ enum CredentialType {
 }
 export class OpenBadgeCredential extends BaseCredential {
   public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
+    debug('OpenBadgeCredential', args);
+
     const display = (this.issuer.metadata.display ?? [{}])[0];
     const credentialConfiguration = getCredentialConfiguration(this.issuer, 'OpenBadgeCredential');
     const credentialDisplay = credentialConfiguration.getFirstDisplay();
@@ -48,6 +50,7 @@ export class OpenBadgeCredential extends BaseCredential {
     // TODO: replace the oblique and way to broard sphereon types with a far more
     // specific Open Badge Credential type. It's useless to have a
     // credentialDataSupplierInput that allows any:any fields.
+    //
     // TODO: we somehow don't have args.credentialDataSupplierInput here. Why is it not set?
     // const achievement = args.credentialDataSupplierInput.achievement;
 
