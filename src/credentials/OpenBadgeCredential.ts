@@ -42,13 +42,14 @@ enum CredentialType {
 export class OpenBadgeCredential extends BaseCredential {
   public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
     const display = (this.issuer.metadata.display ?? [{}])[0];
-    const credentialConfiguration = getCredentialConfiguration(this.issuer, 'VerifiableEducationCredential');
+    const credentialConfiguration = getCredentialConfiguration(this.issuer, 'OpenBadgeCredential');
     const credentialDisplay = credentialConfiguration.getFirstDisplay();
 
     // TODO: replace the oblique and way to broard sphereon types with a far more
     // specific Open Badge Credential type. It's useless to have a
     // credentialDataSupplierInput that allows any:any fields.
-    const achievement = args.credentialDataSupplierInput.achievement;
+    // TODO: we somehow don't have args.credentialDataSupplierInput here. Why is it not set?
+    // const achievement = args.credentialDataSupplierInput.achievement;
 
     // TODO: Can the did ever be null? The sphereon types allow it, but it seems this
     // would not be a valid state in our actual badge and issuer setup. Probably
@@ -80,7 +81,9 @@ export class OpenBadgeCredential extends BaseCredential {
       issuanceDate: new Date().toISOString(),
       credentialSubject: {
         type: badgeTypes,
-        achievement,
+        achievement: {
+          narrative: 'This is a narrative',
+        },
       },
     }
 
