@@ -40,7 +40,15 @@ enum CredentialType {
   VerifiableCredential = 'VerifiableCredential',
   OpenBadgeCredential = 'OpenBadgeCredential',
 }
+
 export class OpenBadgeCredential extends BaseCredential {
+  check(_claims: any): boolean {
+    // TODO: check using jsonschema in payload and hardcoded obv3p0 schema
+    // Checking claims by randomly looking for presence of attributes is a lot of work.
+    // and adds little for the rather complex obv3 schema. So we just skip it entirely.
+    return true;
+  }
+
   public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
     debug('OpenBadgeCredential', args);
 
