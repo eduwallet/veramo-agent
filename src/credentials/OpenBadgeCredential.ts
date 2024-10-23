@@ -2,6 +2,7 @@ import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@spher
 import { ICredential } from "@sphereon/ssi-types"
 import { Issuer } from "issuer/Issuer";
 import { BaseCredential } from "./BaseCredential";
+import { debug } from "utils/logger";
 
 export interface DisplayConfiguration {
   name: string;
