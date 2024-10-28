@@ -4,9 +4,11 @@ import { CredentialDataSupplierArgs, CredentialDataSupplierResult} from "@sphere
 import { AcademicBaseCredential } from './AcademicBaseCredential';
 import { PID } from './PID';
 import { OpenBadgeCredential } from './OpenBadgeCredential';
+import { debug } from 'utils/logger';
 
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
+        debug(args);
         const name = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
         if (issuer.hasCredentialConfiguration(name)) {
             // only support single credential names here

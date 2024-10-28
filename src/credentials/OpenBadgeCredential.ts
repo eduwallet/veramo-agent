@@ -59,9 +59,7 @@ export class OpenBadgeCredential extends BaseCredential {
     // TODO: replace the oblique and way to broard sphereon types with a far more
     // specific Open Badge Credential type. It's useless to have a
     // credentialDataSupplierInput that allows any:any fields.
-    //
-    // TODO: we somehow don't have args.credentialDataSupplierInput here. Why is it not set?
-    // const achievement = args.credentialDataSupplierInput.achievement;
+    const achievement = args.credentialDataSupplierInput.achievement;
 
     // TODO: Can the did ever be null? The sphereon types allow it, but it seems this
     // would not be a valid state in our actual badge and issuer setup. Probably
@@ -93,9 +91,7 @@ export class OpenBadgeCredential extends BaseCredential {
       issuanceDate: new Date().toISOString(),
       credentialSubject: {
         type: badgeTypes,
-        achievement: {
-          narrative: 'This is a narrative',
-        },
+        achievement
       },
     }
 
