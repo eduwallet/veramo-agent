@@ -7,8 +7,7 @@ export function getOpenidConfiguration(
     const path = `/.well-known/openid-configuration`
     issuer.router!.get(path, (request: Request, response: Response) => {
         var data:any = {
-            "issuer": issuer.metadata.credential_issuer,
-            "token_endpoint": tokenpath ?? issuer.options.baseUrl + '/token'
+            "issuer": issuer.metadata.credential_issuer
         };
 
         if (issuer.options.authorizationEndpoint) {
@@ -16,6 +15,9 @@ export function getOpenidConfiguration(
         }
         if (issuer.options.tokenEndpoint) {
             data.token_endpoint = issuer.options.tokenEndpoint;
+        }
+        else {
+            data.token_endpoint = tokenpath ?? issuer.options.baseUrl + '/token';
         }
 
         return response.send(data)
