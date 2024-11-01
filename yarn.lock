@@ -4846,7 +4846,7 @@ jsonld@^4.0.1:
     request "^2.88.0"
     semver "^6.3.0"
 
-"jsonld@link:../../../../.cache/yarn/v6/npm-@sphereon-ssi-sdk-vc-handler-ld-local-0.28.1-next.39-640f8b91d2e7c9d8be9b9c9ceeabfe8211943f84-integrity/node_modules/@sphereon/ssi-sdk.vc-handler-ld-local/../../node_modules/.pnpm/@digitalcredentials+jsonld@6.0.0/node_modules/@digitalcredentials/jsonld":
+"jsonld@link:..\\..\\node_modules\\.pnpm\\@digitalcredentials+jsonld@6.0.0\\node_modules\\@digitalcredentials\\jsonld":
   version "0.0.0"
   uid ""
 
