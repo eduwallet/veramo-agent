@@ -10,11 +10,7 @@ export async function openObserverLog(state:string, endpoint: string, data:any)
     };
 
     if (LOG_SERVICE === undefined || LOG_USER === undefined) {
-<<<<<<< HEAD
         debug("Log server would have recieved:", message);
-=======
-        console.info("Log server would have recieved:", message);
->>>>>>> main
         return;
     }
 
