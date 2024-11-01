@@ -107,6 +107,7 @@ The setup has the following endpoints for the back-end API:
 - POST `<base URL>/<institute>/api/create-offer`
 - POST `<base URL>/<institute>/api/check-offer`
 - POST `<base URL>/<institute>/api/list-credentials`
+- POST `<base URL>/<institute>/api/revoke-credential`
 
 #### Create Offer
 
@@ -115,31 +116,43 @@ POST `<base URL>/<institute>/api/create-offer`
 This creates a credential offer in the agent database based on supplied credentials. The request contains a JSON object:
 ```json
 {
-   "credential_issuer": "string",
-   "credential_configuration_ids": ["array of string"],
+   "credentials": ["array of string"],
    "grants": {
+      "authorization_code": {
+         "issuer_state": "generate"
+      },
       "urn:ietf:params:oauth:grant-type:pre-authorized_code": {
          "pre-authorized_code": "string",
          "tx_code": boolean, optional,
       }
    },
-   "credentialDataSupplierInput": "object containing key-value pairs of the credentials"
+   "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
+   "pinLength": number
 }
 ```
 
+Please note the following:
+
+- the example displays two grant types. Usually only one of either is used (the front-end-issuer either has authenticated the user, or it has not). Which one is used depends on the configuration of the back-end-issuer for this specific instance
+- in the `authorization_code.issuer_state` field, the example shows the content `generate`. This is a special-case situation forcing the back-end-issuer to generate a new state value. Preferably the `issuer_state` was left undefined, but that may cause the entire `authorization_code` object to be removed by intermediate libraries. To prevent that, fill the `issuer_state` with the special `generate` value. The response will provide the actual state identifier used for this session
+
 It returns a JSON object containing the following elements:
 
-- uri (required, the uri that is presented to the wallet as QR code or clickable link (same-device))
-- txCode (optional, transaction code that needs to be shared out of band)
+```json
+{
+   "uri": "the uri that is presented to the wallet as QR code or clickable link (same-device)",
+   "txCode":  "optional, transaction code that needs to be shared out of band",
+   "id": "a string value containing the unique identifier with which to refer to this offer/session"
+}
 
-At the moment, the agent creates a 4 digit random code when a tx_code is requested.
+At the moment, the agent by default creates a 4 digit random code when a tx_code is requested.
 
 #### Check Offer
 
 POST `<base URL>/<institute>/api/check-offer`
 
 The `check-offer` endpoint allows the front-end to poll the status of the offer. Depending on the state of the offer, the front-end
-can display different messages or adjust the interface. The offer `id` is the pre-authorized_code passed in the `create-offer` call.
+can display different messages or adjust the interface. The offer `id` is the `id` value returned in the `create-offer` call.
 The `id` is passed in a POST operation as a json object: `{"id":"<code>"}`
 
 This returns an object as follows:
