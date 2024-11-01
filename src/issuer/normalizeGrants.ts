@@ -9,7 +9,7 @@ import { assertValidPinNumber } from '@sphereon/oid4vci-issuer'
   
     if (grants?.authorization_code) {
         issuerState = grants?.authorization_code.issuer_state
-        if (!issuerState) {
+        if (!issuerState || issuerState == 'generate') {
             issuerState = v4()
             grants.authorization_code.issuer_state = issuerState
         }

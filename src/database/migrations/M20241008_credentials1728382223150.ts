@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
-import { debug } from '@utils/logger';
+import { debug } from 'utils/logger';
 
 export class M20241008_credentials1728382223150 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {

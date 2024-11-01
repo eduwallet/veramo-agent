@@ -1,9 +1,9 @@
 import { ExpressBuilder, ExpressCorsConfigurer } from "@sphereon/ssi-express-support";
-import { dumpExpressRoutes } from '../utils/dumpExpressRoutes';
+import { dumpExpressRoutes } from 'utils/dumpExpressRoutes';
 import { getIssuerStore } from 'issuer/Store';
 import { createRoutesForIssuer } from './createRoutesForIssuer';
 import { bearerAdminForIssuer } from './bearerAdminForIssuer';
-import { debug } from "@utils/logger";
+import { debug } from "utils/logger";
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'

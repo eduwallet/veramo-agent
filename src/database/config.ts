@@ -8,7 +8,8 @@ if (!process.env.DB_ENCRYPTION_KEY) {
   console.warn(`Please provide a DB_ENCRYPTION_KEY env var. Now we will use a pre-configured one. When you change to the var you will have to replace your DB`)
 }
 
-const dbConfig: PostgresConnectionOptions = {
+console.log('creating dbConfig');
+export const dbConfig: PostgresConnectionOptions = {
   type: 'postgres',
   schema: DB_SCHEMA,
   host: DB_HOST,
@@ -30,6 +31,5 @@ const dbConfig: PostgresConnectionOptions = {
   migrationsTransactionMode: 'each', // protect every migration with a separate transaction
   logging: 'all', //['info', 'error'], // 'all' means to enable all logging
   logger: 'advanced-console',
+  
 }
-
-export { dbConfig }

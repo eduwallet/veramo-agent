@@ -1,9 +1,9 @@
 import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { determinePath } from '@utils/determinePath';
+import { determinePath } from 'utils/determinePath';
 import { Issuer } from 'issuer/Issuer';
 import { IssueStatus } from '@sphereon/oid4vci-common'
-import { openObserverLog } from '@utils/openObserverLog';
+import { openObserverLog } from 'utils/openObserverLog';
 
 export function getCredentialOffer(issuer:Issuer, getPath:string) {
     const path = determinePath(issuer.options.baseUrl, getPath, { stripBasePath: true })

@@ -1,23 +1,26 @@
-import { IEWIssuerOptsImportArgs } from "types";
+import Debug from 'debug';
+import { v4 } from 'uuid'
+import { IEWIssuerOptsImportArgs, StatusList } from "types";
 import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
-  CredentialRequest, CredentialResponse, CredentialRequestV1_0_13
+  CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13
  } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
 import { DIDDocument, IIdentifier, IKey } from '@veramo/core';
 import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
-import { ICredential } from "@sphereon/ssi-types"
 import { JWTVerifyOptions } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
-import { resolver } from '../plugins';
-import { context } from '../agent';
+import { resolver } from 'resolver';
+import { getAgent } from 'agent';
 import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getCredentialConfigurationStore } from "credentials/Store";
-import { Credential, getDbConnection } from "database";
+import { getDbConnection } from "database";
+import { Credential, Claims } from "database/entities/Credential";
 import moment from "moment";
-import { Claims, StatusList } from "database/entities/Credential";
+import { credentialDataChecker } from "credentials/credentialDataChecker";
 
+const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
 
 // mapping key types to key output types in the DIDDocument
@@ -46,6 +49,18 @@ interface IssuerSessionData extends StateType {
   state: string;
   credential?: CredentialDataSupplierResult;
   holder?:string;
+  principalCredentialId?: string;
+  credentialId?: string;
+  uuid?: string;
+}
+
+
+export enum StatusListRevocationState {
+  UNKNOWN = 'UNKNOWN',
+  REVOKED = 'REVOKED',
+  WAS_REVOKED = 'WAS_REVOKED',
+  UNREVOKED = 'UNREVOKED',
+  WAS_UNREVOKED = 'WAS_UNREVOKED'
 }
 
 export class Issuer
@@ -88,15 +103,20 @@ export class Issuer
             const repo = dbConnection.getRepository(Credential);
             const credData:CredentialIssuanceInput = session.credential.credential;
             const dbCred = new Credential();
+            dbCred.uuid = v4();
             dbCred.state = session.state;
             dbCred.issuanceDate = moment((credData.issuanceDate as string) || '').toDate();
             dbCred.claims = credData.credentialSubject as Claims;
             dbCred.expirationDate = moment((credData.expirationDate as string) || '').toDate();
             dbCred.holder = session.holder || '';
+            dbCred.credpid = session.principalCredentialId || '';
+            dbCred.issuer = this.name;
+            dbCred.credentialId = session.credentialId || '';
             if (credData.credentialStatus && typeof(credData.credentialStatus) == 'object') {
                 dbCred.statuslists = credData.credentialStatus;
             }
             await repo.save(dbCred);
+            session.uuid = dbCred.uuid;
         }
     }
 
@@ -107,6 +127,11 @@ export class Issuer
         await this.vcIssuer.cNonces.clearExpired();
         await this.vcIssuer.uris?.clearExpired();
         await this.vcIssuer.credentialOfferSessions.clearExpired();
+    }
+
+    public checkCredentialData(credentialIds:string[], credentialData: CredentialDataSupplierInput)
+    {
+        return credentialDataChecker(this, credentialIds[0], credentialData);
     }
 
     public async issueCredential(credentialRequest:CredentialRequestV1_0_13): Promise<{response:CredentialResponse, state:string}>
@@ -141,7 +166,7 @@ export class Issuer
     public async setDid()
     {
       if (typeof this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier == 'string') {
-        this.did = await context?.agent.didManagerGet({did: this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier});
+        this.did = await getAgent().didManagerGet({did: this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier});
       }
       else {
         this.did = this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier;
@@ -158,8 +183,8 @@ export class Issuer
           audience: this.metadata.credential_issuer,
         }
         builder.withIssuerMetadata(this.generateMetadata())
-            .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, context))
-            .withJWTVerifyCallback(getJwtVerifyCallback({ verifyOpts: jwtVerifyOpts }, context))
+            .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, { agent: getAgent() }))
+            .withJWTVerifyCallback(getJwtVerifyCallback({ verifyOpts: jwtVerifyOpts }, { agent: getAgent() }))
             .withInMemoryCNonceState()
             .withInMemoryCredentialOfferState()
             .withCredentialDataSupplier(credentialResolver(this))
@@ -248,6 +273,7 @@ export class Issuer
         metadata.credential_configurations_supported = credentials;
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
+
         return metadata;
     }
 
@@ -260,5 +286,104 @@ export class Issuer
           return store[id] as CredentialConfigurationSupportedV1_0_13;
         }
         return {} as CredentialConfigurationSupportedV1_0_13;
+    }
+
+    public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
+    {
+      const dbConnection = await getDbConnection();
+      var qb = dbConnection.createQueryBuilder().select('c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(Credential, 'c').where('c.id > 0');
+      if (primaryId && primaryId.length) {
+          qb = qb.andWhere('c.credpid=:credpid', {credpid: primaryId});
+      }
+      if (credential && credential.length) {
+          qb = qb.andWhere('c.credentialId=:credentialId', {credentialId:credential});
+      }
+      if (issuanceDate && issuanceDate.length) {
+          qb = qb.andWhere('c."issuanceDate" > :issuanceDate', {issuanceDate});
+      }
+      if (state && state.length) {
+          qb = qb.andWhere('c.state=:state', {state});
+      }
+      if (holder && holder.length) {
+          qb = qb.andWhere('c.holder=:holder', {holder});
+      }
+
+      return await qb.orderBy('c.id', 'ASC').getRawMany();
+    }
+
+    public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string): Promise<StatusListRevocationState>
+    {
+        debug("revoking specific credential " + uuid);
+        const dbConnection = await getDbConnection();
+        const userRepository = dbConnection.getRepository(Credential);
+        const credential = await userRepository.findOneBy({uuid});
+        if (!credential) {
+            debug("credential not found in database");
+            throw new Error("No such credential");
+        }
+        if (!credential.statuslists) {
+            debug("credential has no statuslists associated");
+            throw new Error("No statuslist available");
+        }
+        // convert the if-only-one-than-not-an-array spec to an always-array-even-if-only-one implementation
+        var retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
+        const statuslists = Array.isArray(credential.statuslists) ? credential.statuslists : [credential.statuslists];
+        debug("looping over " + statuslists.length + " statuslists");
+        for (const statlist of statuslists) {
+            if (!listName || listName == statlist.id) {
+                retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+            }
+        }
+        return retval;
+    }
+
+    private mergeStatusListStates(oldState:StatusListRevocationState, newState:StatusListRevocationState)
+    {
+        debug("merging old state " + oldState + " with " + newState);
+        // if we had no state, use the new state
+        if (oldState == StatusListRevocationState.UNKNOWN) {
+            oldState = newState;
+        }
+        // if something had changed, do not update
+        if (oldState != StatusListRevocationState.REVOKED && oldState != StatusListRevocationState.UNREVOKED) {
+            // this updates to REVOKED and UNREVOKED, or resets WAS_REVOKED and WAS_UNREVOKED
+            oldState = newState;
+        }
+        debug("returning state " + oldState);
+        return oldState;
+    }
+
+    private async revokeCredentialFromList(credential:Credential, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
+    {
+        debug("revoking credential of type " + credential.credentialId);
+        const slist = this.options.statusLists![credential.credentialId];
+        if (slist) {
+            debug("invoking " + slist.revoke + " with " + statlist.statusListIndex + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
+            const returnValue:any = await fetch(slist.revoke, {
+                method: 'POST',
+                body: JSON.stringify({
+                    list: statlist.statusListCredential,
+                    index: statlist.statusListIndex,
+                    state: doRevoke ? 'revoke' : 'unrevoke'
+                }),
+                headers: {
+                    'Content-type': 'application/json',
+                    'Authorization': 'Bearer ' + slist.token,
+                }
+            }).then((r) => r.json());
+            debug("return value is " + JSON.stringify(returnValue));
+            // an error in the call will cause an exception which is caught upstairs
+            switch (returnValue.state) {
+                case 'REVOKED': return StatusListRevocationState.REVOKED;
+                case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
+                case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
+                default: return StatusListRevocationState.UNKNOWN;
+            }
+        }
+        else {
+            // else we ignore a statuslist that is no longer configured
+            debug("no status list associated with this credential type in the configuration (anymore). Ignoring request");
+        }
+        return StatusListRevocationState.UNKNOWN;
     }
 }

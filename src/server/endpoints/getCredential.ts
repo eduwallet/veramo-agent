@@ -3,12 +3,12 @@ import { getTypesFromRequest, CredentialRequest, CredentialRequestV1_0_13, extra
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 
-import { determinePath } from '@utils/determinePath';
+import { determinePath } from 'utils/determinePath';
 import { Issuer } from 'issuer/Issuer';
-import { getBaseUrl } from '@utils/getBaseUrl';
+import { getBaseUrl } from 'utils/getBaseUrl';
 import { verifyJWT } from 'did-jwt';
-import { resolver } from 'plugins';
-import { openObserverLog } from '@utils/openObserverLog';
+import { resolver } from 'resolver';
+import { openObserverLog } from 'utils/openObserverLog';
 
 function validateCredentialRequest(issuer:Issuer) {
   return async function (request:Request, response:Response, next:NextFunction) {

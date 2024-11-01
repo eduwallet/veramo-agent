@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { VcIssuer } from '@sphereon/oid4vci-issuer'
 import { AuthorizationRequest } from '@sphereon/oid4vci-common'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
-import { validateRequestBody } from '@utils/validateRequestBody'
+import { validateRequestBody } from 'utils/validateRequestBody'
 import { IEWIssuerOptsImportArgs } from 'types'
 
 export function pushedAuthorization<DIDDoc extends object>(

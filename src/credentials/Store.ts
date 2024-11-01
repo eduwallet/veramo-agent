@@ -4,8 +4,8 @@
 
 import { CREDENTIAL_CONFIGURATION_PATH } from "../environment";
 import { CredentialConfigurationSupportedV1_0_13 } from '@sphereon/oid4vci-common';
-import { debug } from "@utils/logger";
-import { loadJsonFiles } from "@utils/generic";
+import { debug } from "utils/logger";
+import { loadJsonFiles } from "utils/generic";
 
 export interface CredentialConfigurationStore {
   [x: string]: CredentialConfigurationSupportedV1_0_13;

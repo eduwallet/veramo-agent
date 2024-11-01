@@ -6,9 +6,7 @@
     "declaration": true,
     "baseUrl": "./src",
     "rootDir": "./src",
-    "rootDirs": ["./"],
-    "paths": { "@utils/*": ["utils/*"]},
-    "outDir": "dist",
+    "outDir": "./dist",
     "declarationMap": true,
     "esModuleInterop": true,
     /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */

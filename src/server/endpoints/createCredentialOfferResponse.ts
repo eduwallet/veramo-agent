@@ -1,21 +1,33 @@
 import { Request, Response } from 'express'
-import { CredentialOfferRESTRequest, determineGrantTypes, TokenErrorResponse } from '@sphereon/oid4vci-common'
+import { CredentialOfferPayloadV1_0_13, QRCodeOpts, CredentialDataSupplierInput, determineGrantTypes, TokenErrorResponse, GrantTypes, TxCode } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { determinePath } from '@utils/determinePath';
-import { ICreateCredentialOfferURIResponse } from '@sphereon/oid4vci-issuer-server';
+import { determinePath } from 'utils/determinePath';
 
 import { createCredentialOffer} from 'issuer/createCredentialOffer';
 import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
-import { debug } from '@utils/logger';
-import { openObserverLog } from '@utils/openObserverLog';
+import { debug } from 'utils/logger';
+import { openObserverLog } from 'utils/openObserverLog';
+
+export interface CredentialOfferRequest {
+  credentials: string[];
+  pinLength?: number;
+  credentialDataSupplierInput?: CredentialDataSupplierInput;
+}
+
+export type ICreateCredentialOfferURIResponse = {
+  uri: string
+  userPin?: string
+  txCode?: TxCode
+  id?: string
+}
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
     const getOfferPath = determinePath(issuer.options.baseUrl, offerPath, { stripBasePath: true });
     issuer.router!.post(path,
       passport.authenticate(issuer.name + '-admin', { session: false }),
-      async (request: Request<CredentialOfferRESTRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
+      async (request: Request<CredentialOfferRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
       try {
         // before we enter a new request, clean up the memory a bit
         issuer.clearExpired();
@@ -25,7 +37,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           return sendErrorResponse(response, 400, { error: TokenErrorResponse.invalid_grant, error_description: 'No grant type supplied' })
         }
 
-        const credentialConfigIds = request.body.credentials as string[]
+        const credentialConfigIds = request.body.credentials as string[];
         if (!credentialConfigIds || credentialConfigIds.length === 0) {
           return sendErrorResponse(response, 400, {
             error: TokenErrorResponse.invalid_request,
@@ -43,10 +55,20 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           })
         }
 
+        // if pre-authorized-code is used, the proper credential data should be present
+        if (grantTypes.includes(GrantTypes.PRE_AUTHORIZED_CODE)) {
+          if (!issuer.checkCredentialData(credentialConfigIds, request.body.credentialDataSupplierInput)) {
+            return sendErrorResponse(response, 400, {
+              error: TokenErrorResponse.invalid_request,
+              error_description: 'missing required claims',
+            })
+          }
+        }
+
         const offerData = await createCredentialOffer(
           request.body.grants,
           request.body.credentialDataSupplierInput,
-          request.body.credentials,
+          credentialConfigIds,
           request.body.pinLength ?? 4,
           issuer
         );
@@ -54,7 +76,8 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
 
         const resultResponse: ICreateCredentialOfferURIResponse = {
           uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + getOfferPath + '/' + offerData.id,
-          txCode: offerData.txCode
+          txCode: offerData.txCode,
+          id: offerData.id
         }
         await openObserverLog(offerData.id, "createoffer-response", resultResponse);
         return response.send(resultResponse)

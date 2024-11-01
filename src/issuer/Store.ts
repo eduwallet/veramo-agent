@@ -5,8 +5,8 @@
 
 import { IMetadataImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 import { IssuerMetadataV1_0_13 } from '@sphereon/oid4vci-common';
-import { METADATA_PATH, ISSUER_PATH } from "../environment";
-import { loadJsonFiles } from "@utils/generic";
+import { METADATA_PATH, ISSUER_PATH } from "environment";
+import { loadJsonFiles } from "utils/generic";
 import { IEWIssuerOptsImportArgs } from "types";
 import { Issuer } from "./Issuer";
 

@@ -1,10 +1,19 @@
-import { IssueStatusResponse } from '@sphereon/oid4vci-common'
+import { IssueStatus } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Request, Response } from 'express'
 import { Issuer } from 'issuer/Issuer';
-import { determinePath } from '@utils/determinePath'
+import { determinePath } from 'utils/determinePath'
 
-  export function getIssueStatus(issuer:Issuer, checkPath:string) {
+export interface IssueStatusResponse {
+  createdAt: number;
+  lastUpdatedAt: number;
+  status: IssueStatus;
+  error?: string;
+  clientId?: string;
+  uuid?: string;
+}
+
+export function getIssueStatus(issuer:Issuer, checkPath:string) {
     const path = determinePath(issuer.options.baseUrl, checkPath, { stripBasePath: true })
     issuer.router!.post(
       path,
@@ -20,12 +29,15 @@ import { determinePath } from '@utils/determinePath'
             })
           }
     
+          const issuerSession = await issuer.getSessionById(id);
+
           const authStatusBody: IssueStatusResponse = {
             createdAt: session.createdAt,
             lastUpdatedAt: session.lastUpdatedAt,
             status: session.status,
             ...(session.error && { error: session.error }),
             ...(session.clientId && { clientId: session.clientId }),
+            ...(issuerSession.uuid && { uuid: issuerSession.uuid })
           }
           return response.send(JSON.stringify(authStatusBody))
         } catch (e) {

@@ -3,10 +3,10 @@ import express from 'express'
 import { ExpressSupport } from "@sphereon/ssi-express-support";
 import { Issuer } from "issuer/Issuer";
 import { getAccessTokenKeyRef, getAccessTokenSignerCallback } from '@sphereon/ssi-sdk.oid4vci-issuer'
-import { context } from 'agent';
+import { getAgent } from 'agent';
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer';
-import { getBasePath } from '@utils/getBasePath'
-import { debug } from '@utils/logger'
+import { getBasePath } from 'utils/getBasePath'
+import { debug } from 'utils/logger'
 
 import {
     accessToken,
@@ -19,6 +19,8 @@ import {
     pushedAuthorization,
     getOpenidConfiguration,
     getOAuthConfiguration,
+    listCredentials,
+    revokeCredential,
   } from './endpoints'
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
@@ -50,13 +52,13 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
         didOpts: issuer.options.options.issuerOpts.didOpts,
     };
 
-    issuer.keyRef = await getAccessTokenKeyRef(tokenOpts, context);
+    issuer.keyRef = await getAccessTokenKeyRef(tokenOpts, { agent: getAgent() });
     tokenEndpointOpts.accessTokenSignerCallback = getAccessTokenSignerCallback(
         {
           iss: issuer.did!.did,
           keyRef: issuer.keyRef,
         },
-        context,
+        { agent: getAgent() },
     )
 
     issuer.router = express.Router();
@@ -96,5 +98,11 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
   
     // enable the back channel interface to poll the status of an credential offer and see if it was already issued
     getIssueStatus(issuer, '/api/check-offer');
+
+    // allow the front-end issuer to list credentials for further processing
+    listCredentials(issuer, '/api/list-credentials');
+
+    // allow the front-end issuer to revoke or unrevoke specific credentials based on an id
+    revokeCredential(issuer, '/api/revoke-credential');
 }
 

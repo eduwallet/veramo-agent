@@ -11,9 +11,11 @@ export function credentialResolver(issuer:Issuer) {
             // only support single credential names here
             switch (name[0]) {
                 case 'AcademicBaseCredential':
-                    return AcademicBaseCredential(issuer, args);
+                    const abc = new AcademicBaseCredential(issuer);
+                    return abc.generate(args);
                 case 'PID':
-                    return PID(issuer, args);
+                    const pid = new PID(issuer);
+                    return pid.generate(args);
             }
         }
 
