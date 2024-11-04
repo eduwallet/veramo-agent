@@ -112,9 +112,14 @@ export class Issuer
             const dbCred = new Credential();
             dbCred.uuid = v4();
             dbCred.state = session.state;
-            dbCred.issuanceDate = moment((credData.issuanceDate as string) || '').toDate();
+            dbCred.issuanceDate = moment((credData.issuanceDate as string) || undefined).toDate();
             dbCred.claims = credData.credentialSubject as Claims;
-            dbCred.expirationDate = moment((credData.expirationDate as string) || '').toDate();
+            if (credData.expirationDate) {
+                dbCred.expirationDate = moment((credData.expirationDate as string) || undefined).toDate();
+            }
+            else {
+                dbCred.expirationDate = null;
+            }
             dbCred.holder = session.holder || '';
             dbCred.credpid = session.principalCredentialId || '';
             dbCred.issuer = this.name;

@@ -28,7 +28,7 @@ import { assertValidPinNumber } from '@sphereon/oid4vci-issuer'
                 description: 'PIN'
             }
         }
-        if (!preAuthorizedCode) {
+        if (!preAuthorizedCode || preAuthorizedCode == 'generate') {
             preAuthorizedCode = v4()
             grants['urn:ietf:params:oauth:grant-type:pre-authorized_code']['pre-authorized_code'] = preAuthorizedCode
         }

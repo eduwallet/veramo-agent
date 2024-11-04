@@ -3,6 +3,7 @@ import { CredentialDataSupplierInput } from '@sphereon/oid4vci-common'
 import { AcademicBaseCredential } from './AcademicBaseCredential';
 import { PID } from './PID';
 import { OpenBadgeCredential } from './OpenBadgeCredential';
+import { GenericCredential } from './GenericCredential';
 
 export function credentialDataChecker(issuer:Issuer, credentialId:string, claims: CredentialDataSupplierInput): boolean {
     switch (credentialId) {
@@ -15,6 +16,9 @@ export function credentialDataChecker(issuer:Issuer, credentialId:string, claims
         case 'OpenBadgeCredential':
             const obc = new OpenBadgeCredential(issuer);
             return obc.check(claims);
+        case 'GenericCredential':
+            const genericCredential = new GenericCredential(issuer);
+            return genericCredential.check(claims);
         default:
             throw new Error('Unknown credentialId');
     }
