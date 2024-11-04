@@ -1,5 +1,5 @@
-# Use the official Node.js LTS Bookworm image
-FROM node:lts-bookworm
+# Use the official Node.js 21 Bookworm image. The LTS somehow causes a crash?
+FROM node:21-bookworm
 
 # Set working directory inside the container
 WORKDIR /app
