@@ -20,7 +20,7 @@ export const LOG_SERVICE = process.env.LOG_SERVICE;
 export const LOG_USER = process.env.LOG_USER;
 
 //export const DID_PREFIX = 'did'
-export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) : resolve('../../conf')
+export const CONF_PATH = process.env.CONF_PATH ? process.env.CONF_PATH : resolve('../../conf')
 export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`
 export const ISSUER_PATH = `${CONF_PATH}/issuer`;
 export const METADATA_PATH = `${CONF_PATH}/metadata`;
