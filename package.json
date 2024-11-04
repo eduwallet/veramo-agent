@@ -31,8 +31,6 @@
     "@sphereon/ssi-sdk.core": "0.29.0",
     "@sphereon/ssi-sdk.data-store": "0.29.0",
     "@sphereon/ssi-sdk.oid4vci-issuer": "0.29.0",
-    "@sphereon/ssi-sdk.oid4vci-issuer-rest-api": "0.29.0",
-    "@sphereon/ssi-sdk.remote-server-rest-api": "0.29.0",
     "@sphereon/ssi-sdk.vc-handler-ld-local": "0.29.0",
     "@transmute/did-key.js": "^0.3.0-unstable.10",
     "@veramo/core": "4.2.0",
