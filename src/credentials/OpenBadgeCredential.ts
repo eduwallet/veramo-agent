@@ -50,16 +50,15 @@ export class OpenBadgeCredential extends BaseCredential {
   }
 
   public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-    debug('OpenBadgeCredential', args);
+    debug('OpenBadgeCredential.generate()', args);
 
     const display = (this.issuer.metadata.display ?? [{}])[0];
     const credentialConfiguration = getCredentialConfiguration(this.issuer, 'OpenBadgeCredential');
     const credentialDisplay = credentialConfiguration.getFirstDisplay();
 
-    // TODO: replace the oblique and way to broard sphereon types with a far more
-    // specific Open Badge Credential type. It's useless to have a
-    // credentialDataSupplierInput that allows any:any fields.
-    const achievement = args.credentialDataSupplierInput.achievement;
+
+    const achievement = args?.credentialDataSupplierInput?.credential?.credentialSubject?.achievement ?? {};
+    debug('achievement', achievement);
 
     // TODO: Can the did ever be null? The sphereon types allow it, but it seems this
     // would not be a valid state in our actual badge and issuer setup. Probably
