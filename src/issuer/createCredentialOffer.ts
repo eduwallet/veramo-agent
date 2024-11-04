@@ -2,6 +2,7 @@ import { Grant, CredentialDataSupplierInput, CredentialOfferPayloadV1_0_13, Issu
  } from '@sphereon/oid4vci-common'
 import { Issuer } from './Issuer';
 import { normalizeGrants } from './normalizeGrants';
+import { StringKeyedObject } from 'types';
 
 export interface CredentialOfferData {
   id: string;
@@ -11,6 +12,7 @@ export interface CredentialOfferData {
 export async function createCredentialOffer(
     configuredGrants: Grant,
     credentialData: CredentialDataSupplierInput,
+    credentialMetadata: StringKeyedObject,
     credentials: string[],
     pinLength: number,
     issuer: Issuer
@@ -53,11 +55,14 @@ export async function createCredentialOffer(
 
     // link the session data to easy-to-retrieve keys
     if (preAuthorizedCode) {
-      await issuer.vcIssuer.credentialOfferSessions.set(preAuthorizedCode, session)
+      await issuer.vcIssuer.credentialOfferSessions.set(preAuthorizedCode, session);
     }
     if (issuerState) {
       await issuer.vcIssuer.credentialOfferSessions.set(issuerState, session)
     }
+    var issuerSession = await issuer.getSessionById(preAuthorizedCode || issuerState || '');
+    issuerSession.metaData = credentialMetadata;
+    await issuer.sessionData.set(preAuthorizedCode || issuerState || '', issuerSession);
 
     // return the unique id with which to retrieve the offer from the session
     if (preAuthorizedCode) {

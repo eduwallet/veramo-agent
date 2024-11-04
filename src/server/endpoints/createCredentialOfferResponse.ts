@@ -8,11 +8,13 @@ import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
 import { debug } from 'utils/logger';
 import { openObserverLog } from 'utils/openObserverLog';
+import { StringKeyedObject } from 'types';
 
 export interface CredentialOfferRequest {
   credentials: string[];
   pinLength?: number;
   credentialDataSupplierInput?: CredentialDataSupplierInput;
+  credentialMetadata?: StringKeyedObject;
 }
 
 export type ICreateCredentialOfferURIResponse = {
@@ -68,6 +70,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
         const offerData = await createCredentialOffer(
           request.body.grants,
           request.body.credentialDataSupplierInput,
+          request.body.credentialMetadata || {},
           credentialConfigIds,
           request.body.pinLength ?? 4,
           issuer

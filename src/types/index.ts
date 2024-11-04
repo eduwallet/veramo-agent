@@ -2,6 +2,10 @@ import {IDIDManagerCreateArgs, IIdentifier} from "@veramo/core";
 import {CredentialSupplierConfig} from "@sphereon/oid4vci-common"
 import { IIssuerOptsImportArgs } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
 
+export interface StringKeyedObject {
+    [key:string]: any;
+}
+
 export enum KMS {
     LOCAL = 'local',
 }

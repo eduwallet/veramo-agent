@@ -31,17 +31,30 @@ export class BaseCredential
         return false;
     }
 
+    private handleExpirationDate(result:CredentialDataSupplierResult, date:string):CredentialDataSupplierResult
+    {
+        if (date && date.length) {
+            result.credential.expirationDate = moment().add(parseInt(date), 's').toISOString();
+        }
+        return result;
+    }
+
     public async handleAttributes(args: CredentialDataSupplierArgs, types:string[], principalCredentialId:string, result:CredentialDataSupplierResult): Promise<CredentialDataSupplierResult>
     {
+        var session = await this.issuer.getSessionById(args.issuerState || args.preAuthorizedCode || '');        
+
         if (args.credentialDataSupplierInput._exp) {
-            result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._exp), 's').toISOString();
+            result = this.handleExpirationDate(result, args.credentialDataSupplierInput._exp);
         }
         if (args.credentialDataSupplierInput._ttl) {
-            result.credential.expirationDate = moment().add(parseInt(args.credentialDataSupplierInput._ttl), 's').toISOString();
+            result = this.handleExpirationDate(result, args.credentialDataSupplierInput._ttl);
+        }
+        if (session && session.metaData && session.metaData.expiration) {
+            result = this.handleExpirationDate(result, session.metaData.expiration);
         }
     
-        const metadata = JSON.parse(args.credentialDataSupplierInput._meta || '{}');
-        if (this.issuer.options.statusLists && (metadata.enableStatusLists || typeof(metadata.enableStatusLists) == 'undefined')) {
+        const enableLists = !session.metaData || (typeof session.metaData.enableStatusLists === 'undefined') || (session.metaData.enableStatusLists === true);
+        if (this.issuer.options.statusLists && enableLists) {
             const statusses:ICredentialStatus[] = [];
             // types is a string-array, but we only factually support a list of size 1...
             for(const cid of types) {
@@ -81,7 +94,6 @@ export class BaseCredential
             }
         }
     
-        var session = await this.issuer.getSessionById(args.issuerState || args.preAuthorizedCode || '');
         session.credential = result;
         session.principalCredentialId = (result.credential.credentialSubject as AdditionalClaims)[principalCredentialId] || '';
         session.credentialId = types[0];

@@ -1,6 +1,6 @@
 import Debug from 'debug';
 import { v4 } from 'uuid'
-import { IEWIssuerOptsImportArgs, StatusList } from "types";
+import { IEWIssuerOptsImportArgs, StatusList, StringKeyedObject } from "types";
 import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
   CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13
  } from '@sphereon/oid4vci-common';
@@ -55,6 +55,7 @@ const algMapping: Record<TKeyType, Alg> = {
 interface IssuerSessionData extends StateType {
   state: string;
   credential?: CredentialDataSupplierResult;
+  metaData?: StringKeyedObject;
   holder?:string;
   principalCredentialId?: string;
   credentialId?: string;
@@ -118,7 +119,7 @@ export class Issuer
                 dbCred.expirationDate = moment((credData.expirationDate as string) || undefined).toDate();
             }
             else {
-                dbCred.expirationDate = null;
+                dbCred.expirationDate = undefined;
             }
             dbCred.holder = session.holder || '';
             dbCred.credpid = session.principalCredentialId || '';

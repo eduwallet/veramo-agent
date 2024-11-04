@@ -127,6 +127,7 @@ This creates a credential offer in the agent database based on supplied credenti
       }
    },
    "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
+   "credentialMetadata": "object containing key-value pairs defining the metadata",
    "pinLength": number
 }
 ```
@@ -135,8 +136,14 @@ Please note the following:
 
 - the example displays two grant types. Usually only one of either is used (the front-end-issuer either has authenticated the user, or it has not). Which one is used depends on the configuration of the back-end-issuer for this specific instance
 - in the `authorization_code.issuer_state` field, the example shows the content `generate`. This is a special-case situation forcing the back-end-issuer to generate a new state value. Preferably the `issuer_state` was left undefined, but that may cause the entire `authorization_code` object to be removed by intermediate libraries. To prevent that, fill the `issuer_state` with the special `generate` value. The response will provide the actual state identifier used for this session
+- the `pre-authorized_code` field can be undefined, in which case a random code is generated. However, to prevent the grant containing an empty object which may be removed by the intermediate libraries, the value `generate` may be used to force a random state code, like for the `issuer_state` in the previous paragraph
 
-It returns a JSON object containing the following elements:
+The `credentialMetadata` attribute can contain settings about the credential. Currently the following are defined:
+
+- `expiration`: a number representing the seconds after issuance date for the credential to expire. For backwards compatibility, the credential data fields `_exp` and `_ttl` are also supported and serve the same purpose
+- `enableStatusLists`: a boolean field that enables or disables generating status list information. If not specified, but status lists are configured for an issuer, status list information is generated. Set this field explicitely to `false` to prevent generating status list information
+
+The call returns a JSON object containing the following elements:
 
 ```json
 {
