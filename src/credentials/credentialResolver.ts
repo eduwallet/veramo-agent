@@ -9,7 +9,7 @@ import { GenericCredential } from './GenericCredential';
 
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
-        debug(args);
+        debug('credentialResolver().()', args);
         const name = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
         if (issuer.hasCredentialConfiguration(name)) {
             // only support single credential names here

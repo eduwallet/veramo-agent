@@ -50,16 +50,17 @@ export class OpenBadgeCredential extends BaseCredential {
   }
 
   public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-    debug('OpenBadgeCredential', args);
+    debug('OpenBadgeCredential.generate()', args);
 
     const display = (this.issuer.metadata.display ?? [{}])[0];
     const credentialConfiguration = getCredentialConfiguration(this.issuer, 'OpenBadgeCredential');
     const credentialDisplay = credentialConfiguration.getFirstDisplay();
 
-    // TODO: replace the oblique and way to broard sphereon types with a far more
-    // specific Open Badge Credential type. It's useless to have a
-    // credentialDataSupplierInput that allows any:any fields.
-    const achievement = args.credentialDataSupplierInput.achievement;
+    const achievement = args?.credentialDataSupplierInput?.credential?.credentialSubject?.achievement ?? {};
+    debug('achievement', achievement);
+
+    const validFrom: string = args?.credentialDataSupplierInput?.credential?.validFrom;
+    const validUntil: string | undefined = args?.credentialDataSupplierInput?.credential?.validUntil;
 
     // TODO: Can the did ever be null? The sphereon types allow it, but it seems this
     // would not be a valid state in our actual badge and issuer setup. Probably
@@ -88,12 +89,19 @@ export class OpenBadgeCredential extends BaseCredential {
       },
       name: credentialDisplay.name,
       description: credentialDisplay.description,
-      issuanceDate: new Date().toISOString(),
+
+      // We add the new and the old, deprecated fields
+      validFrom,
+      issuanceDate: validFrom,
+      validUntil,
+      expirationDate: validUntil,
+
       credentialSubject: {
         type: badgeTypes,
         achievement
       },
     }
+    debug(`credential ${JSON.stringify(credential)}`);
 
     return {
       format: 'jwt_vc_json',
