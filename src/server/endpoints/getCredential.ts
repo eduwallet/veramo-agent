@@ -90,7 +90,7 @@ export function getCredential(
           const credentialResponse = await issuer.issueCredential(credentialRequest);
           await openObserverLog("none", "credential-response", credentialResponse.response);
           await issuer.storeCredential(credentialResponse.state);
-          return response.send(credentialResponse.response)
+          return response.json(credentialResponse.response)
         } catch (e) {
           console.error((e as Error).stack);
           await openObserverLog("none", "credential-error", "internal error");

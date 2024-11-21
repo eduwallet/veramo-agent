@@ -18,6 +18,6 @@ export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined
             data.token_endpoint = tokenpath ?? issuer.options.baseUrl + '/token';
         }
 
-        return response.send(data)
+        return response.json(data)
     })
 }

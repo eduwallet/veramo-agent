@@ -39,7 +39,7 @@ export function getIssueStatus(issuer:Issuer, checkPath:string) {
             ...(session.clientId && { clientId: session.clientId }),
             ...(issuerSession.uuid && { uuid: issuerSession.uuid })
           }
-          return response.send(JSON.stringify(authStatusBody))
+          return response.json(authStatusBody);
         } catch (e) {
           return sendErrorResponse(
             response,

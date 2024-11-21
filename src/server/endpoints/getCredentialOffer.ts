@@ -22,7 +22,7 @@ export function getCredentialOffer(issuer:Issuer, getPath:string) {
         session.lastUpdatedAt = +new Date()
         await issuer.vcIssuer.credentialOfferSessions.set(id, session);
         await openObserverLog(id, "credentialoffer-response", session.credentialOffer.credential_offer);
-        return response.send(JSON.stringify(session.credentialOffer.credential_offer))
+        return response.json(session.credentialOffer.credential_offer);
       } catch (e) {
         await openObserverLog("none", "credentialoffer-error", "internal error");
         return sendErrorResponse(

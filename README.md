@@ -224,12 +224,12 @@ is optional):
 }
 ```
 
-The endpoint returns a JSON array containing a `state` value indicating the result of the operation:
+The endpoint returns a JSON array containing a `status` value indicating the status of the revocation:
 
 ```
 REVOKED: credential was revoked (bit is set)
-WAS_REVOKED: credential was already set to revoked, status has not changed
+WAS_REVOKED: credential was already set to revoked, state has not changed
 UNREVOKED: credential was unrevoked (bit not set)
-WAS_UNREVOKED: credential was not revoked, status has not changed
+WAS_UNREVOKED: credential was not revoked, state has not changed
 UNKNOWN: status list cannot be determined, bit was never reserved, etc.
 ```

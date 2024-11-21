@@ -83,7 +83,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           id: offerData.id
         }
         await openObserverLog(offerData.id, "createoffer-response", resultResponse);
-        return response.send(resultResponse)
+        return response.json(resultResponse);
       } catch (e) {
         return sendErrorResponse(
           response,

@@ -20,6 +20,6 @@ export function getOpenidConfiguration(
             data.token_endpoint = tokenpath ?? issuer.options.baseUrl + '/token';
         }
 
-        return response.send(data)
+        return response.json(data)
     })
 }

@@ -20,7 +20,7 @@ export function listCredentials(issuer:Issuer, configPath:string) {
       passport.authenticate(issuer.name + '-admin', { session: false }),
       async (request: Request<ListCredentialsRequest>, response: Response) => {
         try {
-          return response.send(JSON.stringify(await issuer.listCredentials(request.body.primaryId, request.body.credential, request.body.issuanceDate, request.body.state, request.body.holder)));
+          return response.json(await issuer.listCredentials(request.body.primaryId, request.body.credential, request.body.issuanceDate, request.body.state, request.body.holder));
         } catch (e) {
           return sendErrorResponse(
             response,
