@@ -6,6 +6,7 @@ import { PID } from './PID';
 import { OpenBadgeCredential } from './OpenBadgeCredential';
 import { debug } from 'utils/logger';
 import { GenericCredential } from './GenericCredential';
+import { AcademicEnrollmentCredential } from './AcademicEnrollmentCredential';
 
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
@@ -17,6 +18,9 @@ export function credentialResolver(issuer:Issuer) {
                 case 'AcademicBaseCredential':
                     const abc = new AcademicBaseCredential(issuer);
                     return abc.generate(args);
+                case 'AcademicEnrollmentCredential':
+                    const aec = new AcademicEnrollmentCredential(issuer);
+                    return aec.generate(args);
                 case 'PID':
                     const pid = new PID(issuer);
                     return pid.generate(args);

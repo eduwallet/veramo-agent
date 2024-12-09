@@ -4,12 +4,16 @@ import { AcademicBaseCredential } from './AcademicBaseCredential';
 import { PID } from './PID';
 import { OpenBadgeCredential } from './OpenBadgeCredential';
 import { GenericCredential } from './GenericCredential';
+import { AcademicEnrollmentCredential } from './AcademicEnrollmentCredential';
 
 export function credentialDataChecker(issuer:Issuer, credentialId:string, claims: CredentialDataSupplierInput): boolean {
     switch (credentialId) {
         case 'AcademicBaseCredential':
             const abc = new AcademicBaseCredential(issuer);
             return abc.check(claims);
+        case 'AcademicEnrollmentCredential':
+            const aec = new AcademicEnrollmentCredential(issuer);
+            return aec.check(claims);
         case 'PID':
             const pid = new PID(issuer);
             return pid.check(claims);
