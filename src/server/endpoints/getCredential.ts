@@ -84,12 +84,14 @@ export function getCredential(
       path,
       validateCredentialRequest(issuer),
       async (request: Request, response: Response) => {
-        await openObserverLog("none", "credential-request", request.body);
         try {
           const credentialRequest = request.body as CredentialRequestV1_0_13
           const credentialResponse = await issuer.issueCredential(credentialRequest);
           await openObserverLog("none", "credential-response", credentialResponse.response);
           await issuer.storeCredential(credentialResponse.state);
+          await openObserverLog(credentialResponse.state, "credential-request", request.body);
+          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request", request.body);
+          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-response", credentialResponse.response, true);
           return response.json(credentialResponse.response)
         } catch (e) {
           console.error((e as Error).stack);

@@ -76,6 +76,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           issuer
         );
         await openObserverLog(offerData.id, "createoffer-request", request.body);
+        await issuer.storeRequestResponseData(offerData.id, 'create_offer-request', request.body);
 
         const resultResponse: ICreateCredentialOfferURIResponse = {
           uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + getOfferPath + '/' + offerData.id,
@@ -83,6 +84,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           id: offerData.id
         }
         await openObserverLog(offerData.id, "createoffer-response", resultResponse);
+        await issuer.storeRequestResponseData(offerData.id, 'create_offer-response', resultResponse);
         return response.json(resultResponse);
       } catch (e) {
         return sendErrorResponse(

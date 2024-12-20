@@ -19,6 +19,7 @@ import { getDbConnection } from "database";
 import { Credential, Claims } from "database/entities/Credential";
 import moment from "moment";
 import { credentialDataChecker } from "credentials/credentialDataChecker";
+import { jwtDecode } from 'jwt-decode'
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -60,6 +61,7 @@ interface IssuerSessionData extends StateType {
   principalCredentialId?: string;
   credentialId?: string;
   uuid?: string;
+  requestResponseData?:any;
 }
 
 
@@ -101,6 +103,23 @@ export class Issuer
         }
       }
       return retval;
+    }
+
+    public async storeRequestResponseData(id:string, phase:string, data:any, isJwt = false)
+    {
+        const session = await this.getSessionById(id);
+        if (session) {
+            if (!session.requestResponseData) {
+                session.requestResponseData = {};
+            }
+
+            if (isJwt) {
+                // decode the JWT to get the payload
+                data = jwtDecode(data);
+            }
+
+            session.requestResponseData[phase] = data;
+        }
     }
 
     public async storeCredential(id:string)

@@ -11,6 +11,7 @@ export function getCredentialOffer(issuer:Issuer, getPath:string) {
       try {
         const { id } = request.params
         await openObserverLog(id, "credentialoffer-request", request.params);
+        issuer.storeRequestResponseData(id, "credential_offer-request", request.params);
         const session = await issuer.vcIssuer.credentialOfferSessions.get(id)
         if (!session || !session.credentialOffer) {
           return sendErrorResponse(response, 404, {
@@ -22,6 +23,7 @@ export function getCredentialOffer(issuer:Issuer, getPath:string) {
         session.lastUpdatedAt = +new Date()
         await issuer.vcIssuer.credentialOfferSessions.set(id, session);
         await openObserverLog(id, "credentialoffer-response", session.credentialOffer.credential_offer);
+        issuer.storeRequestResponseData(id, "credential_offer-response", session.credentialOffer.credential_offer);
         return response.json(session.credentialOffer.credential_offer);
       } catch (e) {
         await openObserverLog("none", "credentialoffer-error", "internal error");

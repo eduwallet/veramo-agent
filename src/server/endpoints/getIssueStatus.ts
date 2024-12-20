@@ -37,7 +37,8 @@ export function getIssueStatus(issuer:Issuer, checkPath:string) {
             status: session.status,
             ...(session.error && { error: session.error }),
             ...(session.clientId && { clientId: session.clientId }),
-            ...(issuerSession.uuid && { uuid: issuerSession.uuid })
+            ...(issuerSession.uuid && { uuid: issuerSession.uuid }),
+            ...(issuerSession.requestResponseData && { requests: issuerSession.requestResponseData })
           }
           return response.json(authStatusBody);
         } catch (e) {
