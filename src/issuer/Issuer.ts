@@ -113,7 +113,7 @@ export class Issuer
                 session.requestResponseData = {};
             }
 
-            if (isJwt) {
+            if (isJwt && typeof(data) == 'string') {
                 // decode the JWT to get the payload
                 data = jwtDecode(data);
             }
