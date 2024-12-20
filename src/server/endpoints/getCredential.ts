@@ -9,6 +9,7 @@ import { getBaseUrl } from 'utils/getBaseUrl';
 import { verifyJWT } from 'did-jwt';
 import { resolver } from 'resolver';
 import { openObserverLog } from 'utils/openObserverLog';
+import { jwtDecode } from 'jwt-decode'
 
 function validateCredentialRequest(issuer:Issuer) {
   return async function (request:Request, response:Response, next:NextFunction) {
@@ -91,7 +92,12 @@ export function getCredential(
           await issuer.storeCredential(credentialResponse.state);
           await openObserverLog(credentialResponse.state, "credential-request", request.body);
           await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request", request.body);
-          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request_proof", request.body.proof, true);
+          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request_prooftoken", request.body.proof, true);
+          try {
+            const proof = jwtDecode(request.body.proof);
+            await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request_proof", (proof as any).jwt, true);
+          }
+          catch (e) {}
           await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-response", credentialResponse.response);
           await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-response_jwt", credentialResponse.response.credential, true);
           return response.json(credentialResponse.response)
