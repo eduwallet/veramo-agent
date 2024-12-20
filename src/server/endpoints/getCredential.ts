@@ -91,7 +91,9 @@ export function getCredential(
           await issuer.storeCredential(credentialResponse.state);
           await openObserverLog(credentialResponse.state, "credential-request", request.body);
           await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request", request.body);
-          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-response", credentialResponse.response, true);
+          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-request_proof", request.body.proof, true);
+          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-response", credentialResponse.response);
+          await issuer.storeRequestResponseData(credentialResponse.state, "get-credential-response_jwt", credentialResponse.response.credential, true);
           return response.json(credentialResponse.response)
         } catch (e) {
           console.error((e as Error).stack);
