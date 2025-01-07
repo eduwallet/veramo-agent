@@ -55,9 +55,7 @@ services:
       - POSTGRES_PASSWORD=this-is-not-secure
       - POSTGRES_DB=postgres
     volumes:
-      - type: bind
-        source: /tmp/database
-        target: /var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - type: bind
         source: ./scripts/dbinit
         target: /docker-entrypoint-initdb.d
@@ -79,9 +77,7 @@ services:
     ports:
       - 5080:5080
     volumes:
-      - type: bind
-        source: /tmp/log/
-        target: /data
+      - openobserve_logs:/data
     environment:
       - ZO_DATA_DIR=/data
       - ZO_ROOT_USER_EMAIL=info@muisit.nl
@@ -95,3 +91,9 @@ networks:
     external: true
   eduwallet_agent:
     driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  openobserve_logs:
+    driver: local
