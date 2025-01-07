@@ -16,7 +16,7 @@ import {
     getIssueStatus,
     getMetadata,
     getDidSpec,
-    pushedAuthorization,
+    // pushedAuthorization,
     getOpenidConfiguration,
     getOAuthConfiguration,
     listCredentials,
