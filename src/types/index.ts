@@ -80,6 +80,7 @@ export interface IEWIssuerOptsImportArgs {
     clientSecret?:string;
     adminToken?:string;
     authorizationEndpoint?:string;
+    authorizationChallengeEndpoint?:string;
     tokenEndpoint?:string;
     statusLists?:StatusListsOption;
 }

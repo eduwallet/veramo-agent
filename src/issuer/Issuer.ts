@@ -306,6 +306,8 @@ export class Issuer
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
 
+        metadata.authorization_challenge_endpoint = this.options.baseUrl + '/authorization-challenge';
+
         return metadata;
     }
 
