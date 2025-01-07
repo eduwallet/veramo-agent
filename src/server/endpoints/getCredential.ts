@@ -9,7 +9,6 @@ import { getBaseUrl } from 'utils/getBaseUrl';
 import { verifyJWT } from 'did-jwt';
 import { resolver } from 'resolver';
 import { openObserverLog } from 'utils/openObserverLog';
-import { jwtDecode } from 'jwt-decode'
 
 function validateCredentialRequest(issuer:Issuer) {
   return async function (request:Request, response:Response, next:NextFunction) {

@@ -19,6 +19,7 @@ import {
     // pushedAuthorization,
     getOpenidConfiguration,
     getOAuthConfiguration,
+    getOid4VpAuthorizationRequest,
     listCredentials,
     revokeCredential,
   } from './endpoints'
@@ -86,6 +87,9 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
     var tokenPath = tokenEndpointOpts.tokenPath ? (issuer.options.baseUrl + tokenEndpointOpts.tokenPath) : undefined;
     getOpenidConfiguration(issuer, tokenPath);
     getOAuthConfiguration(issuer, tokenPath);
+
+    // Fake Authorization Server endpoint to generate OID4VP authorization request
+    getOid4VpAuthorizationRequest(issuer, '/api/oid4vp-authorization-request');
   
     // OpenID4VC endpoint to retrieve a specific credential
     getCredential(issuer, tokenEndpointOpts);
