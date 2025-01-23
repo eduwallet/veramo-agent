@@ -7,6 +7,7 @@ import { getOrCreateDIDs } from "utils/did";
 import { initialiseIssuerStore } from 'issuer/Store';
 import { initialiseCredentialConfigurationStore } from 'credentials/Store';
 import { openObserverLog } from 'utils/openObserverLog';
+import { initialiseContextConfigurationStore } from 'contexts/Store';
 
 export var _agent:TAgent<TAgentTypes>|null = null;
 export function getAgent():TAgent<TAgentTypes> { 
@@ -22,6 +23,9 @@ async function main() {
 
     debug('Loading and/or creating DIDs');
     await getOrCreateDIDs().catch(e => console.error(e))
+
+    debug('Loading contexts');
+    await initialiseContextConfigurationStore().catch(e => console.error(e))
 
     debug('Loading credential configurations');
     await initialiseCredentialConfigurationStore();

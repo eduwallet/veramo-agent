@@ -21,6 +21,7 @@ export function credentialDataChecker(issuer:Issuer, credentialId:string, claims
             const obc = new OpenBadgeCredential(issuer);
             return obc.check(claims);
         case 'GenericCredential':
+        case 'GenericCredentialLD':
             const genericCredential = new GenericCredential(issuer);
             return genericCredential.check(claims);
         default:

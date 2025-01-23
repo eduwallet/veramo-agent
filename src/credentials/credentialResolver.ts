@@ -28,6 +28,7 @@ export function credentialResolver(issuer:Issuer) {
                     const openBadgeCredential = new OpenBadgeCredential(issuer);
                     return openBadgeCredential.generate(args);
                 case 'GenericCredential':
+                case 'GenericCredentialLD':
                     const genericCredential = new GenericCredential(issuer);
                     return genericCredential.generate(args);
             }

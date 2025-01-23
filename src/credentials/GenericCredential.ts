@@ -31,7 +31,7 @@ export class GenericCredential extends BaseCredential
         };
 
         return await this.handleAttributes(args, types, '', ({
-            format: 'jwt_vc_json',
+            format: credentialConfiguration!.format,
             credential: credential
         } as unknown) as CredentialDataSupplierResult);
     }
