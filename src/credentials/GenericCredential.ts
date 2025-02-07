@@ -9,7 +9,7 @@ export class GenericCredential extends BaseCredential
 {
     public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
         const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
-        const display = (this.issuer.metadata.display ?? [{}])[0];
+        const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
 
         const credentialId = types[0];
         const credentialConfiguration = this.issuer.getCredentialConfiguration(credentialId);
@@ -29,6 +29,11 @@ export class GenericCredential extends BaseCredential
             "issuanceDate": moment().toISOString(),
             "credentialSubject": args.credentialDataSupplierInput
         };
+
+        if (credentialConfiguration!.format == 'ldp_vc') {
+            credential['@context'] = ["https://www.w3.org/2018/credentials/v1"].concat(this.issuer.getCredentialContext(credentialId));
+            
+        }
 
         return await this.handleAttributes(args, types, '', ({
             format: credentialConfiguration!.format,

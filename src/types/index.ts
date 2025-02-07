@@ -1,5 +1,5 @@
 import {IDIDManagerCreateArgs, IIdentifier} from "@veramo/core";
-import {CredentialSupplierConfig} from "@sphereon/oid4vci-common"
+import {CredentialIssuerMetadataOpts, CredentialSupplierConfig, IssuerMetadata, IssuerMetadataV1_0_13} from "@sphereon/oid4vci-common"
 import { IIssuerOptsImportArgs } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
 
 export interface StringKeyedObject {
@@ -82,4 +82,12 @@ export interface IEWIssuerOptsImportArgs {
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
     statusLists?:StatusListsOption;
+}
+
+
+export interface MetadataStorage {
+    correlationId: string // The credential Issuer to store the metadata for
+    overwriteExisting?: boolean // Whether to overwrite any existing metadata for a credential issuer. Defaults to true
+    "@context"?: string[];
+    metadata: IssuerMetadataV1_0_13;
 }

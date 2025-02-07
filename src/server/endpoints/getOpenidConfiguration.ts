@@ -7,7 +7,7 @@ export function getOpenidConfiguration(
     const path = `/.well-known/openid-configuration`
     issuer.router!.get(path, (request: Request, response: Response) => {
         var data:any = {
-            "issuer": issuer.metadata.credential_issuer
+            "issuer": issuer.metadata.metadata.credential_issuer
         };
 
         if (issuer.options.authorizationEndpoint) {

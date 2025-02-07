@@ -21,7 +21,7 @@ export async function createCredentialOffer(
     const credentialOfferPayload: CredentialOfferPayloadV1_0_13 = {
       ...(grants && { grants }),
       ...(credentials && { credential_configuration_ids: credentials }),
-      credential_issuer: issuer.metadata.credential_issuer,
+      credential_issuer: issuer.metadata.metadata.credential_issuer,
     } as CredentialOfferPayloadV1_0_13
 
     // If we use Authorized Code flow, pass the OAuth2 client_id in the offer
@@ -35,7 +35,7 @@ export async function createCredentialOffer(
             // EBSI stipulates that the credential_issuer is to be taken as client-id
             // Although the wallet can decide on this client_id itself, we pass it
             // along as out-of-spec data anyway
-            credentialOfferPayload.client_id = issuer.metadata.credential_issuer;
+            credentialOfferPayload.client_id = issuer.metadata.metadata.credential_issuer;
         }
     }
 

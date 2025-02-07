@@ -18,11 +18,17 @@ import { DIDMethods } from './types';
 import { getDbConnection } from './database'
 import { createDidProviders } from "./utils/did";
 import { resolver } from './resolver';
+import { getContextConfigurationStore } from 'contexts/Store'
 
 export async function setupPlugins(): Promise<IAgentPlugin[]>
 {
-    const dbConnection = await getDbConnection()
-    const privateKeyStore: PrivateKeyStore = new PrivateKeyStore(dbConnection)
+    const dbConnection = await getDbConnection();
+    const privateKeyStore: PrivateKeyStore = new PrivateKeyStore(dbConnection);
+    const contextStore = getContextConfigurationStore();
+    var defaultContexts = new Map(LdDefaultContexts);
+    for (const key of Object.keys(contextStore)) {
+        defaultContexts.set(contextStore[key].fullPath!, contextStore[key]['document']);
+    }
 
     debug("creating list of plugins");
     return [
@@ -44,7 +50,7 @@ export async function setupPlugins(): Promise<IAgentPlugin[]>
         }), // Veramo
         new CredentialPlugin(), // Veramo
         new CredentialHandlerLDLocal({
-            contextMaps: [LdDefaultContexts],
+            contextMaps: [defaultContexts],
             suites: [
                 new SphereonEd25519Signature2018(),
                 new SphereonEd25519Signature2020(),

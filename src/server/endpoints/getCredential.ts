@@ -71,16 +71,9 @@ export function getCredential(
     issuer:Issuer,
     opts?: ITokenEndpointOpts & ISingleEndpointOpts,
   ) {
-    const endpoint = issuer.metadata.credential_endpoint
+    const endpoint = issuer.metadata.metadata.credential_endpoint
     const baseUrl = getBaseUrl(issuer.options.baseUrl)
-    let path: string
-    if (!endpoint) {
-      path = `/credentials`
-      issuer.metadata.credential_endpoint = `${baseUrl}${path}`
-    } else {
-      path = determinePath(baseUrl, endpoint, { stripBasePath: true, skipBaseUrlCheck: false })
-    }
-    path = determinePath(baseUrl, path, { stripBasePath: true })
+    let path = determinePath(baseUrl, endpoint, { stripBasePath: true, skipBaseUrlCheck: false })
     issuer.router!.post(
       path,
       validateCredentialRequest(issuer),

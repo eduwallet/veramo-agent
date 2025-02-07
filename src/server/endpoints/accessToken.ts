@@ -18,8 +18,8 @@ export function accessToken(
     issuer: Issuer,
     opts?: ITokenEndpointOpts & ISingleEndpointOpts,
   ) {
-    const tokenEndpoint = issuer.metadata.token_endpoint
-    const externalAS = issuer.metadata.authorization_servers
+    const tokenEndpoint = issuer.metadata.metadata.token_endpoint
+    const externalAS = issuer.metadata.metadata.authorization_servers
     if (externalAS) {
       debug(`[OID4VCI] External Authorization Server ${tokenEndpoint} is being used. Not enabling issuer token endpoint`)
       return;

@@ -18,14 +18,14 @@ export function getAgent():TAgent<TAgentTypes> {
 }
 
 async function main() {
+    debug('Loading contexts');
+    await initialiseContextConfigurationStore().catch(e => console.error(e))
+
     debug('Starting main agent');
     _agent = createAgent<TAgentTypes>({ plugins: await setupPlugins() }) as TAgent<TAgentTypes>;
 
     debug('Loading and/or creating DIDs');
     await getOrCreateDIDs().catch(e => console.error(e))
-
-    debug('Loading contexts');
-    await initialiseContextConfigurationStore().catch(e => console.error(e))
 
     debug('Loading credential configurations');
     await initialiseCredentialConfigurationStore();

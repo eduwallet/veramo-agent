@@ -28,10 +28,11 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
     /*
      * The issuer.options is the object containing the configured issuer options from the conf
      * directory.
-     * The issuer.metadata is the configured issuer metadata from the conf directory
+     * The issuer.metadata is the configured issuer metadata from the conf directory. It contains
+     * a further metadata field that contains the metadata 'following the specs'
      */
     debug("initializing rest api using ", issuer.options);
-    const metadata = issuer.metadata;
+    const metadata = issuer.metadata.metadata;
 
     var tokenEndpointOpts:ITokenEndpointOpts = {
         //enabled: true,

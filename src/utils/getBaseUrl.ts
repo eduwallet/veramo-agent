@@ -4,7 +4,7 @@ import { trimEnd } from '@sphereon/oid4vci-common/dist/functions/HttpUtils'
 export function getBaseUrl(url?: URL | string | undefined) {
     let baseUrl = url
     if (!baseUrl) {
-      const envUrl = env('BASE_URL', process?.env?.ENV_PREFIX)
+      const envUrl = env('BASEURL', process?.env?.ENV_PREFIX)
       if (envUrl && envUrl.length > 0) {
         baseUrl = new URL(envUrl)
       }

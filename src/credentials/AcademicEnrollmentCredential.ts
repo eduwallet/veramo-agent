@@ -10,7 +10,7 @@ export class AcademicEnrollmentCredential extends BaseCredential
 {
     public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
         const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
-        const display = (this.issuer.metadata.display ?? [{}])[0];
+        const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
 
         const credentialId = types[0];
         const credentialConfiguration = this.issuer.getCredentialConfiguration(credentialId);

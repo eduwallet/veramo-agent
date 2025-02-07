@@ -1,8 +1,9 @@
 import Debug from 'debug';
 import { v4 } from 'uuid'
-import { IEWIssuerOptsImportArgs, StatusList, StringKeyedObject } from "types";
-import { IssuerMetadataV1_0_13, CredentialConfigurationSupportedV1_0_13, Alg, StateType,
-  CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13
+import { IEWIssuerOptsImportArgs, MetadataStorage, StatusList, StringKeyedObject } from "types";
+import { CredentialConfigurationSupportedV1_0_13, Alg, StateType,
+  CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13,
+  IssuerMetadata
  } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
@@ -20,6 +21,7 @@ import { Credential, Claims } from "database/entities/Credential";
 import moment from "moment";
 import { credentialDataChecker } from "credentials/credentialDataChecker";
 import { jwtDecode } from 'jwt-decode'
+import { getContextConfigurationStore } from 'contexts/Store';
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -76,7 +78,7 @@ export enum StatusListRevocationState {
 export class Issuer
 {
     public name:string;
-    public metadata:IssuerMetadataV1_0_13;
+    public metadata:MetadataStorage;
     public options:IEWIssuerOptsImportArgs;
     public did:IIdentifier|null;
     public keyRef:string;
@@ -84,7 +86,7 @@ export class Issuer
     public vcIssuer:VcIssuer<DIDDocument>;
     public sessionData:MemoryStates<IssuerSessionData>;
 
-    public constructor(_options:IEWIssuerOptsImportArgs, _metadata: IssuerMetadataV1_0_13) {
+    public constructor(_options:IEWIssuerOptsImportArgs, _metadata: MetadataStorage) {
         this.options = _options;
         this.metadata = _metadata;
         this.keyRef = '';
@@ -212,7 +214,7 @@ export class Issuer
         }
         const jwtVerifyOpts: JWTVerifyOptions = {
           resolver,
-          audience: this.metadata.credential_issuer,
+          audience: this.metadata.metadata.credential_issuer as string,
         }
         builder.withIssuerMetadata(this.generateMetadata())
             .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, { agent: getAgent() }))
@@ -236,7 +238,7 @@ export class Issuer
       const services = this.did!.keys.map((key) => ({
         id: this.did!.did + '#' + key.kid,
         type: "OID4VCI",
-        serviceEndpoint: this.metadata.credential_issuer
+        serviceEndpoint: this.metadata.metadata.credential_issuer
       }));
     
       // ed25519 keys can also be converted to x25519 for key agreement
@@ -280,7 +282,7 @@ export class Issuer
       for (const id of names) {
           // just in case we forgot to filter out the VerifiableCredential type
           if (id != 'VerifiableCredential') {
-              if (!this.metadata.credential_configurations_supported[id]) {
+              if (!this.metadata.metadata.credential_configurations_supported[id]) {
                   return false;
               }
           }
@@ -295,10 +297,30 @@ export class Issuer
         return null;
     }
 
+    public getCredentialContext(id:string): string[]
+    {
+        if (this.hasCredentialConfiguration([id])) {
+            // return the @context setting on the metadata specification, assuming this is applicable
+            // to all credentials defined in the set
+            if (this.metadata['@context']) {
+                const contextStore = getContextConfigurationStore();
+                return this.metadata['@context'].map((item) => {
+                    console.log('checking for context ', item);
+                    if (contextStore[item]) {
+                        return contextStore[item].fullPath!;
+                    }
+                    return null;
+                }).filter((i) => i !== null);
+            }
+        }
+        return [];
+    }
+
+
     public generateMetadata() {
-        var metadata = this.metadata;
+        var metadata:IssuerMetadata = this.metadata.metadata as IssuerMetadata;
         var credentials:Record<string, CredentialConfigurationSupportedV1_0_13> = {};
-        for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
+        for (const id of Object.keys(this.metadata.metadata.credential_configurations_supported)) {
             const credentialConfiguration = this.decorateCredentialConfiguration(id);
             credentials[id] = credentialConfiguration;
         }
@@ -311,8 +333,8 @@ export class Issuer
 
     private decorateCredentialConfiguration(id:string):CredentialConfigurationSupportedV1_0_13 {
         const store = getCredentialConfigurationStore();
-        if (this.metadata.credential_configurations_supported[id]) {
-            return Object.assign({}, store[id] ?? {}, this.metadata.credential_configurations_supported[id]) as CredentialConfigurationSupportedV1_0_13;
+        if (this.metadata.metadata.credential_configurations_supported[id]) {
+            return Object.assign({}, store[id] ?? {}, this.metadata.metadata.credential_configurations_supported[id]) as CredentialConfigurationSupportedV1_0_13;
         }
         else if(store[id]) {
           return store[id] as CredentialConfigurationSupportedV1_0_13;

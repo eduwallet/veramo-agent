@@ -48,7 +48,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
         }
 
         debug('credentialConfigIds', credentialConfigIds);
-        debug('issuer', issuer.metadata.credential_configurations_supported);
+        debug('issuer', issuer.metadata.metadata.credential_configurations_supported);
 
         if (!issuer.hasCredentialConfiguration(credentialConfigIds)) {
           return sendErrorResponse(response, 404, {

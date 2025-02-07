@@ -7,7 +7,7 @@ import { IMetadataImportArgs} from "@sphereon/ssi-sdk.oid4vci-issuer-store";
 import { IssuerMetadataV1_0_13 } from '@sphereon/oid4vci-common';
 import { METADATA_PATH, ISSUER_PATH } from "environment";
 import { loadJsonFiles } from "utils/generic";
-import { IEWIssuerOptsImportArgs } from "types";
+import { IEWIssuerOptsImportArgs, MetadataStorage } from "types";
 import { Issuer } from "./Issuer";
 
 export interface IssuerStore {
@@ -20,7 +20,7 @@ export const getIssuerStore = ():IssuerStore => _issuerStore;
 export async function initialiseIssuerStore() {
     console.log('initialising issuer store, reading json files');
     const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: ISSUER_PATH});
-    const metadatas = loadJsonFiles<IMetadataImportArgs>({path: METADATA_PATH});
+    const metadatas = loadJsonFiles<MetadataStorage>({path: METADATA_PATH});
 
     console.log('looping of ', issuerOptionsObjects.asArray.length,' objects');
     for(const conf of issuerOptionsObjects.asArray) {
@@ -33,11 +33,11 @@ export async function initialiseIssuerStore() {
     console.log('end of issuer store initialisation');
 }
 
-function findMetaDataForCorrelation(correlationId:string, metadatas: IMetadataImportArgs[]): IssuerMetadataV1_0_13
+function findMetaDataForCorrelation(correlationId:string, metadatas: MetadataStorage[]): MetadataStorage
 {
     for(const md of metadatas) {
         if (md.correlationId == correlationId) {
-            return md.metadata as IssuerMetadataV1_0_13;
+            return md;
         }
     }
     throw new Error("Unable to find metadata belonging to correlation " + correlationId);

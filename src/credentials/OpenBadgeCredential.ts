@@ -52,7 +52,7 @@ export class OpenBadgeCredential extends BaseCredential {
   public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
     debug('OpenBadgeCredential.generate()', args);
 
-    const display = (this.issuer.metadata.display ?? [{}])[0];
+    const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
     const credentialConfiguration = getCredentialConfiguration(this.issuer, 'OpenBadgeCredential');
     const credentialDisplay = credentialConfiguration.getFirstDisplay();
 
