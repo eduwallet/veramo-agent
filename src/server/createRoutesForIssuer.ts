@@ -48,12 +48,6 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
         tokenEndpointOpts.tokenEndpointDisabled = true;
     }
 
-    const tokenOpts = {
-        iss: metadata.credential_issuer,
-        didOpts: issuer.options.options.issuerOpts.didOpts,
-    };
-
-    issuer.keyRef = await getAccessTokenKeyRef(tokenOpts, { agent: getAgent() });
     tokenEndpointOpts.accessTokenSignerCallback = getAccessTokenSignerCallback(
         {
           iss: issuer.did!.did,

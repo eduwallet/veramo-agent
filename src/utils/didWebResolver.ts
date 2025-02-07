@@ -1,7 +1,8 @@
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
 import {getResolver} from "web-did-resolver";
-import { getIssuerStore } from 'issuer/Store';
-import { DIDDocument } from '@veramo/core';
+import { getIdentifier } from './did';
+import { didOptConfigs } from 'environment';
+import { toDidDocument } from '@sphereon/ssi-sdk-ext.did-utils';
 
 const resolveDidWeb = async (
     didUrl: string,
@@ -10,17 +11,17 @@ const resolveDidWeb = async (
     options: DIDResolutionOptions,
   ): Promise<DIDResolutionResult> => {
 
-    // to prevent complicated setups, see if this did is one of the issuer dids
+    // to prevent complicated setups, see if this did is one of the dids we have configured
     try {
-        const store = getIssuerStore();
-        for (const issuerKey of Object.keys(store)) {
-            const issuer = store[issuerKey];
-            if (issuer.did?.did == didUrl) {
+        for (const opts of didOptConfigs.asArray) {
+            const did = opts.did;
+            let identifier = did ? await getIdentifier(did) : undefined;
+            if (identifier?.did == didUrl) {
                 return {
-                    didDocument: issuer.getDidDoc(),
+                    didDocument: toDidDocument(identifier)!,
                     didDocumentMetadata: {},
-                    didResolutionMetadata: { },
-                  }
+                    didResolutionMetadata: { }
+                };
             }
         }
     }

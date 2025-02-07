@@ -83,19 +83,27 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
 export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
     const result = didOptConfigs.asArray.map(async opts => {
         debug(`DID config found for: ${opts.did}`)
-        const did = opts.did
-        let identifier = did ? await getIdentifier(did) : undefined
+        let identifier;
+        if (opts.did) {
+            identifier = await getIdentifier(opts.did);
+        }
+        else if(opts.alias) {
+            identifier = await getAgent().didManagerGetByAlias({alias:opts.alias});
+        }
 
         if (identifier) {
-            console.log(`Identifier exists for DID ${did}`)
+            console.log(`Identifier exists for DID ${opts.did}`)
             console.log(`${JSON.stringify(identifier)}`)
             identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
         } else {
-            console.log(`No identifier for DID ${did} exists yet. Will create the DID...`)
+            console.log(`No identifier for DID ${opts.did} exists yet. Will create the DID...`)
 
             let args = opts.createArgs
             if (!args) {
                 args = {options: {}}
+            }
+            if (opts.alias) {
+                args.alias = opts.alias;
             }
 
             // @ts-ignore
@@ -112,11 +120,11 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
             identifier = await getAgent().didManagerCreate(args)
             identifier!.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
 
-            console.log(`Identifier created for DID ${did}`)
+            console.log(`Identifier created for DID ${opts.did}`)
             console.log(`${JSON.stringify(identifier, null, 2)}`)
         }
 
-        return {...opts, did, identifier} as IDIDResult
+        return {...opts, did: identifier.did, identifier} as IDIDResult
     });
     return Promise.all(result)
 }

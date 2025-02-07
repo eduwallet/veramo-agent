@@ -15,6 +15,7 @@ import { resolver } from 'resolver';
 import { getAgent } from 'agent';
 import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
+import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
 import { getCredentialConfigurationStore } from "credentials/Store";
 import { getDbConnection } from "database";
 import { Credential, Claims } from "database/entities/Credential";
@@ -199,12 +200,19 @@ export class Issuer
 
     public async setDid()
     {
-      if (typeof this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier == 'string') {
+      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
         this.did = await getAgent().didManagerGet({did: this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier});
       }
-      else {
-        this.did = this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier;
+      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
+        this.did = await getAgent().didManagerGetByAlias({alias: this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias});
       }
+
+      if (!this.did) {
+        throw new Error('Missing issuer did configuration');
+      }
+
+      const key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
+      this.keyRef = key?.kid
     }
 
     private buildVcIssuer() {

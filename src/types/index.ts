@@ -21,6 +21,7 @@ export enum DIDMethods {
 
 export interface IDIDOpts {
     did?: string
+    alias?: string;
     did_vm?: string
     createArgs?: IDIDManagerCreateArgs
     importArgs?: IImportX509DIDArg
@@ -71,8 +72,28 @@ interface StatusListsOption {
     [x:string]: StatusListOption;
 }
 
+  
+interface IIdentifierOpts {
+    identifier?: string
+    alias?: string;
+}
+
+interface IDIDOptions {
+    identifierOpts: IIdentifierOpts
+}
+
+interface IIssuerOptions {
+    didOpts: IDIDOptions
+}
+
+interface IIssuerOptsPersistArgs {
+    correlationId: string // The credential Issuer to store the metadata for
+    overwriteExisting?: boolean // Whether to overwrite any existing metadata for a credential issuer. Defaults to true
+    issuerOpts: IIssuerOptions
+}  
+
 export interface IEWIssuerOptsImportArgs {
-    options: IIssuerOptsImportArgs;
+    options: IIssuerOptsPersistArgs;
     baseUrl: string
     //credentialSupplier: string
     enableCreateCredentials: boolean
