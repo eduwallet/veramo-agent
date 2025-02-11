@@ -23,6 +23,7 @@ import moment from "moment";
 import { credentialDataChecker } from "credentials/credentialDataChecker";
 import { jwtDecode } from 'jwt-decode'
 import { getContextConfigurationStore } from 'contexts/Store';
+import { getIdentifier, getIdentifierByAlias } from 'utils/did';
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -81,7 +82,7 @@ export class Issuer
     public name:string;
     public metadata:MetadataStorage;
     public options:IEWIssuerOptsImportArgs;
-    public did:IIdentifier|null;
+    public did?:IIdentifier;
     public keyRef:string;
     public router:Router|undefined;
     public vcIssuer:VcIssuer<DIDDocument>;
@@ -91,7 +92,6 @@ export class Issuer
         this.options = _options;
         this.metadata = _metadata;
         this.keyRef = '';
-        this.did = null;
         this.name = _options.options.correlationId;
         this.vcIssuer = this.buildVcIssuer();
         this.sessionData = new MemoryStates<IssuerSessionData>();
@@ -201,10 +201,10 @@ export class Issuer
     public async setDid()
     {
       if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
-        this.did = await getAgent().didManagerGet({did: this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier});
+        this.did = await getIdentifier(this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier);
       }
-      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
-        this.did = await getAgent().didManagerGetByAlias({alias: this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias});
+      if (!this.did && this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
+        this.did = await getIdentifierByAlias(this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias);
       }
 
       if (!this.did) {

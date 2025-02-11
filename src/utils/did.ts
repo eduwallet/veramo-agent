@@ -47,6 +47,20 @@ export async function getIdentifier(did: string): Promise<IIdentifier | undefine
     })
 }
 
+export async function getIdentifierByAlias(alias: string): Promise<IIdentifier | undefined> {
+    const tokens = alias.split(':');
+    let provider = 'did:web';
+    if (tokens.length > 2) {
+        provider = tokens[0] + ':' + tokens[1];
+        tokens.splice(0, 2);
+        alias = tokens.join(':');
+    }
+    return await getAgent().didManagerGetByAlias({alias, provider}).catch((e:any) => {
+        console.error(e)
+        return undefined
+    })
+}
+
 export async function getDefaultDID(): Promise<string | undefined> {
     return getAgent().didManagerFind().then((ids:any) => {
         if (!ids || ids.length === 0) {
@@ -87,8 +101,8 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
         if (opts.did) {
             identifier = await getIdentifier(opts.did);
         }
-        else if(opts.alias) {
-            identifier = await getAgent().didManagerGetByAlias({alias:opts.alias});
+        if(!identifier && opts.alias) {
+            identifier = await getIdentifierByAlias(opts.alias);
         }
 
         if (identifier) {
@@ -120,7 +134,7 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
             identifier = await getAgent().didManagerCreate(args)
             identifier!.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
 
-            console.log(`Identifier created for DID ${opts.did}`)
+            console.log(`Identifier created for DID ${identifier.did}`)
             console.log(`${JSON.stringify(identifier, null, 2)}`)
         }
 

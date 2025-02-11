@@ -21,11 +21,11 @@ You can run a local dockerised Postgres database using the following command:
 
 ```bash
 docker run -t -i \
-   --env-file .env
-   -v ./database:/var/lib/postgresql/data \
-   -v <veramo-agent-path>/scripts/dbinit:/docker-entrypoint-initdb.d \
-   -p 5432:5432 \
-   postgres:16-bookworm
+    --env-file .env
+    -v ./database:/var/lib/postgresql/data \
+    -v <veramo-agent-path>/scripts/dbinit:/docker-entrypoint-initdb.d \
+    -p 5432:5432 \
+    postgres:16-bookworm
 ```
 
 Make sure to replace the `POSTGRES_PASSWORD` and the `<veramo-agent-path>` with proper values and in general match the vales with the `.env` or `.env.local` configuration.
@@ -57,6 +57,124 @@ This *won't* install packages, so `yarn install` is still needed. The app
 directory is mounted read-only in docker. This way, we can inspect dependencies
 in intellisense/lsp while avoiding node_modules to get files and dirs that we
 cannot remove on the host.
+
+## Configuration
+
+Configuration for the Issuer services is done inside the `conf/` directory. There are *5* entities that can be configured:
+
+- `contexts`: linked data proof (`json-ld`) contexts that are served by this issuer.
+- `credentials`: credential configuration metadata for credential types that are reused between issuers
+- `dids`: issuer key configuration, allowing reuse of keys between issuers
+- `metadata`: issuer metadata, listing the issuer endpoints and the credential configuration
+- `issuer`: issuer configuration, connecting the key data, metadata configuration and statuslist information
+
+### Contexts
+
+The `json-ld` contexts are defined in the `conf/contexts/` directory. Each file there defines a context that is served at the issuer agent root. The configuration looks as follows:
+
+```json
+{
+    "basePath": <base path from the issuer root where to serve this configuration>,
+    "document": <context document content, usually starting with an "@context" attribute>
+}
+```
+
+The issuer agent reads all files in the configuration directory and serves the context documents at the indicated path. The context documents are also preloaded in the default context lists.
+
+### Credentials
+
+The credential configuration as defined by the OpenID4VCI spec as part of the `credential_configurations_supported` array. This configuration has to follow the actual credential implementation in the source code, to avoid issues with supported formats and claims. 
+
+### Dids
+
+The key material configuration is stored in the `conf/dids/` directory. Each entry looks as follows:
+
+```json
+{
+    "did": <(optional) full did name, only usable for did:web keys where the key name is known in advance>,
+    "alias": <(optional) string alias that can be used with issuers>,
+    "createArgs": {
+        "provider": <key provider, like did:web or did:key>,
+        "options": {
+            "kid": "auth-key",
+            "keyType": <key type, like Ed25519>,
+            "keys": [{"type": <key type>, "isController": true }]
+        }
+    }
+}
+```
+
+If the key is not found at start-up, it is created.
+
+Please note that the alias needs to contain the key provider as well, because the alias search of veramo requires a provider. To work around this, the implemented alias search will try to extract the key provider from the start of the alias. If not found, the default provider as configured in the `plugins.ts` script will be used. A correct example alias would be: `did:key:mbob` for a non-default-provider `did:key` identifier.
+
+### Metadata
+
+The metadata is configured separately from the issuer configuration for historic reasons. To correlate the right metadata with the right issuer configuration, the metadata configuration contains a `correlationId` attribute at its top level:
+
+```json
+{
+    "correlationId": <string used to correlate issuer and metadata>,
+    "overwriteExisting": <boolean, defaults to true, not implemented>,
+    "@context": <array of context strings, not implemented>,
+    "metadata": <issuer metadata configuration to be served by the issuer>
+}
+```
+
+To allow credential configuration reuse, the metadata configuration `credential_configurations_supported` attribute is parsed when the metadata is loaded. Each credential defined there is extended with any credential data defined for the same identifier in the `conf/credentials/` configuration. In that way, the basic credential display information can be centralized, but branding information can be specified in the issuer metadata configuration.
+
+### Issuers
+
+The issuer configurations are specified in the `conf/issuer/` directory. Each entry there will instantiate an issuer service. The configuration is as follows:
+
+```json
+{
+    "options": <issuer options as defined in the IIssuerOptsPersistArgs interface>,
+    "baseUrl": <base path for this issuer service>,
+    "enableCreateCredentials": <boolean, not implemented>,
+    "clientId": <optional string client id to be used for authorization code flow>,
+    "clientSecret": <optional string client secret to be used for authorization code flow>,
+    "adminToken": <string bearer token to be passed by front end agents to create credential offers>,
+    "authorizationEndpoint": <optional authorization server to be used for authorized code flow>,
+    "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
+    "statusLists": <optional status list specifications>
+}
+```
+
+The `options` attribute contains a `correlationId` attribute that matches the same attribute in the metadata configurations. This `options` attribute also contains an `issuerOpts` attribute that has a `didOpts` attribute with an `identifierOpts` attribute that can contain an `identifier` or `alias` attribute that links to the predefined keys. This deep link has historic reasons.
+
+```json
+{
+    ...
+    "options": {
+        "correlationId": <correlationId matching the metadata>,
+        "issuerOpts": {
+            "didOpts": {
+                "identifierOpts": {
+                    "alias": <alias that matches the alias in the key definitions>
+                }
+            }
+        }
+    },
+    ...
+}
+```
+
+The statuslist configuration lists the available status lists for this issuer:
+
+```json
+{
+    ...
+    "statusLists": {
+        "AcademicBaseCredential": {
+            "url": <endpoint of the status list reservation service>,
+            "revoke": <endpoint of the status list revoke service>,
+            "token": <string bearer token to be used to access the status list service>
+        }
+    }
+    ...
+}
+```
 
 ## Basic Code Setup
 
@@ -116,19 +234,19 @@ POST `<base URL>/<institute>/api/create-offer`
 This creates a credential offer in the agent database based on supplied credentials. The request contains a JSON object:
 ```json
 {
-   "credentials": ["array of string"],
-   "grants": {
-      "authorization_code": {
-         "issuer_state": "generate"
-      },
-      "urn:ietf:params:oauth:grant-type:pre-authorized_code": {
-         "pre-authorized_code": "string",
-         "tx_code": boolean, optional,
-      }
-   },
-   "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
-   "credentialMetadata": "object containing key-value pairs defining the metadata",
-   "pinLength": number
+    "credentials": ["array of string"],
+    "grants": {
+        "authorization_code": {
+            "issuer_state": "generate"
+        },
+        "urn:ietf:params:oauth:grant-type:pre-authorized_code": {
+            "pre-authorized_code": "string",
+            "tx_code": boolean, optional,
+        }
+    },
+    "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
+    "credentialMetadata": "object containing key-value pairs defining the metadata",
+    "pinLength": number
 }
 ```
 
@@ -147,9 +265,9 @@ The call returns a JSON object containing the following elements:
 
 ```json
 {
-   "uri": "the uri that is presented to the wallet as QR code or clickable link (same-device)",
-   "txCode":  "optional, transaction code that needs to be shared out of band",
-   "id": "a string value containing the unique identifier with which to refer to this offer/session"
+    "uri": "the uri that is presented to the wallet as QR code or clickable link (same-device)",
+    "txCode":  "optional, transaction code that needs to be shared out of band",
+    "id": "a string value containing the unique identifier with which to refer to this offer/session"
 }
 
 At the moment, the agent by default creates a 4 digit random code when a tx_code is requested.
@@ -166,10 +284,10 @@ This returns an object as follows:
 
 ```json
 {
-   "createdAt":1725356725408,
-   "lastUpdatedAt":1725356725408,
-   "status":"CREDENTIAL_ISSUED",
-   "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9"
+    "createdAt":1725356725408,
+    "lastUpdatedAt":1725356725408,
+    "status":"CREDENTIAL_ISSUED",
+    "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9"
 }
 ```
 
@@ -195,13 +313,13 @@ This endpoint allows an issuer to list the credentials it has previously issued.
 users want to revoke or re-issue/refresh credentials. The POST data field can contain filtering options (each field
 is optional):
 
-```
+```json
 {
-   state: <filter based on a specific unique state previously used by the front-end issuer>,
-   holder: <filter based on the holder key specification of a wallet>,
-   credential: <filter based on the credential type>,
-   primaryId: <filter based on the primary identifier for a credential (the unique user id)>,
-   issuanceDate: <filter on credentials issued after this date>
+    "state": <filter based on a specific unique state previously used by the front-end issuer>,
+    "holder": <filter based on the holder key specification of a wallet>,
+    "credential": <filter based on the credential type>,
+    'primaryId": <filter based on the primary identifier for a credential (the unique user id)>,
+    "issuanceDate": <filter on credentials issued after this date>
 }
 ```
 
@@ -216,11 +334,11 @@ This endpoint allows an issuer to list the credentials it has previously issued.
 users want to revoke or re-issue/refresh credentials. The POST data field can contain filtering options (each field
 is optional):
 
-```
+```json
 {
-   uuid: <credential uuid>,
-   state: <set to 'revoke' to set the bit in the statuslist, or another value to unset it>,
-   list: <optional URI of a specific statuslist for which to set/unset the status>
+    "uuid": <credential uuid>,
+    "state": <set to 'revoke' to set the bit in the statuslist, or another value to unset it>,
+    "list": <optional URI of a specific statuslist for which to set/unset the status>
 }
 ```
 
