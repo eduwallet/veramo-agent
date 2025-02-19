@@ -448,4 +448,9 @@ export class Issuer
         }
         return StatusListRevocationState.UNKNOWN;
     }
+
+    public usesAuthorisedCodeFlow()
+    {
+        return this.metadata.metadata.authorization_servers && this.metadata.metadata.authorization_servers.length;
+    }
 }

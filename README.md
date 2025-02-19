@@ -269,6 +269,7 @@ The call returns a JSON object containing the following elements:
     "txCode":  "optional, transaction code that needs to be shared out of band",
     "id": "a string value containing the unique identifier with which to refer to this offer/session"
 }
+```
 
 At the moment, the agent by default creates a 4 digit random code when a tx_code is requested.
 

@@ -9,99 +9,81 @@ import { getBaseUrl } from 'utils/getBaseUrl';
 import { verifyJWT } from 'did-jwt';
 import { resolver } from 'resolver';
 import { openObserverLog } from 'utils/openObserverLog';
-import { jwtDecode } from 'jwt-decode'
 
 function validateCredentialRequest(issuer:Issuer) {
-  return async function (request:Request, response:Response, next:NextFunction) {
-    try {
-      const jwt = extractBearerToken(request.header('Authorization'))
-      const data  = await verifyJWT(jwt || '', { resolver, proofPurpose: 'authentication'});
+    return async function (request:Request, response:Response, next:NextFunction) {
+        try {
+            let sessionCode = '';
+            let sessionState:any = null;
+            if (!issuer.usesAuthorisedCodeFlow()) {
+                // in this case we issued the access token ourselves, so we can decode it
+                const jwt = extractBearerToken(request.header('Authorization'));
+                const data  = await verifyJWT(jwt || '', { resolver, proofPurpose: 'authentication'});
 
-      if (data.issuer != issuer.did?.did) {
-        await openObserverLog("none", "credential-error", "incorrect bearer token");
-        return sendErrorResponse(
-          response,
-          403,
-          {
-            error: 'not authorized',
-          }
-        )
-      }
+                if (data.issuer != issuer.did?.did) {
+                    await openObserverLog("none", "credential-error", "incorrect bearer token");
+                    return sendErrorResponse(response, 403, {error: 'not authorized'});
+                }
+                sessionCode = data.payload.preAuthorizedCode;
 
-      const sessionState = await issuer.vcIssuer.credentialOfferSessions.get(data.payload.preAuthorizedCode);
-      if (!sessionState || sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED) {
-        await openObserverLog("none", "credential-error", "access token already used");
-        return sendErrorResponse(
-          response,
-          410,
-          {
-            error: 'not available',
-          }
-        )
-      }
+                sessionState = await issuer.vcIssuer.credentialOfferSessions.get(sessionCode);
+                if (!sessionState) {
+                    await openObserverLog("none", "credential-error", "session not found");
+                    return sendErrorResponse(response, 410, {error: 'not available'});
+                }
+                else if (sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED) {
+                    // we hand out our own access tokens and this one was already used according to its state
+                    await openObserverLog("none", "credential-error", "access token already used");
+                    return sendErrorResponse(response, 410, {error: 'not available'});
+                }
+            }
 
-      const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
-      if (!issuer.hasCredentialConfiguration(types)) {
-        await openObserverLog("none", "credential-error", "request credential type not available");
-        return sendErrorResponse(
-          response,
-          404,
-          {
-            error: 'not found',
-          }
-        )
-      }
-      return next();
-    }
-    catch (e) {
-      console.error('error response on body ', request.headers, request.body);
-      await openObserverLog("none", "credential-error", "internal error");
-      return sendErrorResponse(
-        response,
-        500,
-        {
-          error: 'invalid request',
+            const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
+            if (!issuer.hasCredentialConfiguration(types)) {
+                await openObserverLog("none", "credential-error", "request credential type not available");
+                return sendErrorResponse(response, 404, {error: 'not found'});
+            }
+            return next();
         }
-      )
+        catch (e) {
+            console.error('error response on body ', request.headers, request.body);
+            await openObserverLog("none", "credential-error", "internal error");
+            return sendErrorResponse(response, 500, {error: 'invalid request'});
+        };
     };
-  };
 }
 
 export function getCredential(
     issuer:Issuer,
     opts?: ITokenEndpointOpts & ISingleEndpointOpts,
-  ) {
+) {
     const endpoint = issuer.metadata.metadata.credential_endpoint
     const baseUrl = getBaseUrl(issuer.options.baseUrl)
     let path = determinePath(baseUrl, endpoint, { stripBasePath: true, skipBaseUrlCheck: false })
     issuer.router!.post(
-      path,
-      validateCredentialRequest(issuer),
-      async (request: Request, response: Response) => {
-        try {
-          const credentialRequest = request.body as CredentialRequestV1_0_13
-          const credentialResponse = await issuer.issueCredential(credentialRequest);
-          await openObserverLog("none", "credential-response", credentialResponse.response);
-          await issuer.storeCredential(credentialResponse.state);
-          await openObserverLog(credentialResponse.state, "credential-request", request.body);
-          await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-request", request.body);
-          await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-request_proof", request.body.proof.jwt, true);
-          await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-response", credentialResponse.response);
-          await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-response_jwt", credentialResponse.response.credential, true);
-          return response.json(credentialResponse.response)
-        } catch (e) {
-          console.error((e as Error).stack);
-          await openObserverLog("none", "credential-error", "internal error");
-          return sendErrorResponse(
-            response,
-            500,
-            {
-              error: 'invalid_request',
-              error_description: (e as Error).message,
-            },
-            e,
-          )
+        path,
+        validateCredentialRequest(issuer),
+        async (request: Request, response: Response) => {
+            try {
+                const credentialRequest = request.body as CredentialRequestV1_0_13
+                const credentialResponse = await issuer.issueCredential(credentialRequest);
+                await openObserverLog("none", "credential-response", credentialResponse.response);
+                await issuer.storeCredential(credentialResponse.state);
+                await openObserverLog(credentialResponse.state, "credential-request", request.body);
+                await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-request", request.body);
+                await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-request_proof", request.body.proof.jwt, true);
+                await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-response", credentialResponse.response);
+                await issuer.storeRequestResponseData(credentialResponse.state, "get_credential-response_jwt", credentialResponse.response.credential, true);
+                return response.json(credentialResponse.response)
+            }
+            catch (e) {
+                console.error((e as Error).stack);
+                await openObserverLog("none", "credential-error", "internal error");
+                return sendErrorResponse(response, 500, {
+                    error: 'invalid_request',
+                    error_description: (e as Error).message
+                }, e);
+            }
         }
-      }
-    )
-  }
+    );
+}
