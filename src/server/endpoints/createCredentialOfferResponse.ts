@@ -9,6 +9,7 @@ import passport from 'passport';
 import { debug } from 'utils/logger';
 import { openObserverLog } from 'utils/openObserverLog';
 import { StringKeyedObject } from 'types';
+import { getCredentialTypeFromConfig } from 'utils/getCredentialTypeFromConfig';
 
 export interface CredentialOfferRequest {
   credentials: string[];
@@ -56,10 +57,19 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             error_description: 'no such credential configuration available',
           })
         }
+        // here we determine the actual vc type based on the format of the credential and the first
+        // credential ID in the list. There is only ever 1 id in this list, because that is how we
+        // define our api
+        let credentialConfiguration = issuer.getCredentialConfiguration(credentialConfigIds[0]);
+        let credentialTypes = getCredentialTypeFromConfig(credentialConfiguration!);
 
         // if pre-authorized-code is used, the proper credential data should be present
+        // For this type-check, we use the credential format specification of our configuration, not
+        // the credential ID. This allows us to (re)use credential formats with different credential
+        // setups (for example: two AcademicBaseCredential's with different branding, or two
+        // GenericCredential's with different VC format)        
         if (grantTypes.includes(GrantTypes.PRE_AUTHORIZED_CODE)) {
-          if (!issuer.checkCredentialData(credentialConfigIds, request.body.credentialDataSupplierInput)) {
+          if (!issuer.checkCredentialData(credentialTypes, request.body.credentialDataSupplierInput)) {
             return sendErrorResponse(response, 400, {
               error: TokenErrorResponse.invalid_request,
               error_description: 'missing required claims',

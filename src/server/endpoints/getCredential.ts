@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { getTypesFromRequest, CredentialRequest, CredentialRequestV1_0_13, extractBearerToken, IssueStatus } from '@sphereon/oid4vci-common'
+import { CredentialRequestV1_0_13, extractBearerToken, IssueStatus } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 
@@ -9,7 +9,6 @@ import { getBaseUrl } from 'utils/getBaseUrl';
 import { verifyJWT } from 'did-jwt';
 import { resolver } from 'resolver';
 import { openObserverLog } from 'utils/openObserverLog';
-import { jwtDecode } from 'jwt-decode'
 
 function validateCredentialRequest(issuer:Issuer) {
   return async function (request:Request, response:Response, next:NextFunction) {
@@ -29,7 +28,8 @@ function validateCredentialRequest(issuer:Issuer) {
       }
 
       const sessionState = await issuer.vcIssuer.credentialOfferSessions.get(data.payload.preAuthorizedCode);
-      if (!sessionState || sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED) {
+      const issuerSession = await issuer.getSessionById(data.payload.preAuthorizedCode);
+      if (!sessionState || sessionState.status != IssueStatus.ACCESS_TOKEN_CREATED || !issuerSession) {
         await openObserverLog("none", "credential-error", "access token already used");
         return sendErrorResponse(
           response,
@@ -40,8 +40,8 @@ function validateCredentialRequest(issuer:Issuer) {
         )
       }
 
-      const types = getTypesFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true });
-      if (!issuer.hasCredentialConfiguration(types)) {
+      const types:string = issuerSession.principalCredentialId!;
+      if (!issuer.hasCredentialConfiguration([types])) {
         await openObserverLog("none", "credential-error", "request credential type not available");
         return sendErrorResponse(
           response,

@@ -1,37 +1,19 @@
 
 import {
     AccessTokenRequest,
-    AccessTokenResponse,
-    Alg,
-    CNonceState,
-    CredentialOfferSession,
-    EXPIRED_PRE_AUTHORIZED_CODE,
-    GrantTypes,
-    INVALID_PRE_AUTHORIZED_CODE,
     IssueStatus,
-    IStateManager,
-    Jwt,
     JWTSignerCallback,
-    JWTVerifyCallback,
-    PIN_NOT_MATCH_ERROR,
-    PIN_VALIDATION_ERROR,
     PRE_AUTH_CODE_LITERAL,
-    PRE_AUTHORIZED_CODE_REQUIRED_ERROR,
-    TokenError,
-    TokenErrorResponse,
-    UNSUPPORTED_GRANT_TYPE_ERROR,
-    USER_PIN_NOT_REQUIRED_ERROR,
-    USER_PIN_REQUIRED_ERROR,
-    USER_PIN_TX_CODE_SPEC_ERROR,
 } from '@sphereon/oid4vci-common'
 import { v4 } from 'uuid';
 import { generateAccessToken } from '@sphereon/oid4vci-issuer';
+import { AccessTokenResponse } from 'types/accesstoken';
+import { Issuer } from 'issuer/Issuer';
 
 export const createAccessTokenResponse = async (
+    issuer:Issuer,
     request: AccessTokenRequest,
     opts: {
-      credentialOfferSessions: IStateManager<CredentialOfferSession>
-      cNonces: IStateManager<CNonceState>
       cNonce?: string
       cNonceExpiresIn?: number // expiration in seconds
       tokenExpiresIn: number // expiration in seconds
@@ -39,13 +21,15 @@ export const createAccessTokenResponse = async (
       accessTokenSignerCallback: JWTSignerCallback
       accessTokenIssuer: string
       interval?: number
-      alg:Alg
     },
   ) => {
-    const { credentialOfferSessions, cNonces, cNonceExpiresIn, tokenExpiresIn, accessTokenIssuer, accessTokenSignerCallback, interval } = opts
+    const { cNonceExpiresIn, tokenExpiresIn, accessTokenIssuer, accessTokenSignerCallback, interval } = opts
     // Pre-auth flow
     const preAuthorizedCode = request[PRE_AUTH_CODE_LITERAL] as string
-  
+    const issuerSession = await issuer.getSessionById(preAuthorizedCode || '');
+    const credentialOfferSessions = issuer.vcIssuer.credentialOfferSessions;
+    const cNonces = issuer.vcIssuer.cNonces;
+    const alg = issuer.signingAlg();
     const cNonce = opts.cNonce ?? v4()
     await cNonces.set(cNonce, { cNonce, createdAt: +new Date(), preAuthorizedCode })
   
@@ -54,7 +38,7 @@ export const createAccessTokenResponse = async (
       accessTokenSignerCallback,
       preAuthorizedCode,
       accessTokenIssuer,
-      alg: opts.alg,
+      alg
     })
     const response: AccessTokenResponse = {
       access_token,
@@ -64,6 +48,11 @@ export const createAccessTokenResponse = async (
       c_nonce_expires_in: cNonceExpiresIn,
       authorization_pending: false,
       interval,
+      authorization_details: [{
+        type: 'openid-credential',
+        credential_configuration_id: issuerSession.principalCredentialId,
+        credential_configurations: [issuerSession.principalCredentialId]
+      }]
     }
     const credentialOfferSession = await credentialOfferSessions.getAsserted(preAuthorizedCode)
     credentialOfferSession.status = IssueStatus.ACCESS_TOKEN_CREATED

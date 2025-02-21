@@ -10,10 +10,12 @@ export interface ClaimList {
 export class BaseCredential
 {
     public issuer:Issuer;
+    public credentialId:string;
 
-    public constructor(issuer:Issuer)
+    public constructor(issuer:Issuer, credentialId:string)
     {
         this.issuer = issuer;
+        this.credentialId = credentialId;
     }
 
     protected claimPresent(claim:string, type:string, claims:ClaimList)

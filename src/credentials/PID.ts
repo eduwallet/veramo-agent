@@ -3,6 +3,7 @@ import { getTypesFromRequest, CredentialsSupportedDisplay, CredentialDataSupplie
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@sphereon/oid4vci-issuer";
 import { ICredential } from "@sphereon/ssi-types"
 import moment from 'moment';
+import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig";
 import { toStringByJoin } from "utils/toStringByJoin";
 import { BaseCredential } from "./BaseCredential";
 
@@ -11,11 +12,9 @@ const pidIssuanceFormat = 'DD-MM-YYYY';
 export class PID extends BaseCredential
 {
     public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-        const types: string[] = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
         const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
-
-        const credentialId = types[0];
-        const credentialConfiguration = this.issuer.getCredentialConfiguration(credentialId);
+        const credentialConfiguration = this.issuer.getCredentialConfiguration(this.credentialId);
+        const types = getCredentialTypeFromConfig(credentialConfiguration!);
         const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
         const issDate = args.credentialDataSupplierInput['issuance_date'];

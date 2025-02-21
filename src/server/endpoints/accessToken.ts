@@ -101,16 +101,13 @@ const handleTokenRequest = ({
     try {
       let stateid = request.body[PRE_AUTH_CODE_LITERAL] as string;
       await openObserverLog(stateid, "accesstoken-request", request.body);
-      const responseBody = await createAccessTokenResponse(request.body, {
-        credentialOfferSessions: issuer.vcIssuer.credentialOfferSessions,
+      const responseBody = await createAccessTokenResponse(issuer, request.body, {
         accessTokenIssuer,
-        cNonces: issuer.vcIssuer.cNonces,
         cNonce: v4(),
         accessTokenSignerCallback,
         cNonceExpiresIn,
         interval,
-        tokenExpiresIn,
-        alg: issuer.signingAlg()
+        tokenExpiresIn
       })
       await openObserverLog(stateid, "accesstoken-response", responseBody);
       return response.status(200).json(responseBody)
