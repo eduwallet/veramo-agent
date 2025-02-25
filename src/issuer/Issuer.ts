@@ -93,8 +93,28 @@ export class Issuer
         this.metadata = _metadata;
         this.keyRef = '';
         this.name = _options.options.correlationId;
-        this.vcIssuer = this.buildVcIssuer();
         this.sessionData = new MemoryStates<IssuerSessionData>();
+    }
+
+    public async setDid()
+    {
+      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
+        this.did = await getIdentifier(this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier);
+      }
+      if (!this.did && this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
+        this.did = await getIdentifierByAlias(this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias);
+        this.options.options.issuerOpts.didOpts.identifierOpts.identifier = this.did?.did;
+    }
+
+      if (!this.did) {
+        throw new Error('Missing issuer did configuration');
+      }
+
+      const key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
+      this.keyRef = key?.kid;
+
+      // when we finally reset the did options, build the back-end issuer, which uses the did identifier
+      this.vcIssuer = this.buildVcIssuer();
     }
 
     public async getSessionById(id: string): Promise<IssuerSessionData> {
@@ -198,22 +218,6 @@ export class Issuer
         };
     }
 
-    public async setDid()
-    {
-      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
-        this.did = await getIdentifier(this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier);
-      }
-      if (!this.did && this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
-        this.did = await getIdentifierByAlias(this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias);
-      }
-
-      if (!this.did) {
-        throw new Error('Missing issuer did configuration');
-      }
-
-      const key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
-      this.keyRef = key?.kid
-    }
 
     private buildVcIssuer() {
         const builder = new VcIssuerBuilder<DIDDocument>()
