@@ -30,7 +30,7 @@ export class GenericCredential extends BaseCredential
         };
 
         if (credentialConfiguration!.format == 'ldp_vc') {
-            credential['@context'] = ["https://www.w3.org/2018/credentials/v1"].concat(this.issuer.getCredentialContext(credentialId));
+            credential['@context'] = ["https://www.w3.org/2018/credentials/v1"].concat(this.issuer.getCredentialContext(this.credentialId));
             
         }
 

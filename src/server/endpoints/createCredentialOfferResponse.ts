@@ -69,7 +69,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
         // setups (for example: two AcademicBaseCredential's with different branding, or two
         // GenericCredential's with different VC format)        
         if (grantTypes.includes(GrantTypes.PRE_AUTHORIZED_CODE)) {
-          if (!issuer.checkCredentialData(credentialTypes, request.body.credentialDataSupplierInput)) {
+          if (!issuer.checkCredentialData(credentialConfigIds, request.body.credentialDataSupplierInput)) {
             return sendErrorResponse(response, 400, {
               error: TokenErrorResponse.invalid_request,
               error_description: 'missing required claims',
