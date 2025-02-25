@@ -24,10 +24,9 @@ export function credentialDataChecker(issuer:Issuer, credentialId:string, claims
         case 'OpenBadgeCredential':
             const obc = new OpenBadgeCredential(issuer, credentialId);
             return obc.check(claims);
+        default:
         case 'GenericCredential':
             const genericCredential = new GenericCredential(issuer, credentialId);
             return genericCredential.check(claims);
-        default:
-            throw new Error('Unknown credentialId');
     }
 }
