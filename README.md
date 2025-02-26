@@ -241,12 +241,11 @@ This creates a credential offer in the agent database based on supplied credenti
         },
         "urn:ietf:params:oauth:grant-type:pre-authorized_code": {
             "pre-authorized_code": "string",
-            "tx_code": boolean, optional,
+            "tx_code": boolean|object, optional,
         }
     },
     "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
-    "credentialMetadata": "object containing key-value pairs defining the metadata",
-    "pinLength": number
+    "credentialMetadata": "object containing key-value pairs defining the metadata"
 }
 ```
 
@@ -255,6 +254,7 @@ Please note the following:
 - the example displays two grant types. Usually only one of either is used (the front-end-issuer either has authenticated the user, or it has not). Which one is used depends on the configuration of the back-end-issuer for this specific instance
 - in the `authorization_code.issuer_state` field, the example shows the content `generate`. This is a special-case situation forcing the back-end-issuer to generate a new state value. Preferably the `issuer_state` was left undefined, but that may cause the entire `authorization_code` object to be removed by intermediate libraries. To prevent that, fill the `issuer_state` with the special `generate` value. The response will provide the actual state identifier used for this session
 - the `pre-authorized_code` field can be undefined, in which case a random code is generated. However, to prevent the grant containing an empty object which may be removed by the intermediate libraries, the value `generate` may be used to force a random state code, like for the `issuer_state` in the previous paragraph
+- the 'tx_code' can either be a boolean or an object. If boolean 'true', a pin code of 4 digits is generated. If it is an object, it is expected to contain attributes `input_mode` ('text' or 'numeric' (default)), `length` (default: 4) and a `description` (default 'PIN'). This information is transferred to the `tx_code` attribute of the pre-auth-grant in the offer and used to generate the `txCode` return value.
 
 The `credentialMetadata` attribute can contain settings about the credential. Currently the following are defined:
 

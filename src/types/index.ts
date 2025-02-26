@@ -1,6 +1,5 @@
 import {IDIDManagerCreateArgs, IIdentifier} from "@veramo/core";
-import {CredentialIssuerMetadataOpts, CredentialSupplierConfig, IssuerMetadata, IssuerMetadataV1_0_13} from "@sphereon/oid4vci-common"
-import { IIssuerOptsImportArgs } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
+import { CredentialSupplierConfig, IssuerMetadataV1_0_13} from "@sphereon/oid4vci-common"
 
 export interface StringKeyedObject {
     [key:string]: any;
