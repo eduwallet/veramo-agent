@@ -15,10 +15,11 @@ export function getCredentialTypeFromConfig(config:CredentialConfigurationSuppor
             types = ldpcfg.credential_definition.type.filter((i) => i != 'VerifiableCredential');
             break;
         case 'vc+sd-jwt':
+        case 'dc+sd-jwt': // fall through
             const sdcfg = (config as CredentialConfigurationSupportedSdJwtVcV1_0_13);
-            types = [sdcfg.vct];
-            break;
-        
+            // used to be sdcfg.vct, but the vct attribute is a uri and we want a credential type
+            types = [sdcfg.scope!];
+            break;        
     }
     return types;
 }

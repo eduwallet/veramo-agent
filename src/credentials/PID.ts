@@ -35,7 +35,7 @@ export class PID extends BaseCredential
         };
 
         return await this.handleAttributes(args, types, 'personal_administrative_number', ({
-            format: 'jwt_vc_json',
+            format: credentialConfiguration!.format,
             credential: credential
         } as unknown) as CredentialDataSupplierResult);
     }

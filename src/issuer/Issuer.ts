@@ -87,6 +87,7 @@ export class Issuer
     public metadata:MetadataStorage;
     public options:IEWIssuerOptsImportArgs;
     public did?:IIdentifier;
+    public key:IKey|null;
     public keyRef:string;
     public router:Router|undefined;
     public vcIssuer:VcIssuer<DIDDocument>;
@@ -95,9 +96,15 @@ export class Issuer
     public constructor(_options:IEWIssuerOptsImportArgs, _metadata: MetadataStorage) {
         this.options = _options;
         this.metadata = _metadata;
+        this.key = null;
         this.keyRef = '';
         this.name = _options.options.correlationId;
         this.sessionData = new MemoryStates<IssuerSessionData>();
+    }
+
+    public algorithm():string
+    {
+        return algMapping[this.key!.type];
     }
 
     public async setDid()
@@ -114,8 +121,8 @@ export class Issuer
         throw new Error('Missing issuer did configuration');
       }
 
-      const key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
-      this.keyRef = key?.kid;
+      this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
+      this.keyRef = this.key!.kid;
 
       // when we finally reset the did options, build the back-end issuer, which uses the did identifier
       this.vcIssuer = this.buildVcIssuer();
@@ -358,11 +365,15 @@ export class Issuer
         const vct = getVctForCredentialId(credentialId);
         if (vct !== null) {
             credential.vct = vct.vct!;
-            const subjects = (credential as CredentialConfigurationSupportedJwtVcJsonV1_0_13).credential_definition.credentialSubject;
-            if (subjects) {
-                credential.claims = subjects;
+            if (!credential.claims && credential.credential_definition.credentialSubject) {
+                const subjects = (credential as CredentialConfigurationSupportedJwtVcJsonV1_0_13).credential_definition.credentialSubject;
+                if (subjects) {
+                    credential.claims = subjects;
+                }
             }
-            delete credential.credential_definition;
+            if (credential.credential_definition) {
+                delete credential.credential_definition;
+            }
         }
         return credential;
     }

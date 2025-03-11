@@ -1,7 +1,13 @@
 import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@sphereon/oid4vci-issuer";
-import { ICredentialStatus, AdditionalClaims } from '@sphereon/ssi-types';
+import { CompactSdJwtVc, ICredentialStatus, AdditionalClaims } from '@sphereon/ssi-types';
+import { SDJwtVcInstance, SdJwtVcPayload } from '@sd-jwt/sd-jwt-vc'
+import { DisclosureFrame, JwtPayload, KbVerifier, PresentationFrame, Signer, Verifier } from '@sd-jwt/types'
 import { Issuer } from "issuer/Issuer";
+import { getAgent } from 'agent';
 import moment from "moment";
+import { ES256, digest, generateSalt } from '@sd-jwt/crypto-nodejs';
+import { CredentialSubject } from "@veramo/core";
+import { getVctForCredentialId } from "vct/Store";
 
 export interface ClaimList {
     [x:string]: any
@@ -100,6 +106,76 @@ export class BaseCredential
         session.principalCredentialId = (result.credential.credentialSubject as AdditionalClaims)[principalCredentialId] || '';
         session.credentialId = types[0];
         this.issuer.sessionData.set(session.state, session);
+
+        if (result.format == 'vc+sd-jwt') {
+            result.signCallback = (opts) => { return this.signSDJwt(opts);}
+        }
+
         return result;
+    }
+
+    private async signSDJwt(opts:any): Promise<string>
+    {
+        let baseCredential = opts.credential;
+        // if we have a credentialSubject, convert it to a claims attribute
+        if (baseCredential.credentialSubject) {
+            baseCredential.claims = baseCredential.credentialSubject;
+            delete baseCredential.credentialSubject;
+        }
+
+        baseCredential.issuer = this.issuer.metadata.metadata.issuer;
+        const signer: Signer = async (data: string): Promise<string> => {
+            return getAgent().keyManagerSign({ keyRef: this.issuer.keyRef, data })
+        }
+
+        const sdjwt = new SDJwtVcInstance({
+          signer,
+          signAlg: this.issuer.algorithm(),
+          hasher: digest,
+          saltGenerator: generateSalt,
+          hashAlg: 'sha-256',
+        });
+    
+        let disclosureFrame:DisclosureFrame<CredentialSubject> = this.createDisclosureFrameFromVct(opts.credentialRequest.credential_identifier);
+
+        const credential = await sdjwt.issue(baseCredential, disclosureFrame, {
+          header: {
+            ...(this.issuer.key!.kid !== undefined && { kid: this.issuer.key!.kid })
+          },
+        })
+    
+        return credential;
+    }
+
+    private createDisclosureFrameFromVct(credentialId:string):DisclosureFrame<CredentialSubject>
+    {
+        let disclosureFrame:DisclosureFrame<CredentialSubject> = {};
+        const vct = getVctForCredentialId(credentialId);
+        if (vct && vct.claims) {
+            for (const claim of vct.claims) {
+                if (claim.path && (claim.sd === 'allowed' || claim.sd === 'always')) {
+                    disclosureFrame = this.addPathToDisclosureFrame(disclosureFrame, claim.path);
+                }
+            }
+        }
+        return {"claims": disclosureFrame };
+    }
+
+    private addPathToDisclosureFrame(disclosureFrame:DisclosureFrame<CredentialSubject>, path:string[])
+    {
+        if (path.length === 1) {
+            if (!disclosureFrame._sd) {
+                disclosureFrame._sd = [];
+            }
+            disclosureFrame._sd.push(path[0]);
+        }
+        else if (path.length > 1) {
+            if (!disclosureFrame[path[0]]) {
+                disclosureFrame[path[0]] = {};
+            }
+            const remainingPath = path.slice(1);
+            disclosureFrame[path[0]] = this.addPathToDisclosureFrame(disclosureFrame[path[0]] as DisclosureFrame<CredentialSubject>, remainingPath);
+        }
+        return disclosureFrame;
     }
 }

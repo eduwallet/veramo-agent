@@ -31,7 +31,7 @@ export class AcademicBaseCredential extends BaseCredential
         };
 
         return await this.handleAttributes(args, types, 'sub', ({
-            format: 'jwt_vc_json',
+            format: credentialConfiguration!.format,
             credential: credential
         } as unknown) as CredentialDataSupplierResult);
     }
