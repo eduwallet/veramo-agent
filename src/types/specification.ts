@@ -36,13 +36,17 @@ export interface Grants {
 export type VctClaimPathElement = string | null;
 
 export interface VctClaimDisplay {
-
+    lang: string;
+    name: string;
+    description: string;
 }
+
+export type sd_claim = 'always' | 'allowed' | 'never';
 
 export interface VctClaim {
     path: VctClaimPathElement[];
-    display?:VctClaimDisplay;
-    sd?:string;
+    display?:VctClaimDisplay[];
+    sd?:sd_claim;
     svg_id?:string;
 }
 
@@ -103,6 +107,7 @@ export interface VctDisplay {
 }
 
 export interface Vct {
+    vct?: string;
     name?:string;
     description?:string;
     extends?:string;

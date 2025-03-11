@@ -67,6 +67,7 @@ Configuration for the Issuer services is done inside the `conf/` directory. Ther
 - `dids`: issuer key configuration, allowing reuse of keys between issuers
 - `metadata`: issuer metadata, listing the issuer endpoints and the credential configuration
 - `issuer`: issuer configuration, connecting the key data, metadata configuration and statuslist information
+- `vct`: virtual credential type metadata configuration, used in `vc+sd-jwt` issuance
 
 ### Contexts
 
@@ -83,7 +84,9 @@ The issuer agent reads all files in the configuration directory and serves the c
 
 ### Credentials
 
-The credential configuration as defined by the OpenID4VCI spec as part of the `credential_configurations_supported` array. This configuration has to follow the actual credential implementation in the source code, to avoid issues with supported formats and claims. 
+The credential configuration as defined by the OpenID4VCI spec as part of the `credential_configurations_supported` array. This configuration has to follow the actual credential implementation in the source code, to avoid issues with supported formats and claims.
+
+Please note that the application assumes the credential metadata is in `vc_jwt` format, so the credential attributes are listed in the `credential_definition.credentialSubject` attribute. The content of this attribute is converted automatically if the credential has format `vc+sd-jwt`, which uses a `claims` attribute instead.
 
 ### Dids
 
@@ -122,6 +125,22 @@ The metadata is configured separately from the issuer configuration for historic
 ```
 
 To allow credential configuration reuse, the metadata configuration `credential_configurations_supported` attribute is parsed when the metadata is loaded. Each credential defined there is extended with any credential data defined for the same identifier in the `conf/credentials/` configuration. In that way, the basic credential display information can be centralized, but branding information can be specified in the issuer metadata configuration.
+
+Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
+
+```json
+{
+    ...
+    "metadata": {
+        "CredentialType2": {
+            "format": "vc+sd-jwt",
+            "extends": "CredentialType1"
+        }
+    }
+}
+```
+
+The `extends` attribute is removed from the output if it was present.
 
 ### Issuers
 
@@ -176,6 +195,24 @@ The statuslist configuration lists the available status lists for this issuer:
 }
 ```
 
+### VCTs
+
+The `vct` (Virtual Credential Type metadata) definitions are defined in the `conf/vct/` directory. Each file there defines metadata belonging to one or more credential ids and is required for the implementation of `vc+sd-jwt`. The metadata looks as follows:
+
+```json
+{
+    "path": <base path from the issuer root where to serve this metadata, usually something like /vct/<type>>,
+    "credentials": <array of credential identifiers that support this metadata>,
+    "document": <metadata document content>
+}
+```
+
+Upon reading the metadata configuration, the `document` is extended automatically with a `vct` attribute that points to the full path of the VCT metadata. Also, any template content marked with `{{ here }}` is also replaced with this full path.
+
+There is currently no support for serving `schema` metadata directly.
+
+Please see https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-08.html for more information about the VCT metadata.
+
 ## Basic Code Setup
 
 Main entry script is `src/agent.ts`
@@ -205,7 +242,7 @@ The current setup supports the basic endpoints:
 - `<base URL>/<instance>/credentials`
 - `<base URL>/<instance>/get-credential-offer/:id`
 
-The first URL serves the JSON metadata that configures the issuer. It publishes the available credential templates and the URI to the endpoint that issues the actual credential.
+The first URL serves the JSON metadata that configures the issuer. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute for `vc+sd-jwt` type credentials, allowing the metadata to only list the `vc_jwt` type configuration.
 
 The `openid-configuration` and `oauth-authorization-server` are published to configure the token endpoint in the pre-authorized_code flow. The UniMe wallet
 requires the latter and does not read the former. Sphereon reads both. The spec does not require any of them, but then the token endpoint is undefined.
