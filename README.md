@@ -58,7 +58,7 @@ First build the container:
 Then install the `node_modules` through the container:
 `docker run --rm -v ./:/app --entrypoint yarn eduwalletagent install`
 
-Make sure to install the configurations in the `/conf` directory. And then finally run the container:
+Make sure to install the environment file `.env` and  configurations in the `/conf` directory. And then finally run the container:
 `docker run --rm -v ./:/app eduwalletagent`
 
 ### Docker Compose
@@ -96,7 +96,7 @@ The issuer agent reads all files in the configuration directory and serves the c
 
 ### Credentials
 
-The credential configuration as defined by the OpenID4VCI spec as part of the `credential_configurations_supported` array. This configuration has to follow the actual credential implementation in the source code, to avoid issues with supported formats and claims. 
+The credential configuration as defined by the OpenID4VCI spec as part of the `credential_configurations_supported` array. This configuration has to follow the actual credential implementation in the source code, to avoid issues with supported formats and claims.
 
 ### Dids
 
