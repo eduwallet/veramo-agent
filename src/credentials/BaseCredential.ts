@@ -123,7 +123,17 @@ export class BaseCredential
             delete baseCredential.credentialSubject;
         }
 
-        baseCredential.issuer = this.issuer.metadata.metadata.issuer;
+        baseCredential.issuer = this.issuer.metadata.metadata.credential_issuer;
+        baseCredential.iss = baseCredential.issuer;
+        if (baseCredential.expirationDate) {
+            baseCredential.exp = baseCredential.expirationDate;
+        }
+        const vct = getVctForCredentialType(type);
+        baseCredential.vct = vct!.vct;
+        baseCredential.iat = moment().unix();
+        // TODO: encode the baseCredential.status referring to the status list implementation
+        // the spec does not define this explicitely
+
         const signer: Signer = async (data: string): Promise<string> => {
             return getAgent().keyManagerSign({ keyRef: this.issuer.keyRef, data })
         }
@@ -140,6 +150,7 @@ export class BaseCredential
 
         const credential = await sdjwt.issue(baseCredential, disclosureFrame, {
           header: {
+            typ: 'vc+sd-jwt',
             ...(this.issuer.key!.kid !== undefined && { kid: this.issuer.key!.kid })
           },
         })
