@@ -27,7 +27,7 @@ import { credentialDataChecker } from "credentials/credentialDataChecker";
 import { jwtDecode } from 'jwt-decode'
 import { getContextConfigurationStore } from 'contexts/Store';
 import { getIdentifier, getIdentifierByAlias } from 'utils/did';
-import { getVctForCredentialId } from 'vct/Store';
+import { getVctForCredentialType } from 'vct/Store';
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -68,6 +68,7 @@ interface IssuerSessionData extends StateType {
   holder?:string;
   principalCredentialId?: string;
   credentialId?: string;
+  credentialType?: string;
   uuid?: string;
   requestResponseData?:any;
 }
@@ -362,7 +363,7 @@ export class Issuer
      */
     private convertToSdCredential(credentialId:string, credential:CredentialConfigurationSupportedV1_0_13)
     {
-        const vct = getVctForCredentialId(credentialId);
+        const vct = getVctForCredentialType(credentialId);
         if (vct !== null) {
             credential.vct = vct.vct!;
             if (!credential.claims && credential.credential_definition.credentialSubject) {

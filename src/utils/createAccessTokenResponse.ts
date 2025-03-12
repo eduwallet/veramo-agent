@@ -50,8 +50,8 @@ export const createAccessTokenResponse = async (
       interval,
       authorization_details: [{
         type: 'openid-credential',
-        credential_configuration_id: issuerSession.principalCredentialId,
-        credential_configurations: [issuerSession.principalCredentialId]
+        credential_configuration_id: issuerSession.credentialId!,
+        credential_configurations: [issuerSession.credentialId!]
       }]
     }
     const credentialOfferSession = await credentialOfferSessions.getAsserted(preAuthorizedCode)

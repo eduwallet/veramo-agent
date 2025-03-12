@@ -12,12 +12,12 @@ export class AcademicEnrollmentCredential extends BaseCredential
     public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
         const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
         const credentialConfiguration = this.issuer.getCredentialConfiguration(this.credentialId);
-        const types = getCredentialTypeFromConfig(credentialConfiguration!);
+        const type = getCredentialTypeFromConfig(credentialConfiguration!);
         const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
         const credential:ICredential = {
             "@context": ["https://www.w3.org/2018/credentials/v1"],
-            "type": ['VerifiableCredential', ...types],
+            "type": ['VerifiableCredential', type],
             "issuer": {
                 id: this.issuer.did!.did,
                 name: display.name ?? this.issuer.options.baseUrl,
@@ -30,7 +30,7 @@ export class AcademicEnrollmentCredential extends BaseCredential
             "credentialSubject": this.convertDataToClaims(args.credentialDataSupplierInput)
         };
 
-        return await this.handleAttributes(args, types, 'sub', ({
+        return await this.handleAttributes(args, type, 'sub', ({
             format: 'jwt_vc_json',
             credential: credential
         } as unknown) as CredentialDataSupplierResult);

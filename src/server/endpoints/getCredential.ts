@@ -40,8 +40,8 @@ function validateCredentialRequest(issuer:Issuer) {
         )
       }
 
-      const types:string = issuerSession.principalCredentialId!;
-      if (!issuer.hasCredentialConfiguration([types])) {
+      const type:string = issuerSession.credentialId!;
+      if (!issuer.hasCredentialConfiguration([type])) {
         await openObserverLog("none", "credential-error", "request credential type not available");
         return sendErrorResponse(
           response,

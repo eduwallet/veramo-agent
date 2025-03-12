@@ -40,11 +40,11 @@ export async function initialiseVctConfigurationStore() {
   debug('end of context configuration store initialisation', _vctConfigurationStore);
 }
 
-export function getVctForCredentialId(credentialId:string): Vct|null
+export function getVctForCredentialType(credentialType:string): Vct|null
 {
     for (const key in _vctConfigurationStore) {
         var cfg = _vctConfigurationStore[key];
-        if (cfg.credentials.includes(credentialId)) {
+        if (cfg.credentials.includes(credentialType)) {
             return cfg.document;
         }
     }

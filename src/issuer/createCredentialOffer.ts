@@ -62,7 +62,7 @@ export async function createCredentialOffer(
     }
     var issuerSession = await issuer.getSessionById(preAuthorizedCode || issuerState || '');
     issuerSession.metaData = credentialMetadata;
-    issuerSession.principalCredentialId = credentialId;
+    issuerSession.credentialId = credentialId;
     await issuer.sessionData.set(preAuthorizedCode || issuerState || '', issuerSession);
 
     // return the unique id with which to retrieve the offer from the session
