@@ -15,11 +15,11 @@ export function credentialResolver(issuer:Issuer) {
 
         const stateId = args.preAuthorizedCode || args.issuerState || '';
         var sessionState = await issuer.getSessionById(stateId);
-        const credentialId = sessionState.principalCredentialId;
+        const credentialId = sessionState.credentialId;
         const credentialConfiguration = issuer.getCredentialConfiguration(credentialId!);
-        const credentialTypes = getCredentialTypeFromConfig(credentialConfiguration!); 
+        const credentialType = getCredentialTypeFromConfig(credentialConfiguration!); 
         // only support single credential names here
-        switch (credentialTypes[0]) {
+        switch (credentialType) {
             case 'AcademicBaseCredential':
                 const abc = new AcademicBaseCredential(issuer, credentialId!);
                 return abc.generate(args);

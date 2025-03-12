@@ -14,14 +14,14 @@ export class PID extends BaseCredential
     public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
         const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
         const credentialConfiguration = this.issuer.getCredentialConfiguration(this.credentialId);
-        const types = getCredentialTypeFromConfig(credentialConfiguration!);
+        const type = getCredentialTypeFromConfig(credentialConfiguration!);
         const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
         const issDate = args.credentialDataSupplierInput['issuance_date'];
 
         const credential:ICredential = {
             "@context": ["https://www.w3.org/2018/credentials/v1"],
-            "type": ['VerifiableCredential', ...types], // reinsert the filtered-out VerifiableCredential
+            "type": ['VerifiableCredential', type], // reinsert the filtered-out VerifiableCredential
             "issuer": {
                 id: this.issuer.did!.did,
                 name: display.name ?? this.issuer.options.baseUrl,
@@ -34,8 +34,8 @@ export class PID extends BaseCredential
             "credentialSubject": this.convertDataToClaims(args.credentialDataSupplierInput)
         };
 
-        return await this.handleAttributes(args, types, 'personal_administrative_number', ({
-            format: 'jwt_vc_json',
+        return await this.handleAttributes(args, type, 'personal_administrative_number', ({
+            format: credentialConfiguration!.format,
             credential: credential
         } as unknown) as CredentialDataSupplierResult);
     }
