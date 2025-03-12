@@ -48,6 +48,19 @@ docker run -t -i \
     public.ecr.aws/zinclabs/openobserve:latest
 ```
 
+### Docker instance
+
+The project comes with a `Dockerfile` with a basic configuration to run the `veramo-agent` directly inside a container.
+
+First build the container:
+`docker build -t eduwalletagent .`
+
+Then install the `node_modules` through the container:
+`docker run --rm -v ./:/app --entrypoint yarn eduwalletagent install`
+
+Make sure to install the configurations in the `/conf` directory. And then finally run the container:
+`docker run --rm -v ./:/app eduwalletagent`
+
 ### Docker Compose
 
 Alternatively, just run `docker compose build` and then `docker compose up` to
