@@ -5,6 +5,12 @@ This configuration is derived in a large part from the Veramo agent configuratio
 
 For more details, please see: https://github.com/Sphereon-Opensource/OID4VC-demo
 
+## Preface
+
+Please note the difference between `credentialId` and `credentialType`. The `credentialId` is the identifier used as key in the metadata `credential_configurations_supported` which defines a combination of claims/credentialSubject, display values and formats.
+
+The `type` or `scope` attribute of such a credential configuration defines the `credentialType` in this setup. It is assumed that all credentials of the same `credentialType` (but possibly with different `credentialId`s) share the same set of claims and claim requirements. This is not enforced anywhere though. To help the implementor to achieve this, the metadata specification can reuse credential metadata, so that the `credentialType` (credential metadata) can be easily reused across different issuers, or even within the same issuer using different `credentialId`s. In this way the claim definitions remain identical for the same type.
+
 ## Installation
 
 Run `yarn install` to install all relevant node modules. Then run `npm run start:dev` to run the basic application.
@@ -132,9 +138,9 @@ Optionally, instead of extending a credential based on the credential identifier
 {
     ...
     "metadata": {
-        "CredentialType2": {
+        "CredentialId2": {
             "format": "vc+sd-jwt",
-            "extends": "CredentialType1"
+            "extends": "CredentialId1"
         }
     }
 }
@@ -197,12 +203,12 @@ The statuslist configuration lists the available status lists for this issuer:
 
 ### VCTs
 
-The `vct` (Virtual Credential Type metadata) definitions are defined in the `conf/vct/` directory. Each file there defines metadata belonging to one or more credential ids and is required for the implementation of `vc+sd-jwt`. The metadata looks as follows:
+The `vct` (Virtual Credential Type metadata) definitions are defined in the `conf/vct/` directory. Each file there defines metadata belonging to one or more credential types and is required for the implementation of `vc+sd-jwt`. The metadata looks as follows:
 
 ```json
 {
     "path": <base path from the issuer root where to serve this metadata, usually something like /vct/<type>>,
-    "credentials": <array of credential identifiers that support this metadata>,
+    "credentials": <array of credential types that support this metadata>,
     "document": <metadata document content>
 }
 ```

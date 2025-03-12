@@ -7,7 +7,7 @@ import { getAgent } from 'agent';
 import moment from "moment";
 import { ES256, digest, generateSalt } from '@sd-jwt/crypto-nodejs';
 import { CredentialSubject } from "@veramo/core";
-import { getVctForCredentialId } from "vct/Store";
+import { getVctForCredentialType } from "vct/Store";
 
 export interface ClaimList {
     [x:string]: any
@@ -115,6 +115,8 @@ export class BaseCredential
     private async signSDJwt(opts:any): Promise<string>
     {
         let baseCredential = opts.credential;
+        // type must be set and it must have 2 entries at least, one of which is VerifiableCredential
+        let type = opts.credential.type.filter((i:string)=> i!='VerifiableCredential')[0];
         // if we have a credentialSubject, convert it to a claims attribute
         if (baseCredential.credentialSubject) {
             baseCredential.claims = baseCredential.credentialSubject;
@@ -134,7 +136,7 @@ export class BaseCredential
           hashAlg: 'sha-256',
         });
     
-        let disclosureFrame:DisclosureFrame<CredentialSubject> = this.createDisclosureFrameFromVct(opts.credentialRequest.credential_identifier);
+        let disclosureFrame:DisclosureFrame<CredentialSubject> = this.createDisclosureFrameFromVct(type);
 
         const credential = await sdjwt.issue(baseCredential, disclosureFrame, {
           header: {
@@ -145,10 +147,10 @@ export class BaseCredential
         return credential;
     }
 
-    private createDisclosureFrameFromVct(credentialId:string):DisclosureFrame<CredentialSubject>
+    private createDisclosureFrameFromVct(credentialType:string):DisclosureFrame<CredentialSubject>
     {
         let disclosureFrame:DisclosureFrame<CredentialSubject> = {};
-        const vct = getVctForCredentialId(credentialId);
+        const vct = getVctForCredentialType(credentialType);
         if (vct && vct.claims) {
             for (const claim of vct.claims) {
                 if (claim.path && (claim.sd === 'allowed' || claim.sd === 'always')) {

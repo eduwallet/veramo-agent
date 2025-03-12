@@ -392,7 +392,7 @@ export class Issuer
         const store = getCredentialConfigurationStore();
         const overriddenConfiguration = this.metadata?.metadata?.credential_configurations_supported[credentialId] ?? {}
 
-        // allow the override configuration to specify which credential type it is explicitely overriding
+        // allow the override configuration to specify which credential id it is explicitely overriding
         if (overriddenConfiguration.extends) {
             credentialId = overriddenConfiguration.extends as string;
         }
