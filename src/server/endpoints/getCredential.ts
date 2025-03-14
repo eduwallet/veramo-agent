@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { getTypesFromRequest, CredentialRequest, CredentialRequestV1_0_13, extractBearerToken, IssueStatus } from '@sphereon/oid4vci-common'
+import { CredentialRequest, CredentialRequestV1_0_13, extractBearerToken, getTypesFromRequest, IssueStatus } from '@sphereon/oid4vci-common'
 import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer'
 import { ISingleEndpointOpts, sendErrorResponse } from '@sphereon/ssi-express-support'
 

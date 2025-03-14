@@ -3,7 +3,10 @@ import { v4 } from 'uuid'
 import { IEWIssuerOptsImportArgs, MetadataStorage, StatusList, StringKeyedObject } from "types";
 import { CredentialConfigurationSupportedV1_0_13, Alg, StateType,
   CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13,
-  IssuerMetadata
+  IssuerMetadata,
+  CredentialDefinitionJwtVcJsonV1_0_13,
+  CredentialConfigurationSupportedJwtVcJsonV1_0_13,
+  IssuerCredentialSubject
  } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
@@ -24,6 +27,7 @@ import { credentialDataChecker } from "credentials/credentialDataChecker";
 import { jwtDecode } from 'jwt-decode'
 import { getContextConfigurationStore } from 'contexts/Store';
 import { getIdentifier, getIdentifierByAlias } from 'utils/did';
+import { getVctForCredentialType } from 'vct/Store';
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -64,6 +68,7 @@ interface IssuerSessionData extends StateType {
   holder?:string;
   principalCredentialId?: string;
   credentialId?: string;
+  credentialType?: string;
   uuid?: string;
   requestResponseData?:any;
 }
@@ -83,6 +88,7 @@ export class Issuer
     public metadata:MetadataStorage;
     public options:IEWIssuerOptsImportArgs;
     public did?:IIdentifier;
+    public key:IKey|null;
     public keyRef:string;
     public router:Router|undefined;
     public vcIssuer:VcIssuer<DIDDocument>;
@@ -91,10 +97,36 @@ export class Issuer
     public constructor(_options:IEWIssuerOptsImportArgs, _metadata: MetadataStorage) {
         this.options = _options;
         this.metadata = _metadata;
+        this.key = null;
         this.keyRef = '';
         this.name = _options.options.correlationId;
-        this.vcIssuer = this.buildVcIssuer();
         this.sessionData = new MemoryStates<IssuerSessionData>();
+    }
+
+    public algorithm():string
+    {
+        return algMapping[this.key!.type];
+    }
+
+    public async setDid()
+    {
+      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
+        this.did = await getIdentifier(this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier);
+      }
+      if (!this.did && this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
+        this.did = await getIdentifierByAlias(this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias);
+        this.options.options.issuerOpts.didOpts.identifierOpts.identifier = this.did?.did;
+    }
+
+      if (!this.did) {
+        throw new Error('Missing issuer did configuration');
+      }
+
+      this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
+      this.keyRef = this.key!.kid;
+
+      // when we finally reset the did options, build the back-end issuer, which uses the did identifier
+      this.vcIssuer = this.buildVcIssuer();
     }
 
     public async getSessionById(id: string): Promise<IssuerSessionData> {
@@ -198,22 +230,6 @@ export class Issuer
         };
     }
 
-    public async setDid()
-    {
-      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
-        this.did = await getIdentifier(this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier);
-      }
-      if (!this.did && this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
-        this.did = await getIdentifierByAlias(this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias);
-      }
-
-      if (!this.did) {
-        throw new Error('Missing issuer did configuration');
-      }
-
-      const key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
-      this.keyRef = key?.kid
-    }
 
     private buildVcIssuer() {
         const builder = new VcIssuerBuilder<DIDDocument>()
@@ -339,15 +355,62 @@ export class Issuer
         return metadata;
     }
 
-    private decorateCredentialConfiguration(id:string):CredentialConfigurationSupportedV1_0_13 {
+    /**
+     * 
+     * @param credentialId : string uniquely identifying this credential configuration in the metadata
+     * @param credential : credential configuration in vc_jwt format (with credential_definition)
+     * @returns : credential metadata in vc+sd-jwt format
+     */
+    private convertToSdCredential(credentialId:string, credential:CredentialConfigurationSupportedV1_0_13)
+    {
+        const vct = getVctForCredentialType(credentialId);
+        if (vct !== null) {
+            credential.vct = vct.vct!;
+            if (!credential.claims && credential.credential_definition.credentialSubject) {
+                const subjects = (credential as CredentialConfigurationSupportedJwtVcJsonV1_0_13).credential_definition.credentialSubject;
+                if (subjects) {
+                    credential.claims = subjects;
+                }
+            }
+            if (credential.credential_definition) {
+                delete credential.credential_definition;
+            }
+        }
+        return credential;
+    }
+
+    /**
+     * 
+     * @param credentialId: string uniquely identifying this credential configuration in the metadata
+     * @returns credential metadata
+     * 
+     * Decorate the credential metadata as specified with the issuer with the general metadata specified
+     * for this credential. 
+     * If required, convert this from vc_jwt to vc+sw-jwt configuration.
+     */
+    private decorateCredentialConfiguration(credentialId:string):CredentialConfigurationSupportedV1_0_13 {
         const store = getCredentialConfigurationStore();
-        if (this.metadata.metadata.credential_configurations_supported[id]) {
-            return Object.assign({}, store[id] ?? {}, this.metadata.metadata.credential_configurations_supported[id]) as CredentialConfigurationSupportedV1_0_13;
+        const overriddenConfiguration = this.metadata?.metadata?.credential_configurations_supported[credentialId] ?? {}
+
+        // allow the override configuration to specify which credential id it is explicitely overriding
+        if (overriddenConfiguration.extends) {
+            credentialId = overriddenConfiguration.extends as string;
         }
-        else if(store[id]) {
-          return store[id] as CredentialConfigurationSupportedV1_0_13;
+        var decoratedCredential = Object.assign(
+            {},
+            store[credentialId] ?? {},
+            overriddenConfiguration) as CredentialConfigurationSupportedV1_0_13;
+
+        //remove extension mechanism
+        if (decoratedCredential.extends) {
+            delete decoratedCredential.extends;
         }
-        return {} as CredentialConfigurationSupportedV1_0_13;
+
+        if (decoratedCredential.format == 'vc+sd-jwt') {
+            decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential);
+        }
+
+        return decoratedCredential as CredentialConfigurationSupportedV1_0_13;
     }
 
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)

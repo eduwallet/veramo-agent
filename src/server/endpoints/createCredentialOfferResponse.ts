@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { CredentialOfferPayloadV1_0_13, QRCodeOpts, CredentialDataSupplierInput, determineGrantTypes, TokenErrorResponse, GrantTypes, TxCode } from '@sphereon/oid4vci-common'
+import { TokenErrorResponse } from '@sphereon/oid4vci-common'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { determinePath } from 'utils/determinePath';
 
@@ -8,34 +8,20 @@ import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
 import { debug } from 'utils/logger';
 import { openObserverLog } from 'utils/openObserverLog';
-import { StringKeyedObject } from 'types';
-
-export interface CredentialOfferRequest {
-  credentials: string[];
-  pinLength?: number;
-  credentialDataSupplierInput?: CredentialDataSupplierInput;
-  credentialMetadata?: StringKeyedObject;
-}
-
-export type ICreateCredentialOfferURIResponse = {
-  uri: string
-  userPin?: string
-  txCode?: TxCode
-  id?: string
-}
+import { CreateCredentialOfferResponse, CredentialOfferRequest } from 'types/api';
+import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
     const getOfferPath = determinePath(issuer.options.baseUrl, offerPath, { stripBasePath: true });
     issuer.router!.post(path,
       passport.authenticate(issuer.name + '-admin', { session: false }),
-      async (request: Request<CredentialOfferRequest>, response: Response<ICreateCredentialOfferURIResponse>) => {
+      async (request: Request<CredentialOfferRequest>, response: Response<CreateCredentialOfferResponse>) => {
       try {
         // before we enter a new request, clean up the memory a bit
         issuer.clearExpired();
         debug('createCredentialOfferResponse to issue credential from', issuer.name, request.body);
-        const grantTypes = determineGrantTypes(request.body);
-        if (grantTypes.length === 0) {
+        if (!request.body.grants || Object.keys(request.body.grants).length === 0) {
           return sendErrorResponse(response, 400, { error: TokenErrorResponse.invalid_grant, error_description: 'No grant type supplied' })
         }
 
@@ -47,9 +33,6 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           })
         }
 
-        debug('credentialConfigIds', credentialConfigIds);
-        debug('issuer', issuer.metadata.metadata.credential_configurations_supported);
-
         if (!issuer.hasCredentialConfiguration(credentialConfigIds)) {
           return sendErrorResponse(response, 404, {
             error: TokenErrorResponse.invalid_request,
@@ -58,7 +41,11 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
         }
 
         // if pre-authorized-code is used, the proper credential data should be present
-        if (grantTypes.includes(GrantTypes.PRE_AUTHORIZED_CODE)) {
+        // For this type-check, we use the credential format specification of our configuration, not
+        // the credential ID. This allows us to (re)use credential formats with different credential
+        // setups (for example: two AcademicBaseCredential's with different branding, or two
+        // GenericCredential's with different VC format)        
+        if (request.body.grants[PRE_AUTHORIZED_CODE_GRANT]) {
           if (!issuer.checkCredentialData(credentialConfigIds, request.body.credentialDataSupplierInput)) {
             return sendErrorResponse(response, 400, {
               error: TokenErrorResponse.invalid_request,
@@ -71,14 +58,13 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
           request.body.grants,
           request.body.credentialDataSupplierInput,
           request.body.credentialMetadata || {},
-          credentialConfigIds,
-          request.body.pinLength ?? 4,
+          credentialConfigIds[0],
           issuer
         );
         await openObserverLog(offerData.id, "createoffer-request", request.body);
         await issuer.storeRequestResponseData(offerData.id, 'create_offer-request', request.body);
 
-        const resultResponse: ICreateCredentialOfferURIResponse = {
+        const resultResponse: CreateCredentialOfferResponse = {
           uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + getOfferPath + '/' + offerData.id,
           txCode: offerData.txCode,
           id: offerData.id

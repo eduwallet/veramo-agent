@@ -7,40 +7,35 @@ import { OpenBadgeCredential } from './OpenBadgeCredential';
 import { debug } from 'utils/logger';
 import { GenericCredential } from './GenericCredential';
 import { AcademicEnrollmentCredential } from './AcademicEnrollmentCredential';
+import { getCredentialTypeFromConfig } from 'utils/getCredentialTypeFromConfig';
 
 export function credentialResolver(issuer:Issuer) {
     return async (args:CredentialDataSupplierArgs):Promise<CredentialDataSupplierResult> => {
         debug('credentialResolver().()', args);
-        const name = getTypesFromRequest(args.credentialRequest, { filterVerifiableCredential: true });
-        if (issuer.hasCredentialConfiguration(name)) {
-            // only support single credential names here
-            switch (name[0]) {
-                case 'AcademicBaseCredential':
-                    const abc = new AcademicBaseCredential(issuer);
-                    return abc.generate(args);
-                case 'AcademicEnrollmentCredential':
-                    const aec = new AcademicEnrollmentCredential(issuer);
-                    return aec.generate(args);
-                case 'PID':
-                    const pid = new PID(issuer);
-                    return pid.generate(args);
-                case 'OpenBadgeCredential':
-                    const openBadgeCredential = new OpenBadgeCredential(issuer);
-                    return openBadgeCredential.generate(args);
-                case 'GenericCredential':
-                case 'GenericCredentialLD':
-                    const genericCredential = new GenericCredential(issuer);
-                    return genericCredential.generate(args);
-            }
+
+        const stateId = args.preAuthorizedCode || args.issuerState || '';
+        var sessionState = await issuer.getSessionById(stateId);
+        const credentialId = sessionState.credentialId;
+        const credentialConfiguration = issuer.getCredentialConfiguration(credentialId!);
+        const credentialType = getCredentialTypeFromConfig(credentialConfiguration!); 
+        // only support single credential names here
+        switch (credentialType) {
+            case 'AcademicBaseCredential':
+                const abc = new AcademicBaseCredential(issuer, credentialId!);
+                return abc.generate(args);
+            case 'AcademicEnrollmentCredential':
+                const aec = new AcademicEnrollmentCredential(issuer, credentialId!);
+                return aec.generate(args);
+            case 'PID':
+                const pid = new PID(issuer, credentialId!);
+                return pid.generate(args);
+            case 'OpenBadgeCredential':
+                const openBadgeCredential = new OpenBadgeCredential(issuer, credentialId!);
+                return openBadgeCredential.generate(args);
+            default:
+            case 'GenericCredential':
+                const genericCredential = new GenericCredential(issuer, credentialId!);
+                return genericCredential.generate(args);
         }
-
-        // This is an error value to be returned. It will cause a thrown error in the issuer
-        // We should never get here, as the requested credential has been checked before
-        // to be present and all issuer credentials should have an implementation above
-        return ({
-            format: '',
-            credential: null
-        } as unknown) as CredentialDataSupplierResult;
-
     }
 }

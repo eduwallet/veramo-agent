@@ -52,8 +52,6 @@ export async function getIdentifierByAlias(alias: string): Promise<IIdentifier |
     let provider = 'did:web';
     if (tokens.length > 2) {
         provider = tokens[0] + ':' + tokens[1];
-        tokens.splice(0, 2);
-        alias = tokens.join(':');
     }
     return await getAgent().didManagerGetByAlias({alias, provider}).catch((e:any) => {
         console.error(e)
