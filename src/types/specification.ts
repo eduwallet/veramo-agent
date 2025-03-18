@@ -4,4 +4,4 @@ export {
     TxCode, AuthorizationCodeGrant, PreAuthGrant, Grants
 } from './specification/credential_offer';
 export { Vct } from './specification/vct';
-
+export { Metadata } from './specification/metadata';
