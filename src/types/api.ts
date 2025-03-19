@@ -1,30 +1,29 @@
-import { StringKeyedObject } from "types";
-import { AuthorizationCodeGrant, TxCode } from "./specification";
+export { CreateCredentialOfferRequest, CreateCredentialOfferResponse } from './api/credentialOffer';
 
 
-
-/* Creating the initial credential offer */
-export interface APIPreAuthGrant {
-    'pre-authorized_code'?: string;
-    tx_code?: TxCode|boolean;
-    interval?: number;
-    authorization_server?: string;
+export enum StatusListRevocationState {
+    UNKNOWN = 'UNKNOWN',
+    REVOKED = 'REVOKED',
+    WAS_REVOKED = 'WAS_REVOKED',
+    UNREVOKED = 'UNREVOKED',
+    WAS_UNREVOKED = 'WAS_UNREVOKED'
 }
 
-export interface APIGrants {
-    authorization_code?: AuthorizationCodeGrant;
-    'urn:ietf:params:oauth:grant-type:pre-authorized_code'?: APIPreAuthGrant;
+
+export enum ErrorCodes {
+    NO_ERROR = "no error",
+    INVALID_REQUEST = "invalid request",
+    INTERNAL_ERROR = "internal error",
+    EXPIRED = "expired",
 }
 
-export interface CredentialOfferRequest {
-    credentials: string[];
-    grants: APIGrants;
-    credentialDataSupplierInput?: StringKeyedObject;
-    credentialMetadata?: StringKeyedObject;
+export enum CredentialOfferStatus {
+    OFFER_CREATED = 'OFFER_CREATED',
+    OFFER_URI_RETRIEVED = 'OFFER_URI_RETRIEVED',
+    ACCESS_TOKEN_REQUESTED = 'ACCESS_TOKEN_REQUESTED',
+    ACCESS_TOKEN_CREATED = 'ACCESS_TOKEN_CREATED',
+    CREDENTIAL_REQUEST_RECEIVED = 'CREDENTIAL_REQUEST_RECEIVED',
+    CREDENTIAL_ISSUED = 'CREDENTIAL_ISSUED',
+    ERROR = 'ERROR',
 }
   
-export type CreateCredentialOfferResponse = {
-    uri: string;
-    txCode?: string;
-    id?: string;
-}

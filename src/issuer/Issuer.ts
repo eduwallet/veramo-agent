@@ -1,8 +1,8 @@
 import Debug from 'debug';
 import { v4 } from 'uuid'
-import { IEWIssuerOptsImportArgs, MetadataStorage, StatusList, StringKeyedObject } from "types";
+import { StatusList } from "types/specification/statuslists";
 import { CredentialConfigurationSupportedV1_0_13, Alg, StateType,
-  CredentialDataSupplierInput, CredentialResponse, CredentialRequestV1_0_13,
+  CredentialDataSupplierInput, CredentialRequestV1_0_13,
   IssuerMetadata,
   CredentialDefinitionJwtVcJsonV1_0_13,
   CredentialConfigurationSupportedJwtVcJsonV1_0_13,
@@ -12,7 +12,7 @@ import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, 
 import { Router } from "express";
 import { DIDDocument, IIdentifier, IKey } from '@veramo/core';
 import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
-import { JWTVerifyOptions } from "did-jwt";
+import { createJWT, JWTVerifyOptions } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
 import { resolver } from 'resolver';
 import { getAgent } from 'agent';
@@ -28,6 +28,13 @@ import { jwtDecode } from 'jwt-decode'
 import { getContextConfigurationStore } from 'contexts/Store';
 import { getIdentifier, getIdentifierByAlias } from 'utils/did';
 import { getVctForCredentialType } from 'vct/Store';
+import { Metadata } from 'types/specification';
+import { IssuerConfiguration, IssuerSessionData } from 'types/internal';
+import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
+import { bytesToBase64 } from '@veramo/utils';
+import { JWT } from 'types/specification/jwt';
+import { CredentialConfiguration } from 'types/specification/metadata';
+import { StatusListRevocationState } from 'types/api';
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -61,46 +68,28 @@ const algMapping: Record<TKeyType, Alg> = {
   Bls12381G2: Alg.ES256 // incorrect
 }
 
-interface IssuerSessionData extends StateType {
-  state: string;
-  credential?: CredentialDataSupplierResult;
-  metaData?: StringKeyedObject;
-  holder?:string;
-  principalCredentialId?: string;
-  credentialId?: string;
-  credentialType?: string;
-  uuid?: string;
-  requestResponseData?:any;
-}
-
-
-export enum StatusListRevocationState {
-  UNKNOWN = 'UNKNOWN',
-  REVOKED = 'REVOKED',
-  WAS_REVOKED = 'WAS_REVOKED',
-  UNREVOKED = 'UNREVOKED',
-  WAS_UNREVOKED = 'WAS_UNREVOKED'
-}
-
 export class Issuer
 {
     public name:string;
-    public metadata:MetadataStorage;
-    public options:IEWIssuerOptsImportArgs;
+    public metadata:Metadata;
+    public options:IssuerConfiguration;
     public did?:IIdentifier;
     public key:IKey|null;
     public keyRef:string;
     public router:Router|undefined;
-    public vcIssuer:VcIssuer<DIDDocument>;
-    public sessionData:MemoryStates<IssuerSessionData>;
+    public sessionData:SessionStateManager;
+    public authorizationState:Map<string, string>;
+    public nonceStates:Map<string, string>;
 
-    public constructor(_options:IEWIssuerOptsImportArgs, _metadata: MetadataStorage) {
+    public constructor(_options:IssuerConfiguration, _metadata: Metadata) {
         this.options = _options;
         this.metadata = _metadata;
         this.key = null;
         this.keyRef = '';
-        this.name = _options.options.correlationId;
-        this.sessionData = new MemoryStates<IssuerSessionData>();
+        this.name = _options.name;
+        this.sessionData = new SessionStateManager();
+        this.authorizationState = new Map<string,string>();
+        this.nonceStates = new Map<string, string>();
     }
 
     public algorithm():string
@@ -110,39 +99,61 @@ export class Issuer
 
     public async setDid()
     {
-      if (this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier) {
-        this.did = await getIdentifier(this.options.options.issuerOpts?.didOpts?.identifierOpts?.identifier);
-      }
-      if (!this.did && this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias) {
-        this.did = await getIdentifierByAlias(this.options.options.issuerOpts?.didOpts?.identifierOpts?.alias);
-        this.options.options.issuerOpts.didOpts.identifierOpts.identifier = this.did?.did;
-    }
-
-      if (!this.did) {
-        throw new Error('Missing issuer did configuration');
-      }
-
-      this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
-      this.keyRef = this.key!.kid;
-
-      // when we finally reset the did options, build the back-end issuer, which uses the did identifier
-      this.vcIssuer = this.buildVcIssuer();
-    }
-
-    public async getSessionById(id: string): Promise<IssuerSessionData> {
-      var retval = await this.sessionData.get(id);
-      if (!retval) {
-        retval = {
-          state: id,
-          createdAt: +new Date()
+        this.did = await getIdentifier(this.options.did);
+        if (!this.did) {
+            this.did = await getIdentifierByAlias(this.options.did);
         }
-      }
-      return retval;
+
+        if (!this.did) {
+            throw new Error('Missing issuer did configuration');
+        }
+
+        this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
+        this.keyRef = this.key!.kid;
+    }
+
+    public signData(data: string | Uint8Array)
+    {
+        let dataString, encoding: 'base64' | undefined
+        const keyRef = this.keyRef;
+        if (!keyRef) {
+            throw Error('Cannot sign access tokens without a key ref')
+        }
+        if (typeof data === 'string') {
+            dataString = data
+            encoding = undefined
+        }
+        else {
+            dataString = bytesToBase64(data)
+            encoding = 'base64'
+        }
+        return getAgent().keyManagerSign({ keyRef, data: dataString, encoding });
+    }
+
+    public async signToken(jwt: JWT) {
+        if (!this.did?.did) {
+            throw Error('No issuer configured for access tokens')
+        }
+        const signer = (data:string | Uint8Array) => this.signData(data);
+        const signOptions = {
+            signer,
+            issuer: this.did?.did
+        }
+        const result = await createJWT(jwt.payload, signOptions, { ...jwt.header, typ: 'JWT' })
+        return result
+    }
+
+    public getSessionById(id: string = ''): SessionState {
+        return this.sessionData.get(id, (el:SessionState) => { el.state = id; return el; });
+    }
+    public storeSession(state:SessionState)
+    {
+        this.sessionData.set(state);
     }
 
     public async storeRequestResponseData(id:string, phase:string, data:any, isJwt = false)
     {
-        const session = await this.getSessionById(id);
+        const session = this.getSessionById(id);
         if (session) {
             if (!session.requestResponseData) {
                 session.requestResponseData = {};
@@ -152,14 +163,13 @@ export class Issuer
                 // decode the JWT to get the payload
                 data = jwtDecode(data);
             }
-
             session.requestResponseData[phase] = data;
         }
     }
 
     public async storeCredential(id:string)
     {
-        const session = await this.sessionData.getAsserted(id);
+        const session = this.sessionData.get(id);
         if (session && session.credential) {
             const dbConnection = await getDbConnection();
             const repo = dbConnection.getRepository(Credential);
@@ -190,46 +200,15 @@ export class Issuer
     public async clearExpired()
     {
         // do some random state cleanup to keep memory use down
-        await this.sessionData.clearExpired();
-        await this.vcIssuer.cNonces.clearExpired();
-        await this.vcIssuer.uris?.clearExpired();
-        await this.vcIssuer.credentialOfferSessions.clearExpired();
+        this.sessionData.clearAll();
+        //await this.vcIssuer.cNonces.clearExpired();
+        //await this.vcIssuer.uris?.clearExpired();
     }
 
     public checkCredentialData(credentialIds:string[], credentialData: CredentialDataSupplierInput)
     {
         return credentialDataChecker(this, credentialIds[0], credentialData);
     }
-
-    public async issueCredential(credentialRequest:CredentialRequestV1_0_13): Promise<{response:CredentialResponse, state:string}>
-    {
-        var stateId = '';
-        const response = await this.vcIssuer.issueCredential({
-            credentialRequest,
-            tokenExpiresIn: 300,
-            cNonceExpiresIn: 5000,
-            jwtVerifyCallback: async (args: { jwt: string; kid?: string }) => {
-                if (this.vcIssuer.jwtVerifyCallback) {
-                    // jump through some loops to get data about the holder into our session state
-                    const result = await this.vcIssuer.jwtVerifyCallback(args);
-                    const holder = result.did;
-                    const nonce = result.jwt.payload.nonce;
-                    const cNonceState = await this.vcIssuer.cNonces.getAsserted(nonce || '')
-                    stateId = cNonceState.preAuthorizedCode || cNonceState.issuerState || '';
-                    var sessionState = await this.getSessionById(stateId);
-                    sessionState.holder = holder;
-                    await this.sessionData.set(stateId, sessionState);
-                    return result;
-                }
-                throw new Error('no jwtVerifyCallback defined');
-            }
-        });
-        return {
-          response,
-          state: stateId
-        };
-    }
-
 
     private buildVcIssuer() {
         const builder = new VcIssuerBuilder<DIDDocument>()
@@ -300,22 +279,29 @@ export class Issuer
         return Alg.ES256;
     }
 
-    public hasCredentialConfiguration(names:string[]):boolean {
-      // the list of names should contain only one name, but for the sake of argument/specification...
-      // the VerifiableCredential type should have been filtered out
-      for (const id of names) {
-          // just in case we forgot to filter out the VerifiableCredential type
-          if (id != 'VerifiableCredential') {
-              if (!this.metadata.metadata.credential_configurations_supported[id]) {
-                  return false;
-              }
-          }
-      }
-      return true;
+    public hasCredentialConfiguration(name:string):boolean|CredentialConfiguration {
+        if (!name || typeof(name) != 'string' || name == '') {
+            return false;
+        }
+
+        for (const credentialId of Object.keys(this.metadata.credential_configurations_supported)) {
+            if (credentialId === name) {
+                return this.metadata.credential_configurations_supported[credentialId];
+            }
+            if (this.metadata.credential_configurations_supported[credentialId].vct === name) {
+                return this.metadata.credential_configurations_supported[credentialId];
+            }
+            if (this.metadata.credential_configurations_supported[credentialId].credential_definition
+                && this.metadata.credential_configurations_supported[credentialId].credential_definition.type.includes(name)) {
+                return this.metadata.credential_configurations_supported[credentialId];
+            }
+
+        }
+        return false;
     }
 
     public getCredentialConfiguration(id:string): CredentialConfigurationSupportedV1_0_13|null {
-        if (this.hasCredentialConfiguration([id])) {
+        if (this.hasCredentialConfiguration(id)) {
             return this.decorateCredentialConfiguration(id);
         }
         return null;
@@ -342,9 +328,9 @@ export class Issuer
 
 
     public generateMetadata() {
-        var metadata:IssuerMetadata = this.metadata.metadata as IssuerMetadata;
+        var metadata:IssuerMetadata = this.metadata as IssuerMetadata;
         var credentials:Record<string, CredentialConfigurationSupportedV1_0_13> = {};
-        for (const id of Object.keys(this.metadata.metadata.credential_configurations_supported)) {
+        for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
             const credentialConfiguration = this.decorateCredentialConfiguration(id);
             credentials[id] = credentialConfiguration;
         }
@@ -390,7 +376,7 @@ export class Issuer
      */
     private decorateCredentialConfiguration(credentialId:string):CredentialConfigurationSupportedV1_0_13 {
         const store = getCredentialConfigurationStore();
-        const overriddenConfiguration = this.metadata?.metadata?.credential_configurations_supported[credentialId] ?? {}
+        const overriddenConfiguration = this.metadata?.credential_configurations_supported[credentialId] ?? {}
 
         // allow the override configuration to specify which credential id it is explicitely overriding
         if (overriddenConfiguration.extends) {

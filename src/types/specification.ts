@@ -5,3 +5,4 @@ export {
 } from './specification/credential_offer';
 export { Vct } from './specification/vct';
 export { Metadata } from './specification/metadata';
+export { StatusList, StatusListsOption } from './specification/statuslists';

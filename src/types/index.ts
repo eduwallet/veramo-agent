@@ -52,24 +52,6 @@ interface TemplateMapping {
     format?: string
 }
 
-// https://w3c.github.io/vc-bitstring-status-list/#examples
-export interface StatusList {
-    id: string;
-    type: string;
-    statusPurpose: string;
-    statusListIndex: string
-    statusListCredential: string;
-}
-
-interface StatusListOption {
-    url: string;
-    revoke: string;
-    token: string;
-}
-
-interface StatusListsOption {
-    [x:string]: StatusListOption;
-}
 
   
 interface IIdentifierOpts {
@@ -83,31 +65,4 @@ interface IDIDOptions {
 
 interface IIssuerOptions {
     didOpts: IDIDOptions
-}
-
-interface IIssuerOptsPersistArgs {
-    correlationId: string // The credential Issuer to store the metadata for
-    overwriteExisting?: boolean // Whether to overwrite any existing metadata for a credential issuer. Defaults to true
-    issuerOpts: IIssuerOptions
-}  
-
-export interface IEWIssuerOptsImportArgs {
-    options: IIssuerOptsPersistArgs;
-    baseUrl: string
-    //credentialSupplier: string
-    enableCreateCredentials: boolean
-    clientId?:string;
-    clientSecret?:string;
-    adminToken?:string;
-    authorizationEndpoint?:string;
-    tokenEndpoint?:string;
-    statusLists?:StatusListsOption;
-}
-
-
-export interface MetadataStorage {
-    correlationId: string // The credential Issuer to store the metadata for
-    overwriteExisting?: boolean // Whether to overwrite any existing metadata for a credential issuer. Defaults to true
-    "@context"?: string[];
-    metadata: IssuerMetadataV1_0_13;
 }

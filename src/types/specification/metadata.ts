@@ -10,14 +10,14 @@ export interface Metadata {
     batch_credential_endpoint?:string;         // URL of the issuer batch credential endpoint
     deferred_credential_endpoint?:string;      // URL of the issuer deferred credential endpoint 
     notification_endpoint?:string;             // URL of the issuer notification endpoint
-    credential_response_encryption?:CredentialResponseEncryption;
+    credential_response_encryption?:CredentialResponseEncryptionOptions;
     credential_identifiers_supported?:boolean; // if true, the credential_identifiers parameter is used in authorization_details
     signed_metadata?:string;                   // signed JWT containing metadata as claims
     display?:CredentialIssuerDisplay[];
     credential_configurations_supported:CredentialConfigurations;
 }
 
-export interface CredentialResponseEncryption {
+export interface CredentialResponseEncryptionOptions {
     alg_values_supported:string[];        // list of JWE encryption algorithms (alg) supported
     enc_values_supported:string[];        // list of JWE encryption algorithms (enc) supported
     encryption_required:boolean;          // if true, the wallet MUST provide encryption keys in the request
@@ -39,8 +39,8 @@ export interface CredentialConfigurations {
     [x:string]: CredentialConfiguration;
 }
 
-export type CredentialConfiguration = CredentialConfigurationCommon 
-    | CredentialConfigurationJwtVC | CredentialConfigurationLdpVC | CredentialConfigurationIsoMdl | CredentialConfigurationSdJwt;
+export type CredentialConfiguration = CredentialConfigurationCommon & 
+    (CredentialConfigurationJwtVC | CredentialConfigurationLdpVC | CredentialConfigurationIsoMdl | CredentialConfigurationSdJwt);
 
 export type CredentialFormat = 'jwt_vc_json' | 'jwt_vc_json-ld' | 'vc+sd-jwt' | 'dc+sd-jwt' | 'ldp_vc';
 

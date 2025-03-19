@@ -7,6 +7,8 @@ import { METADATA_PATH, ISSUER_PATH } from "environment";
 import { loadJsonFiles } from "utils/generic";
 import { IEWIssuerOptsImportArgs, MetadataStorage } from "types";
 import { Issuer } from "./Issuer";
+import { Metadata } from "types/specification";
+import { IssuerConfiguration } from "types/internal";
 
 export interface IssuerStore {
     [x:string]:Issuer;
@@ -17,26 +19,20 @@ export const getIssuerStore = ():IssuerStore => _issuerStore;
 
 export async function initialiseIssuerStore() {
     console.log('initialising issuer store, reading json files');
-    const issuerOptionsObjects = loadJsonFiles<IEWIssuerOptsImportArgs>({path: ISSUER_PATH});
-    const metadatas = loadJsonFiles<MetadataStorage>({path: METADATA_PATH});
+    const issuerOptionsObjects = loadJsonFiles<IssuerConfiguration>({path: ISSUER_PATH});
+    const metadatas = loadJsonFiles<Metadata>({path: METADATA_PATH});
 
     console.log('looping of ', issuerOptionsObjects.asArray.length,' objects');
-    for(const conf of issuerOptionsObjects.asArray) {
+    for(const correlationId of Object.keys(issuerOptionsObjects.asObject)) {
         console.log('creating new issuer');
-        const issuer = new Issuer(conf, findMetaDataForCorrelation(conf.options.correlationId, metadatas.asArray));
+        const metadata = metadatas.asObject[correlationId];
+        if (!metadata) {
+            throw new Error("Unable to find matching metadata for " + correlationId);
+        }
+        const issuer = new Issuer(issuerOptionsObjects.asObject[correlationId], metadata);
         await issuer.setDid(); // do some asynchronous post-initialisation
         console.log('setting issuer on store');
-        _issuerStore[conf.options.correlationId] = issuer;
+        _issuerStore[correlationId] = issuer;
     };
     console.log('end of issuer store initialisation');
-}
-
-function findMetaDataForCorrelation(correlationId:string, metadatas: MetadataStorage[]): MetadataStorage
-{
-    for(const md of metadatas) {
-        if (md.correlationId == correlationId) {
-            return md;
-        }
-    }
-    throw new Error("Unable to find metadata belonging to correlation " + correlationId);
 }

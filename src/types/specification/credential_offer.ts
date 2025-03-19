@@ -30,3 +30,20 @@ export interface Grants {
     authorization_code?: AuthorizationCodeGrant;
     'urn:ietf:params:oauth:grant-type:pre-authorized_code'?: PreAuthGrant;
 }
+
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-offer
+
+export interface CredentialOfferUri {
+    credential_offer_uri: string;
+}
+
+export interface CredentialOffer {
+    credential_offer:CredentialOfferData;
+}
+
+export interface CredentialOfferData {
+    credential_issuer:string;
+    credential_configuration_ids:string[];
+    grants?:Grants;
+    client_id?:string; // out of spec client identifier for authorized code flow (Sphereon and others)
+}

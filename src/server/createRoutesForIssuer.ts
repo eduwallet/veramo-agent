@@ -16,12 +16,11 @@ import {
     getIssueStatus,
     getMetadata,
     getDidSpec,
-    pushedAuthorization,
     getOpenidConfiguration,
     getOAuthConfiguration,
     listCredentials,
     revokeCredential,
-  } from './endpoints'
+} from './endpoints'
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
     debug('creating routes for ', issuer.name);
@@ -32,7 +31,7 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
      * a further metadata field that contains the metadata 'following the specs'
      */
     debug("initializing rest api using ", issuer.options);
-    const metadata = issuer.metadata.metadata;
+    const metadata = issuer.metadata;
 
     var tokenEndpointOpts:ITokenEndpointOpts = {
         //enabled: true,
@@ -44,32 +43,15 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
         tokenPath: '/token'
     };
 
-    if (metadata?.authorization_server || metadata?.authorization_servers) {
+    if (metadata?.authorization_servers) {
         tokenEndpointOpts.tokenEndpointDisabled = true;
     }
-
-    tokenEndpointOpts.accessTokenSignerCallback = getAccessTokenSignerCallback(
-        {
-          iss: issuer.did!.did,
-          keyRef: issuer.keyRef,
-        },
-        { agent: getAgent() },
-    )
 
     issuer.router = express.Router();
     expressSupport.express.use(getBasePath(issuer.options.baseUrl), issuer.router)
 
-    // OAuth endpoint to handle the consumation of an access token
-    accessToken(issuer, tokenEndpointOpts)
-  
-    /*
-     * The Pushed Authorization endpoint allows sending authorization parameters directly to the
-     * AS from the RP using a back channel instead of going through the front channel.
-     * This endpoint should return a URL to the authorization server, which would redirect the client.
-     * This would only be implemented if this REST server implements the Authorization Server,
-     * which we currently do not.
-     */
-    //pushedAuthorization(issuer.router, issuer, authRequestsData, issuer.options)
+    // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
+    accessToken(issuer, '/token');
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer)
