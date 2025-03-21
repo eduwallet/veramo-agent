@@ -42,4 +42,14 @@ export interface AuthorizationDetailsSD {
 }
 
 // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-request-issuance-of-a-certa
-export type AuthorizationDetail = AuthorizationDetailCommon & AuthorizationDetailJWT & AuthorizationDetailsLD & AuthorizationDetailsSD;
+export type AuthorizationDetail = AuthorizationDetailCommon & (AuthorizationDetailJWT | AuthorizationDetailsLD | AuthorizationDetailsSD);
+
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-successful-token-response
+//
+// the token response has additional identifiers in the details that define the datasets for the credential_identifier_id
+// that is also specified in this authorization detail object.
+export interface AuthorizationDetailTokenCommon extends AuthorizationDetailCommon {
+    credential_identifiers?:string[];
+}
+
+export type AuthorizationDetailToken = AuthorizationDetailTokenCommon & (AuthorizationDetailJWT | AuthorizationDetailsLD | AuthorizationDetailsSD);

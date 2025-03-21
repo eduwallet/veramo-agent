@@ -5,10 +5,9 @@
 
 import { METADATA_PATH, ISSUER_PATH } from "environment";
 import { loadJsonFiles } from "utils/generic";
-import { IEWIssuerOptsImportArgs, MetadataStorage } from "types";
 import { Issuer } from "./Issuer";
-import { Metadata } from "types/specification";
 import { IssuerConfiguration } from "types/internal";
+import { MetadataConfiguration } from "types/api/metadata";
 
 export interface IssuerStore {
     [x:string]:Issuer;
@@ -20,7 +19,7 @@ export const getIssuerStore = ():IssuerStore => _issuerStore;
 export async function initialiseIssuerStore() {
     console.log('initialising issuer store, reading json files');
     const issuerOptionsObjects = loadJsonFiles<IssuerConfiguration>({path: ISSUER_PATH});
-    const metadatas = loadJsonFiles<Metadata>({path: METADATA_PATH});
+    const metadatas = loadJsonFiles<MetadataConfiguration>({path: METADATA_PATH});
 
     console.log('looping of ', issuerOptionsObjects.asArray.length,' objects');
     for(const correlationId of Object.keys(issuerOptionsObjects.asObject)) {

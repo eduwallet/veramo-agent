@@ -14,6 +14,7 @@ export enum ErrorCodes {
     NO_ERROR = "no error",
     INVALID_REQUEST = "invalid request",
     INTERNAL_ERROR = "internal error",
+    NOT_IMPLEMENTED = "not implemented",
     EXPIRED = "expired",
 }
 

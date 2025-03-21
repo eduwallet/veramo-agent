@@ -42,12 +42,17 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     session.metaData = request.credentialMetadata || {};
     session.credentialId = credentialConfigIds[0];
 
+    // store the requested dataset as a credential-data-set named after the credential id
+    session.credentialDataSets = {};
+    session.credentialDataSets[credentialConfigIds[0]] = {
+        credentialId: credentialConfigIds[0],
+        data: request.credentialDataSupplierInput
+    };
+
     if (userPin) {
         session.pinCode = userPin;
     }
-    if (request.credentialDataSupplierInput) {
-        session.credentialDataSupplierInput = request.credentialDataSupplierInput;
-    }
+
     if (preAuthorizedCode) {
         session.preAuthorizedCode = preAuthorizedCode;
         issuer.authorizationState.set(preAuthorizedCode, session.id);

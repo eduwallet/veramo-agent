@@ -10,9 +10,9 @@ import { CredentialConfigurationSupportedV1_0_13, Alg, StateType,
  } from '@sphereon/oid4vci-common';
 import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
-import { DIDDocument, IIdentifier, IKey } from '@veramo/core';
+import { DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
 import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
-import { createJWT, JWTVerifyOptions } from "did-jwt";
+import { createJWT, decodeJWT, JWTVerifyOptions, verifyJWT } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
 import { resolver } from 'resolver';
 import { getAgent } from 'agent';
@@ -33,8 +33,9 @@ import { IssuerConfiguration, IssuerSessionData } from 'types/internal';
 import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 import { bytesToBase64 } from '@veramo/utils';
 import { JWT } from 'types/specification/jwt';
-import { CredentialConfiguration } from 'types/specification/metadata';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurationSdJwt } from 'types/specification/metadata';
 import { StatusListRevocationState } from 'types/api';
+import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
 
 const debug = Debug('agent:issuer');
 type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
@@ -71,7 +72,7 @@ const algMapping: Record<TKeyType, Alg> = {
 export class Issuer
 {
     public name:string;
-    public metadata:Metadata;
+    public metadata:MetadataConfiguration;
     public options:IssuerConfiguration;
     public did?:IIdentifier;
     public key:IKey|null;
@@ -81,7 +82,7 @@ export class Issuer
     public authorizationState:Map<string, string>;
     public nonceStates:Map<string, string>;
 
-    public constructor(_options:IssuerConfiguration, _metadata: Metadata) {
+    public constructor(_options:IssuerConfiguration, _metadata: MetadataConfiguration) {
         this.options = _options;
         this.metadata = _metadata;
         this.key = null;
@@ -141,6 +142,46 @@ export class Issuer
         }
         const result = await createJWT(jwt.payload, signOptions, { ...jwt.header, typ: 'JWT' })
         return result
+    }
+
+    public async verifyToken(jwt:string)
+    {
+        const result = await verifyJWT(jwt, {
+            resolver: {
+                resolve: async (didUrl:string, options?:DIDResolutionOptions) => {
+                    return await getAgent().resolveDid({ didUrl, options })
+                }
+            }
+        });
+
+        if (!result.verified) {
+            return null;
+        }
+
+        const decoded = decodeJWT(jwt);
+        const alg = decoded.header.alg;
+        const kid = decoded.header.kid;
+        const did = (kid ?? '').split('#')[0]
+        return {
+            decoded,
+            didResolution: result.didResolutionResult,
+            alg,
+            kid,
+            did
+        };   
+    }
+
+    private async unused() {
+                // jump through some loops to get data about the holder into our session state
+                const result = await this.vcIssuer.jwtVerifyCallback(args);
+                const holder = result.did;
+                const nonce = result.jwt.payload.nonce;
+                const cNonceState = await this.vcIssuer.cNonces.getAsserted(nonce || '')
+                stateId = cNonceState.preAuthorizedCode || cNonceState.issuerState || '';
+                var sessionState = await this.getSessionById(stateId);
+                sessionState.holder = holder;
+                await this.sessionData.set(stateId, sessionState);
+                return result;
     }
 
     public getSessionById(id: string = ''): SessionState {
@@ -217,7 +258,7 @@ export class Issuer
         }
         const jwtVerifyOpts: JWTVerifyOptions = {
           resolver,
-          audience: this.metadata.metadata.credential_issuer as string,
+          audience: this.metadata.credential_issuer as string,
         }
         builder.withIssuerMetadata(this.generateMetadata())
             .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, { agent: getAgent() }))
@@ -241,7 +282,7 @@ export class Issuer
       const services = this.did!.keys.map((key) => ({
         id: this.did!.did + '#' + key.kid,
         type: "OID4VCI",
-        serviceEndpoint: this.metadata.metadata.credential_issuer
+        serviceEndpoint: this.metadata.credential_issuer
       }));
     
       // ed25519 keys can also be converted to x25519 for key agreement
@@ -279,7 +320,7 @@ export class Issuer
         return Alg.ES256;
     }
 
-    public hasCredentialConfiguration(name:string):boolean|CredentialConfiguration {
+    public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
         if (!name || typeof(name) != 'string' || name == '') {
             return false;
         }
@@ -300,41 +341,41 @@ export class Issuer
         return false;
     }
 
-    public getCredentialConfiguration(id:string): CredentialConfigurationSupportedV1_0_13|null {
-        if (this.hasCredentialConfiguration(id)) {
-            return this.decorateCredentialConfiguration(id);
+    public getCredentialConfiguration(id:string): CredentialConfiguration|null {
+        const credential = this.hasCredentialConfiguration(id);
+        if (credential !== false) {
+            return this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration);
         }
         return null;
     }
 
     public getCredentialContext(id:string): string[]
     {
-        if (this.hasCredentialConfiguration([id])) {
+        if (this.hasCredentialConfiguration(id)) {
             // return the @context setting on the metadata specification, assuming this is applicable
             // to all credentials defined in the set
-            if (this.metadata['@context']) {
+            if (this.metadata['@context'] && this.metadata['@context'].length) {
                 const contextStore = getContextConfigurationStore();
                 return this.metadata['@context'].map((item) => {
-                    console.log('checking for context ', item);
                     if (contextStore[item]) {
                         return contextStore[item].fullPath!;
                     }
                     return null;
-                }).filter((i) => i !== null);
+                }).filter((i) => i !== null) as string[];
             }
         }
         return [];
     }
 
-
     public generateMetadata() {
         var metadata:IssuerMetadata = this.metadata as IssuerMetadata;
-        var credentials:Record<string, CredentialConfigurationSupportedV1_0_13> = {};
+        var credentials:Record<string, CredentialConfiguration> = {};
         for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
             const credentialConfiguration = this.decorateCredentialConfiguration(id);
             credentials[id] = credentialConfiguration;
         }
         metadata.credential_configurations_supported = credentials;
+        metadata.credential_identifiers_supported = true;
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
 
@@ -346,57 +387,69 @@ export class Issuer
      * @param credentialId : string uniquely identifying this credential configuration in the metadata
      * @param credential : credential configuration in vc_jwt format (with credential_definition)
      * @returns : credential metadata in vc+sd-jwt format
+     * 
+     * We do some name and type mangling here to be able to convert one object type (JwtVC) to
+     * another (SD-JWT) and test/delete the attributes that are missing or need to be converted
      */
-    private convertToSdCredential(credentialId:string, credential:CredentialConfigurationSupportedV1_0_13)
+    private convertToSdCredential(credentialId:string, credential:CredentialConfigurationJwtVC): CredentialConfiguration
     {
         const vct = getVctForCredentialType(credentialId);
+        const sdjwt = (credential as unknown) as CredentialConfigurationSdJwt;
         if (vct !== null) {
-            credential.vct = vct.vct!;
-            if (!credential.claims && credential.credential_definition.credentialSubject) {
-                const subjects = (credential as CredentialConfigurationSupportedJwtVcJsonV1_0_13).credential_definition.credentialSubject;
+            sdjwt.vct = vct.vct!;
+            if (!sdjwt.claims && credential.credential_definition.credentialSubject) {
+                const subjects = credential.credential_definition.credentialSubject;
                 if (subjects) {
-                    credential.claims = subjects;
+                    sdjwt.claims = subjects as ClaimsList;
                 }
             }
             if (credential.credential_definition) {
-                delete credential.credential_definition;
+                delete (sdjwt as any).credential_definition;
             }
         }
-        return credential;
+        return sdjwt as CredentialConfiguration;
     }
 
     /**
      * 
      * @param credentialId: string uniquely identifying this credential configuration in the metadata
+     * @param configuration: an ExtendableCredentialConfiguration for this id
      * @returns credential metadata
      * 
      * Decorate the credential metadata as specified with the issuer with the general metadata specified
      * for this credential. 
      * If required, convert this from vc_jwt to vc+sw-jwt configuration.
      */
-    private decorateCredentialConfiguration(credentialId:string):CredentialConfigurationSupportedV1_0_13 {
+    private decorateCredentialConfiguration(credentialId:string, configuration?:ExtendableCredentialConfiguration):CredentialConfiguration {
         const store = getCredentialConfigurationStore();
-        const overriddenConfiguration = this.metadata?.credential_configurations_supported[credentialId] ?? {}
+        let overriddenConfiguration:ExtendableCredentialConfiguration;
+        if (!configuration) {
+            overriddenConfiguration = this.metadata?.credential_configurations_supported[credentialId] ?? {}
+        }
+        else {
+            overriddenConfiguration = configuration;
+        }
 
         // allow the override configuration to specify which credential id it is explicitely overriding
         if (overriddenConfiguration.extends) {
             credentialId = overriddenConfiguration.extends as string;
         }
-        var decoratedCredential = Object.assign(
+
+        var decoratedCredential:CredentialConfiguration = Object.assign(
             {},
             store[credentialId] ?? {},
-            overriddenConfiguration) as CredentialConfigurationSupportedV1_0_13;
+            overriddenConfiguration) as CredentialConfiguration;
 
-        //remove extension mechanism
-        if (decoratedCredential.extends) {
-            delete decoratedCredential.extends;
+        // remove extension mechanism from ExtendableCredentialConfiguration
+        if ((decoratedCredential as ExtendableCredentialConfiguration).extends) {
+            delete (decoratedCredential as ExtendableCredentialConfiguration).extends;
         }
 
         if (decoratedCredential.format == 'vc+sd-jwt') {
-            decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential);
+            decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential as CredentialConfigurationJwtVC);
         }
 
-        return decoratedCredential as CredentialConfigurationSupportedV1_0_13;
+        return decoratedCredential as CredentialConfiguration;
     }
 
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)

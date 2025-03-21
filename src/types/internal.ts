@@ -48,3 +48,8 @@ export interface CreateCredentialData {
     id:string;
     pinCode?:string;
 }
+
+export interface CredentialDataSet {
+    credentialId: string;
+    data: StringKeyedObject;
+}
