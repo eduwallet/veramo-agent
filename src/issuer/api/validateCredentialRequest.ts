@@ -108,6 +108,46 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     const { header, payload } = decoded;
     const { iss, aud, iat, nonce } = payload
 
+
+    // checking the composition of the proof, which should normally be a no-brainer
+
+    // we are not going to check the validity of the signature and whether the header
+    // composition is valid or not: if verifyJWT was able to verify the signature,
+    // the JWT is signed and the contents are valid
+
+    // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-jwt-proof-type
+    // alg: required, must not be none
+    if (!alg || alg === 'none') {
+        // if we did not determine an algorithm, how did verifyJWT return a verified result above...
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid proof algorithm";
+        return error;
+    }
+    // typ: required, must be openid4vci-proof+jwt'
+    // the did-jwt library predefines the typ header claim to always be JWT, which is
+    // obviously not the case
+    if ((header.typ as string) !== 'openid4vci-proof+jwt') {
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid proof type";
+        return error;
+    }
+
+    // kid: optional. If present it must be a did. The did-jwt library extracts this
+    // jwk: optional, used instead of kid. did-jwt does not support this
+    // x5c: optional, used instead of kid. did-jwt does not support this
+    // trust_chain: optional, OIDFed information
+
+    // in the body:
+    // iss: optional, must not be present for pre-auth, contains client_id
+    if (session.issuerState && !iss) {
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "No iss claim found";
+        return error;
+    }
+
+    // aud: required, credential issuer identifier
+    // iat: required, time the proof was created
+    // nonce: optional, must be present if a c_nonce was supplied
     if (!nonce) {
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No nonce value found";
@@ -127,54 +167,13 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-    // checking the composition of the proof, which should normally be a no-brainer
-    // the did-jwt library predefines the typ header claim to always be JWT, which is
-    // obviously not the case
-    if ((header.typ as string) !== 'openid4vci-proof+jwt') {
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "Invalid proof type";
-        return error;
-    }
-
-    // we are not going to check the validity of the signature and whether the header
-    // composition is valid or not: if verifyJWT was able to verify the signature,
-    // the JWT is signed and the contents are valid
-    if (!alg) {
-        // if we did not determine an algorithm, how did verifyJWT return a verified result above...
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "Invalid proof algorithm";
-        return error;
-    }
     if (!did || !didDocument) {
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No did found";
         return error;
     }
 
-        authSession.lastUpdatedAt = +new Date()
-        authSession.status = IssueStatus.CREDENTIAL_REQUEST_RECEIVED
 
-      // https://www.rfc-editor.org/rfc/rfc6749.html#section-3.2.1
-      // A client MAY use the "client_id" request parameter to identify itself
-      // when sending requests to the token endpoint.  In the
-      // "authorization_code" "grant_type" request to the token endpoint, an
-      // unauthenticated client MUST send its "client_id" to prevent itself
-      // from inadvertently accepting a code intended for a client with a
-      // different "client_id".  This protects the client from substitution of
-      // the authentication code.  (It provides no additional security for the
-      // protected resource.)
-      if (!iss && authSession?.credentialOffer.credential_offer?.grants?.authorization_code) {
-        throw new Error(NO_ISS_IN_AUTHORIZATION_CODE_CONTEXT)
-      }
-      // iss: OPTIONAL (string). The value of this claim MUST be the client_id of the client making the credential request.
-      // This claim MUST be omitted if the Access Token authorizing the issuance call was obtained from a Pre-Authorized Code Flow through anonymous access to the Token Endpoint.
-      // TODO We need to investigate further what the comment above means, because it's not clear if the client or the user may be authorized anonymously
-      // if (iss && grants && grants[PRE_AUTH_GRANT_LITERAL]) {
-      //   throw new Error(ISS_PRESENT_IN_PRE_AUTHORIZED_CODE_CONTEXT)
-      // }
-      /*if (iss && iss !== clientId) {
-        throw new Error(ISS_MUST_BE_CLIENT_ID + `iss: ${iss}, client_id: ${clientId}`)
-      }*/
       if (!aud || aud !== this._issuerMetadata.credential_issuer) {
         throw new Error(AUD_ERROR)
       }
