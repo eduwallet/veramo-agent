@@ -1,8 +1,9 @@
 import Debug from 'debug';
 import { Issuer } from "issuer/Issuer";
-import { CreateCredentialOfferRequest, ErrorCodes } from "types/api";
+import { ErrorCodes } from 'types/api';
+import { CreateCredentialOfferRequest } from "types/api/credentialOffer";
 import { ApiState } from "types/internal";
-import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification';
+import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification/credential_offer';
 
 const debug = Debug('api:validate');
 
@@ -24,13 +25,13 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
     }
 
     const credentialConfigIds = request.credentials as string[];
-    if (!credentialConfigIds || credentialConfigIds.length === 0) {
+    if (!credentialConfigIds || credentialConfigIds.length !== 1) {
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Missing credential types";
         return error;
     }
 
-    if (!issuer.hasCredentialConfiguration(credentialConfigIds)) {
+    if (!issuer.hasCredentialConfiguration(credentialConfigIds[0])) {
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Credential type not supported";
         return error;

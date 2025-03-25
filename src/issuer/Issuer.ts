@@ -1,22 +1,11 @@
 import Debug from 'debug';
 import { v4 } from 'uuid'
 import { StatusList } from "types/specification/statuslists";
-import { CredentialConfigurationSupportedV1_0_13, Alg, StateType,
-  CredentialDataSupplierInput, CredentialRequestV1_0_13,
-  IssuerMetadata,
-  CredentialDefinitionJwtVcJsonV1_0_13,
-  CredentialConfigurationSupportedJwtVcJsonV1_0_13,
-  IssuerCredentialSubject
- } from '@sphereon/oid4vci-common';
-import { VcIssuer, VcIssuerBuilder, MemoryStates, CredentialDataSupplierResult, CredentialIssuanceInput } from '@sphereon/oid4vci-issuer';
 import { Router } from "express";
-import { DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
-import { getCredentialSignerCallback, getJwtVerifyCallback } from "@sphereon/ssi-sdk.oid4vci-issuer";
-import { createJWT, decodeJWT, JWTVerifyOptions, verifyJWT } from "did-jwt";
+import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
+import { createJWT, decodeJWT, verifyJWT } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
-import { resolver } from 'resolver';
 import { getAgent } from 'agent';
-import { credentialResolver } from "credentials/credentialResolver";
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
 import { getCredentialConfigurationStore } from "credentials/Store";
@@ -28,46 +17,16 @@ import { jwtDecode } from 'jwt-decode'
 import { getContextConfigurationStore } from 'contexts/Store';
 import { getIdentifier, getIdentifierByAlias } from 'utils/did';
 import { getVctForCredentialType } from 'vct/Store';
-import { Metadata } from 'types/specification';
-import { IssuerConfiguration, IssuerSessionData } from 'types/internal';
+import { IssuerConfiguration } from 'types/internal';
 import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 import { bytesToBase64 } from '@veramo/utils';
 import { JWT } from 'types/specification/jwt';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurationSdJwt } from 'types/specification/metadata';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
 import { StatusListRevocationState } from 'types/api';
 import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
+import { Alg, algMapping, keyMapping } from 'crypto/index';
 
 const debug = Debug('agent:issuer');
-type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
-
-// mapping key types to key output types in the DIDDocument
-const keyMapping: Record<TKeyType, string> = {
-  Secp256k1: 'EcdsaSecp256k1VerificationKey2019',
-  Secp256r1: 'EcdsaSecp256r1VerificationKey2019',
-  // we need JsonWebKey2020 output
-  Ed25519: 'JsonWebKey2020', //'Ed25519VerificationKey2018', 
-  X25519: 'X25519KeyAgreementKey2019',
-  Bls12381G1: 'Bls12381G1Key2020',
-  Bls12381G2: 'Bls12381G2Key2020',
-  RSA: 'RsaVerificationKey2018'
-}
-
-// TODO: OBV3 says the following:
-// > The signing algorithm MUST be "RS256" as a minimum as defined in [RFC7518]. Support for
-// > other algorithms is permitted but their use limits interoperability. Later versions of
-// > this specification MAY add OPTIONAL support for other algorithms. See Section 6.1 RSA Key
-// > of the IMS Global Security Framework v1.1.
-//
-// So we must support RS256 at least, and should remove the other algorithms.
-const algMapping: Record<TKeyType, Alg> = {
-  Ed25519: Alg.EdDSA,
-  X25519: Alg.EdDSA,
-  Secp256k1: Alg.ES256,
-  Secp256r1: Alg.ES256K,
-  RSA: Alg.RS512,
-  Bls12381G1: Alg.ES256, // incorrect
-  Bls12381G2: Alg.ES256 // incorrect
-}
 
 export class Issuer
 {
@@ -147,6 +106,7 @@ export class Issuer
     public async verifyToken(jwt:string)
     {
         const result = await verifyJWT(jwt, {
+            audience: this.metadata.credential_issuer,
             resolver: {
                 resolve: async (didUrl:string, options?:DIDResolutionOptions) => {
                     return await getAgent().resolveDid({ didUrl, options })
@@ -171,25 +131,22 @@ export class Issuer
         };   
     }
 
-    private async unused() {
-                // jump through some loops to get data about the holder into our session state
-                const result = await this.vcIssuer.jwtVerifyCallback(args);
-                const holder = result.did;
-                const nonce = result.jwt.payload.nonce;
-                const cNonceState = await this.vcIssuer.cNonces.getAsserted(nonce || '')
-                stateId = cNonceState.preAuthorizedCode || cNonceState.issuerState || '';
-                var sessionState = await this.getSessionById(stateId);
-                sessionState.holder = holder;
-                await this.sessionData.set(stateId, sessionState);
-                return result;
-    }
-
     public getSessionById(id: string = ''): SessionState {
         return this.sessionData.get(id, (el:SessionState) => { el.state = id; return el; });
     }
     public storeSession(state:SessionState)
     {
         this.sessionData.set(state);
+    }
+    public removeSession(state:SessionState)
+    {
+        if (this.authorizationState.has(state.issuerState)) {
+            this.authorizationState.delete(state.issuerState);
+        }
+        if (this.authorizationState.has(state.preAuthorizedCode)) {
+            this.authorizationState.delete(state.preAuthorizedCode);
+        }
+        this.sessionData.clear(state.id);
     }
 
     public async storeRequestResponseData(id:string, phase:string, data:any, isJwt = false)
@@ -208,20 +165,18 @@ export class Issuer
         }
     }
 
-    public async storeCredential(id:string)
+    public async storeCredential(session:SessionState, credential:CredentialPayload)
     {
-        const session = this.sessionData.get(id);
-        if (session && session.credential) {
+        if (session && credential && typeof(credential) !== 'string') {
             const dbConnection = await getDbConnection();
             const repo = dbConnection.getRepository(Credential);
-            const credData:CredentialIssuanceInput = session.credential.credential;
             const dbCred = new Credential();
             dbCred.uuid = v4();
             dbCred.state = session.state;
-            dbCred.issuanceDate = moment((credData.issuanceDate as string) || undefined).toDate();
-            dbCred.claims = credData.credentialSubject as Claims;
-            if (credData.expirationDate) {
-                dbCred.expirationDate = moment((credData.expirationDate as string) || undefined).toDate();
+            dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
+            dbCred.claims = credential.credentialSubject as Claims;
+            if (credential.expirationDate) {
+                dbCred.expirationDate = moment((credential.expirationDate as string) || undefined).toDate();
             }
             else {
                 dbCred.expirationDate = undefined;
@@ -230,8 +185,8 @@ export class Issuer
             dbCred.credpid = session.principalCredentialId || '';
             dbCred.issuer = this.name;
             dbCred.credentialId = session.credentialId || '';
-            if (credData.credentialStatus && typeof(credData.credentialStatus) == 'object') {
-                dbCred.statuslists = credData.credentialStatus;
+            if (credential.credentialStatus && typeof(credential.credentialStatus) == 'object') {
+                dbCred.statuslists = credential.credentialStatus;
             }
             await repo.save(dbCred);
             session.uuid = dbCred.uuid;
@@ -246,64 +201,44 @@ export class Issuer
         //await this.vcIssuer.uris?.clearExpired();
     }
 
-    public checkCredentialData(credentialIds:string[], credentialData: CredentialDataSupplierInput)
+    public checkCredentialData(credentialIds:string[], claims: any)
     {
-        return credentialDataChecker(this, credentialIds[0], credentialData);
+        return credentialDataChecker(this, credentialIds[0], claims);
     }
 
-    private buildVcIssuer() {
-        const builder = new VcIssuerBuilder<DIDDocument>()
-        if (!resolver) {
-          throw Error('A Resolver is necessary to verify DID JWTs')
-        }
-        const jwtVerifyOpts: JWTVerifyOptions = {
-          resolver,
-          audience: this.metadata.credential_issuer as string,
-        }
-        builder.withIssuerMetadata(this.generateMetadata())
-            .withCredentialSignerCallback(getCredentialSignerCallback(this.options.options.issuerOpts.didOpts, { agent: getAgent() }))
-            .withJWTVerifyCallback(getJwtVerifyCallback({ verifyOpts: jwtVerifyOpts }, { agent: getAgent() }))
-            .withInMemoryCNonceState()
-            .withInMemoryCredentialOfferState()
-            .withCredentialDataSupplier(credentialResolver(this))
-            .withInMemoryCredentialOfferURIState();
-      
-        return builder.build();
-    }  
-
     public getDidDoc ():DIDDocument {
-      const allKeys = this.did!.keys.map((key) => ({
-        id: this.did!.did + '#' + key.kid,
-        type: keyMapping[key.type],
-        controller: this.did!.did,
-        publicKeyJwk: toJwk(key.publicKeyHex, key.type, { use: JwkKeyUse.Signature, key: key}) as JsonWebKey,
-      }));
+        const allKeys = this.did!.keys.map((key) => ({
+            id: this.did!.did + '#' + key.kid,
+            type: keyMapping[key.type],
+            controller: this.did!.did,
+            publicKeyJwk: toJwk(key.publicKeyHex, key.type, { use: JwkKeyUse.Signature, key: key}) as JsonWebKey,
+        }));
     
-      const services = this.did!.keys.map((key) => ({
-        id: this.did!.did + '#' + key.kid,
-        type: "OID4VCI",
-        serviceEndpoint: this.metadata.credential_issuer
-      }));
+        const services = this.did!.keys.map((key) => ({
+            id: this.did!.did + '#' + key.kid,
+            type: "OID4VCI",
+            serviceEndpoint: this.metadata.credential_issuer
+        }));
     
-      // ed25519 keys can also be converted to x25519 for key agreement
-      const keyAgreementKeyIds = allKeys
-        .filter((key) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type))
-        .map((key) => key.id)
-      const signingKeyIds = allKeys
-        .filter((key) => key.type !== 'X25519KeyAgreementKey2019')
-        .map((key) => key.id)
-    
-      const didDoc:DIDDocument = {
-        '@context': 'https://w3id.org/did/v1',
-        id: this.did!.did,
-        verificationMethod: allKeys,
-        authentication: signingKeyIds,
-        assertionMethod: signingKeyIds,
-        keyAgreement: keyAgreementKeyIds,
-        service: [...services, ...(this.did?.services || [])],
-      }
-    
-      return didDoc;
+        // ed25519 keys can also be converted to x25519 for key agreement
+        const keyAgreementKeyIds = allKeys
+            .filter((key) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type))
+            .map((key) => key.id)
+        const signingKeyIds = allKeys
+            .filter((key) => key.type !== 'X25519KeyAgreementKey2019')
+            .map((key) => key.id)
+        
+        const didDoc:DIDDocument = {
+            '@context': 'https://w3id.org/did/v1',
+            id: this.did!.did,
+            verificationMethod: allKeys,
+            authentication: signingKeyIds,
+            assertionMethod: signingKeyIds,
+            keyAgreement: keyAgreementKeyIds,
+            service: [...services, ...(this.did?.services || [])],
+        }
+        
+        return didDoc;
     }
 
     public signingAlg():Alg {
@@ -368,8 +303,8 @@ export class Issuer
     }
 
     public generateMetadata() {
-        var metadata:IssuerMetadata = this.metadata as IssuerMetadata;
-        var credentials:Record<string, CredentialConfiguration> = {};
+        const metadata:Metadata = Object.assign({}, this.metadata) as Metadata;
+        var credentials:CredentialConfigurations = {};
         for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
             const credentialConfiguration = this.decorateCredentialConfiguration(id);
             credentials[id] = credentialConfiguration;
@@ -553,6 +488,6 @@ export class Issuer
 
     public usesAuthorisedCodeFlow()
     {
-        return this.metadata.metadata.authorization_servers && this.metadata.metadata.authorization_servers.length;
+        return this.metadata.authorization_servers && this.metadata.authorization_servers.length;
     }
 }

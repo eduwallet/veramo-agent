@@ -1,5 +1,4 @@
 import { Issuer } from 'issuer/Issuer';
-import { CredentialDataSupplierInput } from '@sphereon/oid4vci-common'
 import { AcademicBaseCredential } from './AcademicBaseCredential';
 import { PID } from './PID';
 import { OpenBadgeCredential } from './OpenBadgeCredential';
@@ -7,7 +6,7 @@ import { GenericCredential } from './GenericCredential';
 import { AcademicEnrollmentCredential } from './AcademicEnrollmentCredential';
 import { getCredentialTypeFromConfig } from 'utils/getCredentialTypeFromConfig';
 
-export function credentialDataChecker(issuer:Issuer, credentialId:string, claims: CredentialDataSupplierInput): boolean {
+export function credentialDataChecker(issuer:Issuer, credentialId:string, claims: any): boolean {
     const credentialConfiguration = issuer.getCredentialConfiguration(credentialId);
     const credentialType = getCredentialTypeFromConfig(credentialConfiguration!); 
 

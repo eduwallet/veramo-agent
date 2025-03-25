@@ -7,10 +7,9 @@ import { DataStore, DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from '@v
 import { DIDManager } from '@veramo/did-manager'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { CredentialPlugin } from '@veramo/credential-w3c'
+import { KeyManager } from '@veramo/key-manager';
+import { KeyManagementSystem } from '@veramo/kms-local';
 
-import { IOID4VCIStore } from '@sphereon/ssi-sdk.oid4vci-issuer-store';
-import {SphereonKeyManager} from '@sphereon/ssi-sdk-ext.key-manager'
-import {SphereonKeyManagementSystem} from '@sphereon/ssi-sdk-ext.kms-local'
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018,
     SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } from '@sphereon/ssi-sdk.vc-handler-ld-local'
 
@@ -34,10 +33,10 @@ export async function setupPlugins(): Promise<IAgentPlugin[]>
     return [
         new DataStore(dbConnection), // Veramo
         new DataStoreORM(dbConnection), // Veramo
-        new SphereonKeyManager({
+        new KeyManager({
             store: new KeyStore(dbConnection),
             kms: {
-                local: new SphereonKeyManagementSystem(privateKeyStore),
+                local: new KeyManagementSystem(privateKeyStore),
             },
         }),
         new DIDManager({
@@ -66,8 +65,7 @@ export async function setupPlugins(): Promise<IAgentPlugin[]>
     ];
 }
 
-export type TAgentTypes = IOID4VCIStore &
-    IDIDManager &
+export type TAgentTypes = IDIDManager &
     IResolver &
     IKeyManager &
     IDataStore &

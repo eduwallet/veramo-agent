@@ -1,16 +1,17 @@
 import { Issuer } from '../Issuer';
 import { normalizeGrants } from '../../protocol/normalizeGrants';
-import { AUTHORIZATION_CODE_GRANT } from 'types/specification';
-import { CreateCredentialOfferRequest, CredentialOfferStatus } from 'types/api';
+import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer';
+import { CreateCredentialOfferRequest } from 'types/api/credentialOffer';
 import { CredentialOfferData } from 'types/specification/credential_offer';
 import { CreateCredentialData } from 'types/internal';
+import { CredentialOfferStatus } from 'types/api';
 
 export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):CreateCredentialData {
     let { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(request.grants);
 
     const credentialConfigIds = request.credentials as string[]
 
-    const credentialOffer: CredentialOfferData = {
+    const credentialOffer:CredentialOfferData = {
         grants,
         credential_configuration_ids: credentialConfigIds,
         credential_issuer: issuer.metadata.credential_issuer,
@@ -46,6 +47,7 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     session.credentialDataSets = {};
     session.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
+        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0]),
         data: request.credentialDataSupplierInput
     };
 
@@ -65,7 +67,7 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     issuer.storeSession(session);
 
     return {
-        id: session.preAuthorizedCode || session.issuerState || session.id,
+        id: session.id,
         ...(userPin && {pinCode:userPin })
     };
 }

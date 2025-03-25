@@ -20,7 +20,7 @@ export function validateGetCredentialOffer(issuer:Issuer, request:Request)
         return error;
     }
 
-    if (!session.credentialOffer || !session.credentialOffer.credential_offer) {
+    if (!session.credentialOffer || !session.credentialOffer.grants) {
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No credential offer found";
         return error;

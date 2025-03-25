@@ -3,12 +3,12 @@
  */
 
 import { CREDENTIAL_CONFIGURATION_PATH } from "../environment";
-import { CredentialConfigurationSupportedV1_0_13 } from '@sphereon/oid4vci-common';
 import { debug } from "utils/logger";
 import { loadJsonFiles } from "utils/generic";
+import { CredentialConfiguration } from "types/specification/metadata";
 
 export interface CredentialConfigurationStore {
-  [x: string]: CredentialConfigurationSupportedV1_0_13;
+  [x: string]: CredentialConfiguration;
 }
 
 var _credentialConfigurationStore: CredentialConfigurationStore = {};
@@ -16,7 +16,7 @@ export const getCredentialConfigurationStore = (): CredentialConfigurationStore 
 
 export async function initialiseCredentialConfigurationStore() {
   debug('Loading credential configurations, path: ' + CREDENTIAL_CONFIGURATION_PATH);
-  const configurations = loadJsonFiles<CredentialConfigurationSupportedV1_0_13>({ path: CREDENTIAL_CONFIGURATION_PATH });
+  const configurations = loadJsonFiles<CredentialConfiguration>({ path: CREDENTIAL_CONFIGURATION_PATH });
   _credentialConfigurationStore = configurations.asObject;
   debug('end of credential configuration store initialisation');
 }

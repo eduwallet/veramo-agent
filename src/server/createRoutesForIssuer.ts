@@ -1,11 +1,6 @@
-import Debug from 'debug'
 import express from 'express'
 import { ExpressSupport } from "@sphereon/ssi-express-support";
 import { Issuer } from "issuer/Issuer";
-import { getAccessTokenKeyRef, getAccessTokenSignerCallback } from '@sphereon/ssi-sdk.oid4vci-issuer'
-import { getAgent } from 'agent';
-import { ITokenEndpointOpts } from '@sphereon/oid4vci-issuer';
-import { getBasePath } from 'utils/getBasePath'
 import { debug } from 'utils/logger'
 
 import {
@@ -21,8 +16,10 @@ import {
     listCredentials,
     revokeCredential,
 } from './endpoints'
+import { getBasePath } from 'utils/getBasePath';
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
+    var tokenPath = '/token';
     debug('creating routes for ', issuer.name);
     /*
      * The issuer.options is the object containing the configured issuer options from the conf
@@ -31,27 +28,12 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
      * a further metadata field that contains the metadata 'following the specs'
      */
     debug("initializing rest api using ", issuer.options);
-    const metadata = issuer.metadata;
-
-    var tokenEndpointOpts:ITokenEndpointOpts = {
-        //enabled: true,
-        tokenEndpointDisabled: false,
-        // override the access-token-issuer, by default set to the credential-issuer
-        // accessTokenIssuer:
-        preAuthorizedCodeExpirationDuration: 300000, // max time between creation of the offer and the token request in ms
-        interval: 300000, // interval between requesting new credential tokens, in seconds
-        tokenPath: '/token'
-    };
-
-    if (metadata?.authorization_servers) {
-        tokenEndpointOpts.tokenEndpointDisabled = true;
-    }
-
     issuer.router = express.Router();
-    expressSupport.express.use(getBasePath(issuer.options.baseUrl), issuer.router)
+    expressSupport.express.use(getBasePath(issuer.options.baseUrl), issuer.router);
 
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
-    accessToken(issuer, '/token');
+    debug("adding token path");
+    accessToken(issuer, tokenPath);
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer)
@@ -60,12 +42,15 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
     getDidSpec(issuer);
   
     // This endpoint serves the /.well-known/openid-configuration document
-    var tokenPath = tokenEndpointOpts.tokenPath ? (issuer.options.baseUrl + tokenEndpointOpts.tokenPath) : undefined;
-    getOpenidConfiguration(issuer, tokenPath);
-    getOAuthConfiguration(issuer, tokenPath);
+    getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath);
+    getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath);
   
     // OpenID4VC endpoint to retrieve a specific credential
-    getCredential(issuer, tokenEndpointOpts);
+    let credentialEndpoint = issuer.metadata.credential_endpoint;
+    if (credentialEndpoint.startsWith(issuer.options.baseUrl)) {
+        credentialEndpoint = credentialEndpoint.substring(issuer.options.baseUrl.length);
+    }
+    getCredential(issuer, credentialEndpoint);
   
     // Enable the back channel interface to create a new credential offer
     createCredentialOfferResponse(issuer, '/api/create-offer', '/get-credential-offer');

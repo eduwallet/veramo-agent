@@ -1,17 +1,15 @@
 import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { determinePath } from 'utils/determinePath';
 import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
 import { openObserverLog } from 'utils/openObserverLog';
-import { CreateCredentialOfferResponse, CreateCredentialOfferRequest, ErrorCodes } from 'types/api';
+import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from 'types/api/credentialOffer';
 import { validateCreateCredentialOffer } from 'issuer/api/validateCreateCredentialOffer';
 import { createCredentialOffer } from 'issuer/api/createCredentialOffer';
+import { ErrorCodes } from 'types/api';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
-    const path = determinePath(issuer.options.baseUrl, createOfferPath, { stripBasePath: true })
-    const getOfferPath = determinePath(issuer.options.baseUrl, offerPath, { stripBasePath: true });
-    issuer.router!.post(path,
+    issuer.router!.post(createOfferPath,
         passport.authenticate(issuer.name + '-admin', { session: false }),
         async (request: Request<CreateCredentialOfferRequest>, response: Response<CreateCredentialOfferResponse>) => {
         try {
@@ -25,7 +23,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-request', request.body);
 
             const resultResponse: CreateCredentialOfferResponse = {
-                uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + getOfferPath + '/' + credentialOfferData.id,
+                uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + offerPath + '/' + credentialOfferData.id,
                 txCode: credentialOfferData.pinCode,
                 id: credentialOfferData.id
             }

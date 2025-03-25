@@ -6,8 +6,6 @@ import { ApiState } from 'types/internal';
 import { resolver } from 'resolver';
 import { CredentialRequest, CredentialRequestJwtVC, CredentialRequestLdpVC, CredentialRequestSdJwt } from 'types/specification/credential_request';
 import { SessionState } from 'utils/SessionStateManager';
-import { ExtendableCredentialConfiguration } from 'types/api/metadata';
-import { unpackCredentialRequestProof } from 'issuer/lib/unpackCredentialRequestProof';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -73,6 +71,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         }
         credentialDataSet = {
             credentialId: type,
+            credentialConfiguration,
             data: {} // we hope the credential implementation can determine the required values itself
         };
     }
@@ -82,11 +81,12 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
 
-    error.data = { session, type, credentialDataSet, proof:error.data.proof };
+    // return a CredentialProofData object
+    error.data = { session, credentialDataSet, nonce: error.data.nonce, keys: { kid: error.data.kid, jwk: error.data.jwk, did: error.data.did }};
     return error;
 }
 
-async function validateCredentialRequestProof(issuer:Issuer, session:SessionState, credentialRequest:CredentialRequest): ApiState
+async function validateCredentialRequestProof(issuer:Issuer, session:SessionState, credentialRequest:CredentialRequest): Promise<ApiState>
 {
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     // we only support JWT proofs at this moment
@@ -108,9 +108,8 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     const { header, payload } = decoded;
     const { iss, aud, iat, nonce } = payload
 
-
     // checking the composition of the proof, which should normally be a no-brainer
-
+    //
     // we are not going to check the validity of the signature and whether the header
     // composition is valid or not: if verifyJWT was able to verify the signature,
     // the JWT is signed and the contents are valid
@@ -146,7 +145,20 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     }
 
     // aud: required, credential issuer identifier
+    if (!aud || aud !== issuer.metadata.credential_issuer) {
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid aud claim";
+        return error;
+    }
+
     // iat: required, time the proof was created
+    // cannot be after the expiration time
+    if (!iat || iat > Math.round(session.expires / 1000)) {
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid iat claim";
+        return error;
+    }
+      
     // nonce: optional, must be present if a c_nonce was supplied
     if (!nonce) {
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -173,23 +185,9 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-
-      if (!aud || aud !== this._issuerMetadata.credential_issuer) {
-        throw new Error(AUD_ERROR)
-      }
-      if (!iat) {
-        throw new Error(IAT_ERROR)
-      } else if (iat > Math.round(createdAt / 1000) + tokenExpiresIn) {
-        // createdAt is in milliseconds whilst iat and tokenExpiresIn are in seconds
-        throw new Error(IAT_ERROR)
-      }
-      // todo: Add a check of iat against current TS on server with a skew
-
-      return { jwtVerifyResult, preAuthorizedCode, preAuthSession, issuerState, authSession, cNonceState }
-    } catch (error: unknown) {
-      await this.updateErrorStatus({ preAuthorizedCode, issuerState, error })
-      throw error
-    }    
+    // return the did of the proof, this is the holder key
+    error.data = {did, nonce, kid: header.kid, jwk: header.jwk};
+    return error;
 }
 
 function extractBearerToken (authorizationHeader?: string): string | undefined 

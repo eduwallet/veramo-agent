@@ -25,6 +25,7 @@ export interface CredentialResponseEncryptionOptions {
 
 export interface CredentialIssuerDisplay {
     name?:string;                         // credential issuer name
+    description?:string;                  // not mentioned in the specification
     locale?:string;                       // language identification following RFC5646
     logo?:CredentialIssuerLogo;
 }

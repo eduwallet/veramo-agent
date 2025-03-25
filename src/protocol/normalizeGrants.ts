@@ -1,7 +1,7 @@
 import { v4 } from 'uuid'
-import { AUTHORIZATION_CODE_GRANT, Grants, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT } from '../types/specification';
+import { AUTHORIZATION_CODE_GRANT, Grants, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT } from '../types/specification/credential_offer';
 import { generatePin } from './generatePin';
-import { APIGrants } from 'types/api';
+import { APIGrants } from 'types/api/credentialOffer';
 
  export function normalizeGrants(apiGrants: APIGrants) {
     let preAuthorizedCode: string | undefined = undefined

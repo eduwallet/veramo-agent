@@ -10,13 +10,18 @@ export async function openObserverLog(state:string, endpoint: string, data:any)
     };
 
     if (LOG_SERVICE === undefined || LOG_USER === undefined) {
-        debug("Log server would have recieved:", message);
+        debug("Log server would have received:", message);
         return;
     }
 
-    await fetch(LOG_SERVICE, {
-        method: 'POST',
-        headers: {'Authorization': 'Basic ' + LOG_USER},
-        body: JSON.stringify(message)
-    });
+    try {
+        await fetch(LOG_SERVICE, {
+            method: 'POST',
+            headers: {'Authorization': 'Basic ' + LOG_USER},
+            body: JSON.stringify(message)
+        });
+    }
+    catch (e) {
+
+    }
 }

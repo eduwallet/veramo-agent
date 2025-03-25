@@ -1,21 +1,22 @@
 
-import { getTypesFromRequest, CredentialsSupportedDisplay, CredentialDataSupplierInput} from "@sphereon/oid4vci-common";
-import { CredentialDataSupplierArgs, CredentialDataSupplierResult } from "@sphereon/oid4vci-issuer";
-import { ICredential } from "@sphereon/ssi-types"
 import moment from 'moment';
 import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig";
 import { toStringByJoin } from "utils/toStringByJoin";
 import { BaseCredential } from './BaseCredential';
+import { CredentialProofData, CredentialResult } from "types/internal";
+import { CredentialDisplay } from "types/specification/metadata";
+import { CredentialPayload } from '@veramo/core';
 
 export class AcademicBaseCredential extends BaseCredential
 {
-    public async generate(args: CredentialDataSupplierArgs): Promise<CredentialDataSupplierResult> {
-        const display = (this.issuer.metadata.metadata.display ?? [{}])[0];
-        const credentialConfiguration = this.issuer.getCredentialConfiguration(this.credentialId);
+    public async generate(proofData:CredentialProofData): Promise<CredentialResult> {
+        const display = (this.issuer.metadata.display ?? [{}])[0];
+        const { credentialDataSet } = proofData;
+        const { credentialConfiguration, data } = credentialDataSet;
         const type = getCredentialTypeFromConfig(credentialConfiguration!);
-        const credentialDisplay:CredentialsSupportedDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
+        const credentialDisplay:CredentialDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
-        const credential:ICredential = {
+        const credential:CredentialPayload = {
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ['VerifiableCredential', type],
             "issuer": {
@@ -27,16 +28,16 @@ export class AcademicBaseCredential extends BaseCredential
             'name': credentialDisplay?.name ?? '',
             'description': credentialDisplay?.description ?? '',
             "issuanceDate": moment().toISOString(),
-            "credentialSubject": this.convertDataToClaims(args.credentialDataSupplierInput)
+            "credentialSubject": this.convertDataToClaims(data)
         };
 
-        return await this.handleAttributes(args, type, 'sub', ({
+        return await this.handleAttributes(proofData, type, 'sub', {
             format: credentialConfiguration!.format,
             credential: credential
-        } as unknown) as CredentialDataSupplierResult);
+        });
     }
 
-    public check(claims: CredentialDataSupplierInput)
+    public check(claims: any)
     {
         const subject = this.convertDataToClaims(claims);
         if (!this.claimPresent('sub', 'string', subject)) return false;
@@ -47,7 +48,7 @@ export class AcademicBaseCredential extends BaseCredential
         return true;
     }
 
-    private convertDataToClaims(input:CredentialDataSupplierInput):any {
+    private convertDataToClaims(input:any):any {
         var retval:any = {};
         for (const key of Object.keys(input)) {
             switch (key) {

@@ -1,15 +1,13 @@
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Request, Response } from 'express'
 import { Issuer } from 'issuer/Issuer';
-import { determinePath } from 'utils/determinePath'
 import passport from 'passport';
 import { RevokeCredentialRequest } from 'types/api/index';
 import { ErrorCodes } from 'types/api';
 
 export function revokeCredential(issuer:Issuer, configPath:string) {
-    const path = determinePath(issuer.options.baseUrl, configPath, { stripBasePath: true })
     issuer.router!.post(
-        path,
+        configPath,
         passport.authenticate(issuer.name + '-admin', { session: false }),
         async (request: Request<RevokeCredentialRequest>, response: Response) => {
             try {

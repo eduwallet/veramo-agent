@@ -1,6 +1,5 @@
 import { Request, Response} from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { determinePath } from 'utils/determinePath';
 import { createAccessTokenResponse } from 'issuer/api/createAccessTokenResponse';
 import { Issuer } from 'issuer/Issuer'
 import { openObserverLog } from 'utils/openObserverLog';
@@ -8,18 +7,15 @@ import { debug } from 'utils/logger'
 import { TokenRequest, TokenResponse } from 'types/specification/access_token'
 import { validateAccessTokenRequest } from 'issuer/api/validateAccessTokenRequest'
 import { ErrorCodes } from 'types/api'
-import { PRE_AUTHORIZED_CODE } from 'types/specification'
 
 export function accessToken(issuer: Issuer, tokenPath:string) {
     const externalAS = issuer.metadata.authorization_servers
     if (externalAS) {
         debug(`[OID4VCI] External Authorization Server is being used. Not enabling issuer token endpoint`)
         return;
-    }
-    const path = determinePath(issuer.options.baseUrl, tokenPath, { stripBasePath: true })
-  
+    } 
     // this.issuer.issuerMetadata.token_endpoint = url.toString()
-    issuer.router!.post(path,
+    issuer.router!.post(tokenPath,
         async (request:Request<TokenRequest>, response: Response<TokenResponse>) => {
             try {
                 const error = validateAccessTokenRequest(issuer, request.body);

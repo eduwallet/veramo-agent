@@ -1,5 +1,5 @@
 import { Issuer } from "issuer/Issuer";
-import { PRE_AUTHORIZED_CODE } from "types/specification";
+import { PRE_AUTHORIZED_CODE } from "types/specification/credential_offer";
 import { ErrorCodes } from "types/api";
 import { ApiState } from "types/internal";
 import { GrantTypes, TokenRequest } from "types/specification/access_token";
@@ -28,13 +28,14 @@ export function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequ
         error.description = "No state found";
         return error;
     }
-    if (!validateTokenExpiry(session)) {
-      error.error = ErrorCodes.EXPIRED;
-      error.description = "Session expired, please try again";
-      return error;
+    if (sessionHasExpired(session)) {
+        issuer.removeSession(session);
+        error.error = ErrorCodes.EXPIRED;
+        error.description = "Session expired, please try again";
+        return error;
     }
 
-    const grants = session.credentialOffer?.credential_offer?.grants;
+    const grants = session.credentialOffer?.grants;
     if (!grants || !grants[tokenRequest.grant_type]) {
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid grant type";
@@ -65,8 +66,7 @@ export function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequ
     return error;
 }
 
-
-function validateTokenExpiry(session:SessionState)
+function sessionHasExpired(session:SessionState)
 {
     return (Date.now() > session.expires);
 }

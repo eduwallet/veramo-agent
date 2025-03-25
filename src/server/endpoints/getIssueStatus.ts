@@ -4,12 +4,10 @@ import { Issuer } from 'issuer/Issuer';
 import passport from 'passport';
 import { ErrorCodes } from 'types/api';
 import { IssueStatusResponse } from 'types/api/index';
-import { determinePath } from 'utils/determinePath'
 
 export function getIssueStatus(issuer:Issuer, checkPath:string) {
-    const path = determinePath(issuer.options.baseUrl, checkPath, { stripBasePath: true })
     issuer.router!.post(
-        path,
+        checkPath,
         passport.authenticate(issuer.name + '-admin', { session: false }),
         async (request: Request, response: Response) => {
             try {

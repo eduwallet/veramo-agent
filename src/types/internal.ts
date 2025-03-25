@@ -1,32 +1,29 @@
+import { SessionState } from 'utils/SessionStateManager';
 import { ErrorCodes } from './api';
 import { StringKeyedObject } from './index';
-import { Metadata, StatusListsOption, TxCode } from './specification';
-import { Credential } from './specification/virtual_credential';
+import { StatusListsOption } from './specification';
+import { CredentialOffer } from './specification/credential_offer';
+import { CredentialConfiguration, CredentialFormat } from './specification/metadata';
+import { CredentialPayload } from '@veramo/core';
 
 // Session state as maintained by the Issuer in the whole process of creating an offer up
 // to receiving notifications
-export interface IssuerSessionData {
+export interface IssuerSessionData extends SessionState {
     createdAt: number;
-    state: string;
-    credential?: Credential;
-    metaData?: StringKeyedObject;
-    holder?:string;
-    principalCredentialId?: string;
-    credentialId?: string;
-    credentialType?: string;
-    uuid?: string;
+    lastUpdatedAt: number;
+    status: string;
+    credentialOffer:CredentialOffer;
+    metaData: StringKeyedObject;
+    credentialId: string;
+    credentialDataSets:StringKeyedObject;
+    pinCode?:string;
+    preAuthorizedCode?:string;
+    issuerState?:string;
     requestResponseData?:any;
 }
 
-
-interface IIssuerOptsPersistArgs {
-    overwriteExisting?: boolean // Whether to overwrite any existing metadata for a credential issuer. Defaults to true
-    issuerOpts: IIssuerOptions
-}  
-
 export interface IssuerConfiguration {
     name:string;
-    options: IIssuerOptsPersistArgs;
     baseUrl: string
     enableCreateCredentials: boolean
     clientId?:string;
@@ -51,5 +48,19 @@ export interface CreateCredentialData {
 
 export interface CredentialDataSet {
     credentialId: string;
+    credentialConfiguration:CredentialConfiguration;
     data: StringKeyedObject;
+}
+
+export interface CredentialProofData {
+    session:IssuerSessionData;
+    credentialDataSet:CredentialDataSet;
+    nonce:string;
+    keys: StringKeyedObject;
+}
+
+export interface CredentialResult {
+    credential: CredentialPayload;
+    format?: CredentialFormat;
+    signCallback?: any // If the data supplier wants to actually sign directly
 }
