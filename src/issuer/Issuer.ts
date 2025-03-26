@@ -207,14 +207,14 @@ export class Issuer
     }
 
     public getDidDoc ():DIDDocument {
-        const allKeys = this.did!.keys.map((key) => ({
+        const allKeys = this.did!.keys.map((key:IKey) => ({
             id: this.did!.did + '#' + key.kid,
             type: keyMapping[key.type],
             controller: this.did!.did,
             publicKeyJwk: toJwk(key.publicKeyHex, key.type, { use: JwkKeyUse.Signature, key: key}) as JsonWebKey,
         }));
     
-        const services = this.did!.keys.map((key) => ({
+        const services = this.did!.keys.map((key:IKey) => ({
             id: this.did!.did + '#' + key.kid,
             type: "OID4VCI",
             serviceEndpoint: this.metadata.credential_issuer
@@ -222,11 +222,11 @@ export class Issuer
     
         // ed25519 keys can also be converted to x25519 for key agreement
         const keyAgreementKeyIds = allKeys
-            .filter((key) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type))
-            .map((key) => key.id)
+            .filter((key:IKey) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type))
+            .map((key:IKey) => key.id)
         const signingKeyIds = allKeys
-            .filter((key) => key.type !== 'X25519KeyAgreementKey2019')
-            .map((key) => key.id)
+            .filter((key:IKey) => key.type !== 'X25519KeyAgreementKey2019')
+            .map((key:IKey) => key.id)
         
         const didDoc:DIDDocument = {
             '@context': 'https://w3id.org/did/v1',
@@ -242,7 +242,7 @@ export class Issuer
     }
 
     public signingAlg():Alg {
-        var keys:IKey[] = (this.did?.keys ?? []).filter((key) => key.kid == this.keyRef);
+        var keys:IKey[] = (this.did?.keys ?? []).filter((key:IKey) => key.kid == this.keyRef);
         if (keys.length == 0 && this.did!.keys) {
             keys = this.did!.keys;
         }

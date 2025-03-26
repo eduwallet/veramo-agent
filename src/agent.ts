@@ -1,6 +1,6 @@
 import Debug from 'debug';
 const debug = Debug("agent:main");
-import { createAgent, IAgentContext, TAgent } from '@veramo/core'
+import { createAgent, TAgent } from '@veramo/core'
 import { initialiseServer } from './server';
 import { setupPlugins, TAgentTypes } from './plugins';
 import { getOrCreateDIDs } from "utils/did";

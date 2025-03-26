@@ -1,9 +1,8 @@
-import { debug } from "utils/logger";
+import { debug } from "./logger";
 import {Resolver} from "did-resolver";
-import {getDidIonResolver, IonDIDProvider} from "@veramo/did-provider-ion";
 import {KeyDIDProvider} from "@veramo/did-provider-key";
 import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";
-import {WebDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-web";
+import {WebDIDProvider} from "@veramo/did-provider-web";
 import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
 import { getAgent } from "agent";
 import {DIDDocumentSection, IIdentifier} from "@veramo/core";
@@ -18,16 +17,12 @@ export function createDidResolver() {
     return new Resolver({
         ...getDidJwkResolver(),
         ...getDidKeyResolver(),
-        ...getDidIonResolver(),
         ...getDidWebResolver()
     })
 }
 
 export function createDidProviders() {
     return {
-        [`did:${DIDMethods.DID_ION}`]: new IonDIDProvider({
-            defaultKms: KMS.LOCAL,
-        }),
         [`did:${DIDMethods.DID_WEB}`]: new WebDIDProvider({
             defaultKms: KMS.LOCAL,
         }),
@@ -106,7 +101,7 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
         if (identifier) {
             console.log(`Identifier exists for DID ${opts.did}`)
             console.log(`${JSON.stringify(identifier)}`)
-            identifier.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
+            identifier.keys.map((key:any) => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
         } else {
             console.log(`No identifier for DID ${opts.did} exists yet. Will create the DID...`)
 
@@ -130,7 +125,7 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
             }
 
             identifier = await getAgent().didManagerCreate(args)
-            identifier!.keys.map(key => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
+            identifier!.keys.map((key:any) => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
 
             console.log(`Identifier created for DID ${identifier.did}`)
             console.log(`${JSON.stringify(identifier, null, 2)}`)

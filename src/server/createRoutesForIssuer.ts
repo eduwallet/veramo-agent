@@ -38,8 +38,10 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer)
   
-    // This endpoint serves the /.well-known/did.json document
-    getDidSpec(issuer);
+    if (issuer.did?.did?.startsWith('did:web:')) {
+        // This endpoint serves the /.well-known/did.json document
+        getDidSpec(issuer);
+    }
   
     // This endpoint serves the /.well-known/openid-configuration document
     getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath);

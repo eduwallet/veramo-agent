@@ -3,7 +3,6 @@ const debug = Debug(`eduwallet:plugin`)
 
 import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStore, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
 import { DataStore, DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from '@veramo/data-store'
-//import {SecretBox} from '@veramo/kms-local'
 import { DIDManager } from '@veramo/did-manager'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { CredentialPlugin } from '@veramo/credential-w3c'

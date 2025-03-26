@@ -1,3 +1,5 @@
+import { TKeyType } from '@veramo/core';
+
 export enum Alg {
     EdDSA = 'EdDSA',
     ES256 = 'ES256',
@@ -10,7 +12,7 @@ export enum Alg {
     RS512 = 'RS512',
 }
 
-export type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
+//export type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'RSA' | 'Bls12381G1' | 'Bls12381G2'
 
 // mapping key types to key output types in the DIDDocument
 export const keyMapping: Record<TKeyType, string> = {
