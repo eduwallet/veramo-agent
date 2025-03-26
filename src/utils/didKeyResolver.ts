@@ -1,6 +1,5 @@
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
 import { getDidKeyResolver as veramoResolver } from '@veramo/did-provider-key';
-import { getDidKeyResolver as blockchainResolver } from '@blockchain-lab-um/did-provider-key'
 import { jwk } from '@transmute/did-key.js';
 
 const resolveDidKey = async (
@@ -28,16 +27,6 @@ const resolveDidKey = async (
           }
     }
     catch (err:any) {}
-
-    try {
-        const resolver = blockchainResolver();
-        const retval = await resolver.key(didUrl, _parsed, _resolver, options);
-
-        if (!retval.didResolutionMetadata.error) {
-          return retval;
-        }
-    }
-    catch (err: any) {}
 
     return {
         didDocumentMetadata: {},

@@ -138,7 +138,7 @@ export class BaseCredential
             baseCredential.exp = moment(credential.expirationDate).unix();
         }
         const vct = getVctForCredentialType(type!);
-        baseCredential.vct = vct!.vct;
+        baseCredential.vct = vct!.vct!;
         baseCredential.iat = moment().unix();
         // TODO: encode the baseCredential.status referring to the status list implementation
         // the spec does not define this explicitely
@@ -179,10 +179,10 @@ export class BaseCredential
                 }
             }
         }
-        return {"claims": disclosureFrame };
+        return {"claims": disclosureFrame } as DisclosureFrame<SdJwtVcPayload>;
     }
 
-    private addPathToDisclosureFrame(disclosureFrame:DisclosureFrame<SdJwtVcPayload>, path:VctClaimPathElement[])
+    private addPathToDisclosureFrame(disclosureFrame:DisclosureFrame<SdJwtVcPayload>, path:VctClaimPathElement[]): DisclosureFrame<SdJwtVcPayload>
     {
         if (path.length === 1) {
             if (!disclosureFrame._sd) {
@@ -191,11 +191,14 @@ export class BaseCredential
             disclosureFrame._sd.push(path[0] as string);
         }
         else if (path.length > 1) {
-            if (!disclosureFrame[path[0] as string]) {
-                disclosureFrame[path[0] as string] = {};
+            const key = path[0]!;
+            if (!disclosureFrame[key]) {
+                disclosureFrame[key] = {};
             }
             const remainingPath = path.slice(1);
-            disclosureFrame[path[0] as string] = this.addPathToDisclosureFrame(disclosureFrame[path[0] as string] as DisclosureFrame<SdJwtVcPayload>, remainingPath);
+            const frameToAdd = disclosureFrame[key] as DisclosureFrame<SdJwtVcPayload>;
+            const frame = this.addPathToDisclosureFrame(frameToAdd, remainingPath);
+            disclosureFrame[key] = frame as any;
         }
         return disclosureFrame;
     }
