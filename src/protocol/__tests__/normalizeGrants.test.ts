@@ -1,7 +1,7 @@
 import {describe, expect, test} from '@jest/globals';
 import { normalizeGrants } from '../normalizeGrants'
-import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT, PreAuthGrant, TxCode } from '../../types/specification';
-import type { APIGrants } from '../../types/api';
+import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT, PreAuthGrant, TxCode } from '../../types/specification/credential_offer';
+import type { APIGrants } from '../../types/api/credentialOffer';
 
 test('generate authorization issuer state', () => {
     let grant:APIGrants = {};

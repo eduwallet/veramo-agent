@@ -1,7 +1,6 @@
 import { v4 } from 'uuid';
-import { AccessTokenResponse, TokenRequest } from 'types/specification/access_token';
+import { AccessTokenResponse } from 'types/specification/access_token';
 import { Issuer } from 'issuer/Issuer';
-import { PRE_AUTHORIZED_CODE } from 'types/specification';
 import { CredentialOfferStatus } from 'types/api';
 import { SessionState } from 'utils/SessionStateManager';
 import { JWT } from 'types/specification/jwt';

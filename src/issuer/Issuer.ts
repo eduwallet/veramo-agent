@@ -222,11 +222,11 @@ export class Issuer
     
         // ed25519 keys can also be converted to x25519 for key agreement
         const keyAgreementKeyIds = allKeys
-            .filter((key:IKey) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type))
-            .map((key:IKey) => key.id)
+            .filter((key:any) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type as string))
+            .map((key:any) => key.kid)
         const signingKeyIds = allKeys
-            .filter((key:IKey) => key.type !== 'X25519KeyAgreementKey2019')
-            .map((key:IKey) => key.id)
+            .filter((key:any) => key.type !== 'X25519KeyAgreementKey2019')
+            .map((key:any) => key.kid)
         
         const didDoc:DIDDocument = {
             '@context': 'https://w3id.org/did/v1',

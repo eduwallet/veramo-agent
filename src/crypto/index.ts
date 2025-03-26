@@ -23,7 +23,7 @@ export const keyMapping: Record<TKeyType, string> = {
   X25519: 'X25519KeyAgreementKey2019',
   Bls12381G1: 'Bls12381G1Key2020',
   Bls12381G2: 'Bls12381G2Key2020',
-  RSA: 'RsaVerificationKey2018'
+//  RSA: 'RsaVerificationKey2018'
 }
 
 // TODO: OBV3 says the following:
@@ -38,7 +38,7 @@ export const algMapping: Record<TKeyType, Alg> = {
   X25519: Alg.EdDSA,
   Secp256k1: Alg.ES256,
   Secp256r1: Alg.ES256K,
-  RSA: Alg.RS512,
+//  RSA: Alg.RS512,
   Bls12381G1: Alg.ES256, // incorrect
   Bls12381G2: Alg.ES256 // incorrect
 }

@@ -35,7 +35,7 @@ import { APIGrants } from 'types/api/credentialOffer';
             apiGrants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE] = preAuthorizedCode
         }
         // replace any unwanted characters (non-alphanumeric, underscores and whitespace) to keep a safe code
-        preAuthorizedCode = preAuthorizedCode.replace(/[\W_\s]+/g,"");
+        preAuthorizedCode.replace(/[\W_\s]+/g,"");
     }
     const grants = apiGrants as Grants;
     return { grants, issuerState, preAuthorizedCode, userPin };

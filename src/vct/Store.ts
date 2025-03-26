@@ -6,7 +6,7 @@ import { VCT_CONFIGURATION_PATH } from "../environment";
 import { debug } from "utils/logger";
 import { loadJsonFiles } from "utils/generic";
 import { getBaseUrl } from "utils/getBaseUrl";
-import { Vct } from "types/specification";
+import { Vct } from "types/specification/vct";
 
 
 export interface VctConfiguration
