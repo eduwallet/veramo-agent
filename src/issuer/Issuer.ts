@@ -1,32 +1,33 @@
 import Debug from 'debug';
+const debug = Debug('agent:issuer');
 import { v4 } from 'uuid'
-import { StatusList } from "types/specification/statuslists";
+import moment from "moment";
 import { Router } from "express";
-import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
 import { createJWT, decodeJWT, verifyJWT } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
-import { getAgent } from 'agent';
+import { jwtDecode } from 'jwt-decode'
+import { StatusList } from "types/specification/statuslists";
+import { StatusListRevocationState } from 'types/api';
+import { IssuerConfiguration } from 'types/internal';
+import { JWT } from 'types/specification/jwt';
+import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
+import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
+import { bytesToBase64 } from '@veramo/utils';
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
+debug('importing getAgent');
+import { getAgent } from 'agent';
 import { getCredentialConfigurationStore } from "credentials/Store";
+debug('importing getDbConnection from Issuer');
 import { getDbConnection } from "database";
 import { Credential, Claims } from "database/entities/Credential";
-import moment from "moment";
-import { credentialDataChecker } from "credentials/credentialDataChecker";
-import { jwtDecode } from 'jwt-decode'
 import { getContextConfigurationStore } from 'contexts/Store';
-import { getIdentifier, getIdentifierByAlias } from 'utils/did';
-import { getVctForCredentialType } from 'vct/Store';
-import { IssuerConfiguration } from 'types/internal';
-import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
-import { bytesToBase64 } from '@veramo/utils';
-import { JWT } from 'types/specification/jwt';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
-import { StatusListRevocationState } from 'types/api';
-import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
+import { credentialDataChecker } from "credentials/credentialDataChecker";
 import { Alg, algMapping, keyMapping } from 'crypto/index';
-
-const debug = Debug('agent:issuer');
+import { getVctForCredentialType } from 'vct/Store';
+import { getIdentifier, getIdentifierByAlias } from 'utils/did';
+import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 
 export class Issuer
 {

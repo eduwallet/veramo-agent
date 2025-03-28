@@ -1,24 +1,26 @@
-import { jest, expect, test} from '@jest/globals';
+import Debug from 'debug';
+const debug = Debug('test:test');
+import { expect, test} from '@jest/globals';
+debug("importing mock environment");
+import { mockIssuer } from '../../../jest.setup';
 import { validateAccessTokenRequest } from '../validateAccessTokenRequest'
 import { GrantTypes, TokenRequest } from "../../../types/specification/access_token";
 import { ErrorCodes } from "../../../types/api";
-import { Issuer } from "../../../issuer/Issuer";
+import { getDbConnection } from "../../../database/databaseService";
 
-jest.mock("../../../issuer/Issuer");
+test("should call getDbConnection", async () => {
+    const issuer = mockIssuer();
+    await getDbConnection();  
+    expect(getDbConnection).toHaveBeenCalled();
+    expect(!!issuer).toBe(true);
+});
 
-test('numeric pin code of 4 characters', () => {
+/*test('numeric pin code of 4 characters', () => {
     const tokenRequest:TokenRequest = {
         grant_type: GrantTypes.PRE_AUTHORIZED_CODE,
         "pre-authorized_code": "aaa"
     };
-    const issuer = new Issuer({
-        name: "test",
-        baseUrl: "http://here",
-        enableCreateCredentials:true,
-        did: "did:alias"
-    },{
-        "credential_configurations_supported": {}
-    }) as jest.Mocked<Issuer>;
+    const issuer = mockIssuer();
 
     expect(true).toBe(true);
     return;
@@ -38,3 +40,4 @@ test('numeric pin code of 4 characters', () => {
     expect(!!(result.data.session)).toBe(true);
     expect(result.data.session.id).toBe(session.id);
 });
+*/

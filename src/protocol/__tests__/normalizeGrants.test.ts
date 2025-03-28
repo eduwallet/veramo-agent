@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('test:test');
+debug(test);
 import {describe, expect, test} from '@jest/globals';
 import { normalizeGrants } from '../normalizeGrants'
 import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT, PreAuthGrant, TxCode } from '../../types/specification/credential_offer';

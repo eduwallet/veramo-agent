@@ -11,7 +11,8 @@
     "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/agent.js",
     "start:dev": "tsx --watch src/agent.ts",
     "cli": "tsx src/cli.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "test": 'NODE_OPTIONS="--experimental-vm-modules" npx jest  --verbose --no-cache'
   },
   "keywords": [],
   "author": "Michiel Uitdehaag <info@muisit.nl>",
@@ -62,8 +63,10 @@
     "**/debug": "4.3.5",
     "**/dotenv": "16.4.5",
     "**/dotenv-flow": "4.1.0",
-    "**/@digitalcredentials/vc": "5.0.0",
-    "**/@digitalcredentials/jsonld": "5.2.2",
+    "**/@digitalcredentials/vc": "9.0.1",
+    "**/@digitalcredentials/jsonld": "9.0.0",
+    "**/@digitalcredentials/jsonld-signatures": "12.0.1",
+    "**/@digitalcredentials/ed25519-verification-key-2020": "4.0.0",
     "**/@transmute/ed25519-key-pair": "0.7.0-unstable.82",
     "**/@transmute/jose-ld": "0.7.0-unstable.82",
     "**/@transmute/json-web-signature": "0.7.0-unstable.82",
@@ -91,7 +94,8 @@
     "**/@veramo/did-jwt": "4.2.0",
     "**/@types/express-serve-static-core": "4.19.6",
     "**/@types/express": "4.17.21",
-    "**/jsonld": "5.2.0",
+    "**/jsonld-signatures": "11.5.0",
+    "**/jsonld": "8.3.3",
     "**/glob": "10.4.5",
     "**/minimatch": "9.0.5",
     "**/strip-ansi": "6.0.1"

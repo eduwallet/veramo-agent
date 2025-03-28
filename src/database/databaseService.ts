@@ -9,8 +9,9 @@ const debug = Debug(`database:service`)
  * Todo, move to a class
  */
 var dataSource:DataSource|null = null;
-
+debug("exporting getDbConnection");
 export const getDbConnection = async (skipMigrate?:boolean): Promise<DataSource> => {
+  debug("getting db connection");
   if (dbConfig.synchronize) {
     return Promise.reject(
       `WARNING: Migrations need to be enabled in this app! Adjust the database configuration and set migrationsRun and synchronize to false`

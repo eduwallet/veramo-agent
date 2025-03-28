@@ -18,7 +18,7 @@ export function getAgent():TAgent<TAgentTypes> {
     return _agent!; 
 }
 
-async function main() {
+export async function main() {
     debug('Loading contexts');
     await initialiseContextConfigurationStore().catch(e => console.error(e))
 
@@ -43,5 +43,3 @@ async function main() {
     debug("Sending initial log message");
     openObserverLog("none", "init", {message:"Started issuer agent"});
 }
-
-main().catch(console.log);

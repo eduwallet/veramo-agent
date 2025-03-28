@@ -8,7 +8,6 @@ if (!process.env.DB_ENCRYPTION_KEY) {
   console.warn(`Please provide a DB_ENCRYPTION_KEY env var. Now we will use a pre-configured one. When you change to the var you will have to replace your DB`)
 }
 
-console.log('creating dbConfig');
 export const dbConfig: PostgresConnectionOptions = {
   type: 'postgres',
   schema: DB_SCHEMA,
