@@ -8,18 +8,16 @@
   "scripts": {
     "build": "tsc",
     "build:clean": "tsc --build --clean && tsc --build",
-    "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/agent.js",
-    "start:dev": "tsx --watch src/agent.ts",
+    "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/main.js",
+    "start:dev": "tsx --watch src/main.ts",
     "cli": "tsx src/cli.ts",
-    "postinstall": "patch-package",
-    "test": 'NODE_OPTIONS="--experimental-vm-modules" npx jest  --verbose --no-cache'
+    "postinstall": "patch-package"
   },
   "keywords": [],
   "author": "Michiel Uitdehaag <info@muisit.nl>",
   "license": "Apache-2.0",
   "private": false,
   "dependencies": {
-    "@blockchain-lab-um/did-provider-key": "^1.0.8",
     "@sd-jwt/core": "^0.9.2",
     "@sd-jwt/crypto-nodejs": "^0.9.2",
     "@sd-jwt/sd-jwt-vc": "^0.9.2",
@@ -121,18 +119,13 @@
     }
   },
   "devDependencies": {
-    "@jest/globals": "^29.7.0",
     "@types/debug": "^4.1.12",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.14",
     "@types/passport": "^1.0.16",
     "@types/passport-http-bearer": "^1.0.41",
-    "jest": "^29.7.0",
     "reflect-metadata": "^0.2.2",
-    "ts-jest": "^29.3.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.16.2",
-    "typescript": "^5.8.2"
+    "tsx": "^4.16.2"
   },
   "imports": {
     "#root/*": "./src/*.ts"
