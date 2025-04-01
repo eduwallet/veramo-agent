@@ -1,9 +1,8 @@
-import { verifyJWT } from 'did-jwt';
+import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT';
 import { Request } from 'express'
 import { Issuer } from 'issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from 'types/api';
 import { ApiState } from 'types/internal';
-import { resolver } from 'resolver';
 import { CredentialRequest, CredentialRequestJwtVC, CredentialRequestLdpVC, CredentialRequestSdJwt } from 'types/specification/credential_request';
 import { SessionState } from 'utils/SessionStateManager';
 
@@ -19,30 +18,46 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     }
 
     let session:SessionState|null = null;
-    if (!issuer.usesAuthorisedCodeFlow()) {
-        // in this case we issued the access token ourselves, so we can decode it
-        const data  = await verifyJWT(jwt || '', { resolver, proofPurpose: 'authentication'});
-        if (data.issuer != issuer.did?.did) {
-            error.error = ErrorCodes.INVALID_REQUEST;
-            error.description = "Unauthorised";
-            return error;
-        }
 
-        const stateid = data.payload.preAuthorizedCode;
+    // try to decode the access token as if it were a JWT
+    try {
+        const data  = await verifyAccessTokenJWT(jwt, issuer);
+
+        if (issuer.usesAuthorisedCodeFlow()) {
+            // the issuer should be one of our authorization servers
+            if (!issuer.metadata.authorization_servers.includes(data.payload.iss)) {
+                error.error = ErrorCodes.INVALID_REQUEST;
+                error.description = "Unauthorised";
+                return error;
+            }
+        }
+        else  {
+            // we must have issued it ourselves
+            if (data.payload.iss != issuer.did?.did) {
+                error.error = ErrorCodes.INVALID_REQUEST;
+                error.description = "Unauthorised";
+                return error;
+            }
+        }
+    
+        const stateid = data.payload.issuer_state;
         const sessionId = issuer.authorizationState.get(stateid);
+
         if (!sessionId) {
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "No state found";
             return error;
         }
-
         session = issuer.getSessionById(sessionId);
 
-        if (session && session.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
+        if (!issuer.usesAuthorisedCodeFlow() && session && session.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "No access token created";
             return error;
         }
+    }
+    catch (e) {
+        console.error("Caught exception on validating access token", e);
     }
 
     if (!session) {
@@ -158,25 +173,27 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         error.description = "Invalid iat claim";
         return error;
     }
-      
-    // nonce: optional, must be present if a c_nonce was supplied
-    if (!nonce) {
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "No nonce value found";
-        return error;
-    }
+    
+    if (issuer.usesNonces && !issuer.usesAuthorisedCodeFlow()) {
+        // nonce: optional, must be present if a c_nonce was supplied
+        if (!nonce) {
+            error.error = ErrorCodes.INVALID_REQUEST;
+            error.description = "No nonce value found";
+            return error;
+        }
 
-    const cNonceState = issuer.nonceStates.get(nonce);
-    if (!cNonceState) {
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "Invalid nonce";
-        return error;
-    }
+        const cNonceState = issuer.nonceStates.get(nonce);
+        if (!cNonceState) {
+            error.error = ErrorCodes.INVALID_REQUEST;
+            error.description = "Invalid nonce";
+            return error;
+        }
 
-    if (cNonceState !== session.id) {
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "Invalid nonce";
-        return error;
+        if (cNonceState !== session.id) {
+            error.error = ErrorCodes.INVALID_REQUEST;
+            error.description = "Invalid nonce";
+            return error;
+        }
     }
 
     if (!did || !didDocument) {

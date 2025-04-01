@@ -28,6 +28,8 @@ import { Alg, algMapping, keyMapping } from 'crypto/index';
 import { getVctForCredentialType } from 'vct/Store';
 import { getIdentifier, getIdentifierByAlias } from 'utils/did';
 import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
+import { StringKeyedObject } from '#root/types/index';
+import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
 
 export class Issuer
 {
@@ -41,6 +43,8 @@ export class Issuer
     public sessionData:SessionStateManager;
     public authorizationState:Map<string, string>;
     public nonceStates:Map<string, string>;
+    public serverKeys:StringKeyedObject;
+    public usesNonces:boolean;
 
     public constructor(_options:IssuerConfiguration, _metadata: MetadataConfiguration) {
         this.options = _options;
@@ -51,6 +55,8 @@ export class Issuer
         this.sessionData = new SessionStateManager();
         this.authorizationState = new Map<string,string>();
         this.nonceStates = new Map<string, string>();
+        this.serverKeys = {};
+        this.usesNonces = _options.usesNonces ?? true;
     }
 
     public algorithm():string
@@ -71,6 +77,20 @@ export class Issuer
 
         this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
         this.keyRef = this.key!.kid;
+    }
+
+    public async retrieveASServerKeys()
+    {
+        if (this.metadata.authorization_servers) {
+            for(const as of this.metadata.authorization_servers) {
+                const keys = await retrieveASServerKey(as);
+                if (keys !== null && keys.length) {
+                    for (const key of keys) {
+                        this.serverKeys[key.kid] = key;
+                    }
+                }
+            }
+        }
     }
 
     public signData(data: string | Uint8Array)

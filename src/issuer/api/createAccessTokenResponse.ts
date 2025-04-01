@@ -20,14 +20,17 @@ export async function createAccessTokenResponse(issuer:Issuer,session:SessionSta
       access_token,
       token_type: 'bearer',
       expires_in: TOKEN_EXPIRY / 1000,
-      c_nonce: cNonce,
-      c_nonce_expires_in: TOKEN_EXPIRY / 1000,
       authorization_pending: false,
       authorization_details: [{
         type: 'openid-credential',
         credential_configuration_id: session.credentialId!,
         credential_configurations: [session.credentialId!]
       }]
+    }
+
+    if (issuer.usesNonces) {
+      response.c_nonce = cNonce;
+      response.c_nonce_expires_in = TOKEN_EXPIRY / 1000;
     }
     return response
 }
@@ -38,12 +41,12 @@ async function generateAccessToken(issuer:Issuer, session:SessionState)
     const iat = new Date().getTime() / 1000
     const exp = iat + TOKEN_EXPIRY;
     const jwt: JWT = {
-        header: { typ: 'JWT', alg: issuer.signingAlg() },
+        header: { typ: 'JWT', alg: issuer.signingAlg(), kid: issuer.did.did },
         payload: {
             iat,
             exp,
             iss: issuer.did!.did,
-            ...(session.preAuthorizedCode && { preAuthorizedCode: session.preAuthorizedCode }),
+            ...(session.preAuthorizedCode && { issuer_state: session.preAuthorizedCode }),
             token_type: 'Bearer',
         }
     }

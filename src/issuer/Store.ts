@@ -30,6 +30,7 @@ export async function initialiseIssuerStore() {
         }
         const issuer = new Issuer(issuerOptionsObjects.asObject[correlationId], metadata);
         await issuer.setDid(); // do some asynchronous post-initialisation
+        await issuer.retrieveASServerKeys(); // retrieve the AS server keys
         console.log('setting issuer on store');
         _issuerStore[correlationId] = issuer;
     };

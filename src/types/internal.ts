@@ -33,6 +33,7 @@ export interface IssuerConfiguration {
     tokenEndpoint?:string;
     statusLists?:StatusListsOption;
     did:string;
+    usesNonces?:boolean;
 }
 
 export interface ApiState {
