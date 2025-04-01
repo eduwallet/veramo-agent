@@ -125,7 +125,9 @@
     "@types/passport": "^1.0.16",
     "@types/passport-http-bearer": "^1.0.41",
     "reflect-metadata": "^0.2.2",
-    "tsx": "^4.16.2"
+    "tsx": "^4.16.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "2.1.5"
   },
   "imports": {
     "#root/*": "./src/*.ts"

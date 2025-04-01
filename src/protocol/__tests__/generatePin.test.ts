@@ -1,4 +1,4 @@
-import {describe, expect, test} from '@jest/globals';
+import { expect, test} from 'vitest';
 import { generatePin } from '../generatePin';
 
 test('numeric pin code of 4 characters', () => {
