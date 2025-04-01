@@ -5,8 +5,10 @@ import { createRoutesForIssuer } from './createRoutesForIssuer';
 import { bearerAdminForIssuer } from './bearerAdminForIssuer';
 import { debug } from "utils/logger";
 import { getContextConfigurationStore } from "contexts/Store";
+import { getVctConfigurationStore } from "vct/Store";
 import express from 'express'
 import { getContext } from "./endpoints/getContext";
+import { getVct } from "./endpoints/getVct";
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'
@@ -37,6 +39,14 @@ export const initialiseServer = async () => {
   for (const key of Object.keys(contextStore)) {
     const context = contextStore[key];
     getContext(contextRouter, context);
+  };
+
+  const vctStore = getVctConfigurationStore();
+  const vctRouter = express.Router();
+  expressSupport.express.use('/', vctRouter);
+  for (const key of Object.keys(vctStore)) {
+    const vct = vctStore[key];
+    getVct(vctRouter, vct);
   };
 
   debug("starting express server");

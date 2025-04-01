@@ -26,4 +26,5 @@ export const ISSUER_PATH = `${CONF_PATH}/issuer`;
 export const METADATA_PATH = `${CONF_PATH}/metadata`;
 export const CREDENTIAL_CONFIGURATION_PATH = `${CONF_PATH}/credentials`;
 export const CONTEXT_CONFIGURATION_PATH = `${CONF_PATH}/contexts`;
+export const VCT_CONFIGURATION_PATH = `${CONF_PATH}/vct`;
 export const didOptConfigs = loadJsonFiles<IDIDOpts>({path: DID_OPTIONS_PATH})

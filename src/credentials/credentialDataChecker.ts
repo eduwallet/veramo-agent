@@ -9,9 +9,9 @@ import { getCredentialTypeFromConfig } from 'utils/getCredentialTypeFromConfig';
 
 export function credentialDataChecker(issuer:Issuer, credentialId:string, claims: CredentialDataSupplierInput): boolean {
     const credentialConfiguration = issuer.getCredentialConfiguration(credentialId);
-    const credentialTypes = getCredentialTypeFromConfig(credentialConfiguration!); 
+    const credentialType = getCredentialTypeFromConfig(credentialConfiguration!); 
 
-    switch (credentialTypes[0]) {
+    switch (credentialType) {
         case 'AcademicBaseCredential':
             const abc = new AcademicBaseCredential(issuer, credentialId);
             return abc.check(claims);
