@@ -1,6 +1,6 @@
 import Debug from 'debug';
 const debug = Debug('agent:issuer');
-import { v4 } from 'uuid'
+
 import moment from "moment";
 import { Router } from "express";
 import { createJWT, decodeJWT, verifyJWT } from "did-jwt";
@@ -30,6 +30,7 @@ import { getIdentifier, getIdentifierByAlias } from 'utils/did';
 import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
+import { createUniqueId } from '#root/utils/createUniqueId';
 
 export class Issuer
 {
@@ -192,7 +193,7 @@ export class Issuer
             const dbConnection = await getDbConnection();
             const repo = dbConnection.getRepository(Credential);
             const dbCred = new Credential();
-            dbCred.uuid = v4();
+            dbCred.uuid = createUniqueId();
             dbCred.state = session.state;
             dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
             dbCred.claims = credential.credentialSubject as Claims;

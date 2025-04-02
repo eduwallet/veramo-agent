@@ -1,4 +1,4 @@
-import { v4 } from 'uuid'
+import { createUniqueId } from '#root/utils/createUniqueId';
 import { AUTHORIZATION_CODE_GRANT, Grants, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT } from '../types/specification/credential_offer';
 import { generatePin } from './generatePin';
 import { APIGrants } from 'types/api/credentialOffer';
@@ -11,7 +11,7 @@ import { APIGrants } from 'types/api/credentialOffer';
     if (apiGrants[AUTHORIZATION_CODE_GRANT]) {
         issuerState = apiGrants[AUTHORIZATION_CODE_GRANT].issuer_state;
         if (!issuerState || issuerState == '' || issuerState == 'generate') {
-            issuerState = v4();
+            issuerState = createUniqueId();
             apiGrants[AUTHORIZATION_CODE_GRANT].issuer_state = issuerState
         }
     }
@@ -31,11 +31,9 @@ import { APIGrants } from 'types/api/credentialOffer';
             }
         }
         if (!preAuthorizedCode || preAuthorizedCode == 'generate') {
-            preAuthorizedCode = v4()
+            preAuthorizedCode = createUniqueId();
             apiGrants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE] = preAuthorizedCode
         }
-        // replace any unwanted characters (non-alphanumeric, underscores and whitespace) to keep a safe code
-        preAuthorizedCode.replace(/[\W_\s]+/g,"");
     }
     const grants = apiGrants as Grants;
     return { grants, issuerState, preAuthorizedCode, userPin };

@@ -1,3 +1,5 @@
+import Debug from 'debug';
+const debug = Debug("server:createCredentialOffer");
 import { Issuer } from '../Issuer';
 import { normalizeGrants } from '../../protocol/normalizeGrants';
 import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer';
@@ -7,6 +9,7 @@ import { CreateCredentialData } from 'types/internal';
 import { CredentialOfferStatus } from 'types/api';
 
 export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):CreateCredentialData {
+    debug("creating credential offer", request);
     let { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(request.grants);
 
     const credentialConfigIds = request.credentials as string[]
@@ -21,6 +24,7 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     // This is an out-of-spec implementation of Sphereon, but not supported in
     // the open source versions of the VcIssuer. 
     if (grants[AUTHORIZATION_CODE_GRANT]) {
+        debug("offer for authorisation_code flow");
         if (issuer.options.clientId) {
             credentialOffer.client_id = issuer.options.clientId;
         }
@@ -30,6 +34,7 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
             // along as out-of-spec data anyway
             credentialOffer.client_id = credentialOffer.credential_issuer;
         }
+        debug("client id is ", credentialOffer.client_id);
     }
 
     // before we create a new session, clear out the old ones
@@ -52,22 +57,27 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     };
 
     if (userPin) {
+        debug("using pincode ", userPin);
         session.pinCode = userPin;
     }
 
     if (preAuthorizedCode) {
+        debug("using pre-authorized_code", preAuthorizedCode);
         session.preAuthorizedCode = preAuthorizedCode;
         issuer.authorizationState.set(preAuthorizedCode, session.id);
     }
     if (issuerState) {
+        debug("using issuerState", issuerState);
         session.issuerState = issuerState;
         issuer.authorizationState.set(issuerState, session.id);
     }
 
     issuer.storeSession(session);
 
-    return {
+    const retval = {
         id: session.id,
         ...(userPin && {pinCode:userPin })
     };
+    debug("returning ", retval);
+    return retval;
 }

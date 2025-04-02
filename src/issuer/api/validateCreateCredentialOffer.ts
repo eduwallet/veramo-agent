@@ -1,24 +1,27 @@
 import Debug from 'debug';
+const debug = Debug('server:validateCreateCredentialOffer');
 import { Issuer } from "issuer/Issuer";
 import { ErrorCodes } from 'types/api';
 import { CreateCredentialOfferRequest } from "types/api/credentialOffer";
 import { ApiState } from "types/internal";
 import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification/credential_offer';
 
-const debug = Debug('api:validate');
 
 export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):ApiState
 {
+    debug("validating createCredentialOffer", request);
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
 
     debug('validateCreateCredentialOffer to issue credential from', issuer.name, request);
     if (!request.grants || Object.keys(request.grants).length === 0) {
+        debug("invalid because no grant specified");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No grant specified";
         return error;
     }
 
     if (!request.credentials) {
+        debug("invalid because no credentials requested");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Missing credentials list";
         return error;
@@ -26,12 +29,14 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
 
     const credentialConfigIds = request.credentials as string[];
     if (!credentialConfigIds || credentialConfigIds.length !== 1) {
+        debug("invalid because credentials requested is incorrect", credentialConfigIds);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Missing credential types";
         return error;
     }
 
     if (!issuer.hasCredentialConfiguration(credentialConfigIds[0])) {
+        debug("invalid because requested credential does not exists on issuer");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Credential type not supported";
         return error;
@@ -44,11 +49,13 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
     // GenericCredential's with different VC format)        
     if (request.grants[PRE_AUTHORIZED_CODE_GRANT]) {
         if (!issuer.checkCredentialData(credentialConfigIds, request.credentialDataSupplierInput || {})) {
+            debug("invalid because the requested credential data is incorrect", request.credentialDataSupplierInput);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Missing required claims";
             return error;
         }
     }
   
+    debug("create credential offer is valid");
     return error;
 }

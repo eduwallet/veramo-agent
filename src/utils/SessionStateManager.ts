@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { v4 } from 'uuid';
+import { createUniqueId } from '#root/utils/createUniqueId';
 
 export interface SessionState {
     expires:number;
@@ -43,7 +43,7 @@ export class SessionStateManager {
     public newState():SessionState {
         return {
             expires: moment().add(1, 'hours').valueOf(),
-            id: v4()
+            id: createUniqueId()
         }
     }
 
