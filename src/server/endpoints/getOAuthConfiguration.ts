@@ -17,6 +17,7 @@ export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined
         else {
             data.token_endpoint = tokenpath ?? issuer.options.baseUrl + '/token';
         }
+        data.response_types_supported = ["token"];
 
         return response.json(data)
     })

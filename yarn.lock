@@ -35,6 +35,16 @@
   dependencies:
     jsep "^0.3.0"
 
+"@cef-ebsi/key-did-resolver@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@cef-ebsi/key-did-resolver/-/key-did-resolver-2.1.0.tgz#55426e432b553551c881d23e55fe3b30d900e786"
+  integrity sha512-opVZj1eWYqEO9ZYLhoAPlHTkF7tatS9zNdn4sLWMzxJOcGcCgR3WsAZRXBrlsqq1m/GrfQRccRqYSrsmpCCGlg==
+  dependencies:
+    did-resolver "^4.1.0"
+    lodash.isplainobject "^4.0.6"
+    multiformats "^9.6.2"
+    uint8arrays "3.1.1"
+
 "@danieldietrich/copy@^0.4.2":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@danieldietrich/copy/-/copy-0.4.2.tgz#c1cabfa499d8b473ba95413c446c1c1efae64d24"

@@ -42,6 +42,15 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     else {
         debug("using veramo directly to sign credential");
         // make sure the issuer field is set
+        // Veramo enforces that the issuer field is a valid did identifier, but the spec
+        // does not indicate that. The did is actually part of the header with which the
+        // credential is signed and not the identifier of the issuer
+        // did-jwt-vc transforms issuer.id/issuer to the iss claim, so it is always
+        // duplicated. However, this library uses the issuer as passed and only as fallback
+        // the iss-claim-as-did, so if veramo would allow it, we could transmit the
+        // issuer URL instead.
+        // If the issuer would be a URL, we could trace back the original issuer and
+        // test the federation linkup
         const baseCredential = credential as CredentialPayload;
         if (!baseCredential.issuer) {
             debug("explicitely setting issuer");
@@ -56,9 +65,12 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         const result = await getAgent().createVerifiableCredential({
           credential: credential as CredentialPayload,
           proofFormat,
-          removeOriginalFields: false,
+          removeOriginalFields: true,
           fetchRemoteContexts: true,
-          domain: issuer.did!.did
+          domain: issuer.did!.did,
+          header: {
+            kid: issuer.did!.did
+          }
         });
         w3cCredential = (proofFormat === 'jwt' && 'jwt' in result.proof ? result.proof.jwt : result) as W3CVerifiableCredential;
     }

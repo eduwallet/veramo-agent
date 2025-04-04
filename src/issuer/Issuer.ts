@@ -119,9 +119,9 @@ export class Issuer
         const signer = (data:string | Uint8Array) => this.signData(data);
         const signOptions = {
             signer,
-            issuer: this.did?.did
+            issuer: this.did!.did
         }
-        const result = await createJWT(jwt.payload, signOptions, { ...jwt.header, typ: 'JWT' })
+        const result = await createJWT(jwt.payload, signOptions, { ...jwt.header, typ: 'JWT', kid: this.did!.did })
         return result
     }
 

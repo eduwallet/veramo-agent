@@ -1,3 +1,5 @@
+import Debug from 'debug';
+const debug = Debug('server:getCredentialOffer');
 import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Issuer } from 'issuer/Issuer';
@@ -24,6 +26,7 @@ export function getCredentialOffer(issuer:Issuer, getPath:string) {
 
             await openObserverLog(session.id, "credentialoffer-response", session.credentialOffer.credential_offer);
             issuer.storeRequestResponseData(session.id, "credential_offer-response", session.credentialOffer.credential_offer);
+            debug("returning ", session.credentialOffer);
             return response.json(session.credentialOffer);
         }
         catch (e) {
