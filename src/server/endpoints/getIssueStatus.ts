@@ -24,7 +24,8 @@ export function getIssueStatus(issuer:Issuer, checkPath:string) {
                     createdAt: session.createdAt,
                     lastUpdatedAt: session.lastUpdatedAt,
                     status: session.status,
-                    ...(session.requestResponseData && { requests: session.requestResponseData })
+                    ...(session.requestResponseData && { requests: session.requestResponseData }),
+                    ...(session.uuid && { uuid: session.uuid })
                 }
                 return response.json(authStatusBody);
             } 

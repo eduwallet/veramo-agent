@@ -25,7 +25,6 @@ export interface IssuerSessionData extends SessionState {
 export interface IssuerConfiguration {
     name:string;
     baseUrl: string
-    enableCreateCredentials: boolean
     clientId?:string;
     clientSecret?:string;
     adminToken?:string;

@@ -3,7 +3,7 @@ Implementation of a generic veramo agent
 
 This configuration is derived in a large part from the Veramo agent configuration of the Sphereon OID4VC-demo
 
-For more details, please see: https://github.com/Sphereon-Opensource/OID4VC-demo
+For more details about the Sphereon code, please see: https://github.com/Sphereon-Opensource/OID4VC-demo
 
 ## Preface
 
@@ -19,7 +19,7 @@ To get all debugging messages, run using `DEBUG=*:* npm run start:dev`
 
 ### Postgres Database
 
-The application uses a Postgres database instead of a local SQLite file. Database encryption has been disabled to allow easier access to the database internals.
+The application uses a Postgres database instead of a local SQLite file. Database encryption has been disabled to allow easier access to the database internals. Please note that this makes the private key material readable for anyone with database access.
 
 Configure the database using the relevant values in the `.env` or `.env.local` configuration. Copy the [`.env.example`](./.env.example) to `.env` and optionally change the values. The defaults should work for local development.
 
@@ -86,7 +86,7 @@ Configuration for the Issuer services is done inside the `conf/` directory. Ther
 - `dids`: issuer key configuration, allowing reuse of keys between issuers
 - `metadata`: issuer metadata, listing the issuer endpoints and the credential configuration
 - `issuer`: issuer configuration, connecting the key data, metadata configuration and statuslist information
-- `vct`: virtual credential type metadata configuration, used in `vc+sd-jwt` issuance
+- `vct`: virtual credential type metadata configuration, used in `vc+sd-jwt` and `dc+sd-jwt` issuance
 
 ### Contexts
 
@@ -132,30 +132,20 @@ Please note that the alias needs to contain the key provider as well, because th
 
 ### Metadata
 
-The metadata is configured separately from the issuer configuration for historic reasons. To correlate the right metadata with the right issuer configuration, the metadata configuration contains a `correlationId` attribute at its top level:
-
-```json
-{
-    "correlationId": <string used to correlate issuer and metadata>,
-    "overwriteExisting": <boolean, defaults to true, not implemented>,
-    "@context": <array of context strings, not implemented>,
-    "metadata": <issuer metadata configuration to be served by the issuer>
-}
-```
+The metadata is configured separately from the issuer configuration for historic reasons. The issuer configuration and the metadata are linked based on the name of the configuration file. *Please note: there used to be a `correlationId` element for this and the metadata content would be in a metadata attribute. This metadata has been moved up.*
 
 To allow credential configuration reuse, the metadata configuration `credential_configurations_supported` attribute is parsed when the metadata is loaded. Each credential defined there is extended with any credential data defined for the same identifier in the `conf/credentials/` configuration. In that way, the basic credential display information can be centralized, but branding information can be specified in the issuer metadata configuration.
 
-Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
+Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` or `dc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
 
 ```json
 {
     ...
-    "metadata": {
-        "CredentialId2": {
-            "format": "vc+sd-jwt",
-            "extends": "CredentialId1"
-        }
+    "CredentialId2": {
+        "format": "vc+sd-jwt",
+        "extends": "CredentialId1"
     }
+    ...
 }
 ```
 
@@ -163,40 +153,24 @@ The `extends` attribute is removed from the output if it was present.
 
 ### Issuers
 
-The issuer configurations are specified in the `conf/issuer/` directory. Each entry there will instantiate an issuer service. The configuration is as follows:
+The issuer configurations are specified in the `conf/issuer/` directory. Each entry there will instantiate an issuer service. The configuration is as follows (*Please note: this configuration has changed significantly*):
 
 ```json
 {
-    "options": <issuer options as defined in the IIssuerOptsPersistArgs interface>,
+    "name": "human readable name for the issuer",
     "baseUrl": <base path for this issuer service>,
-    "enableCreateCredentials": <boolean, not implemented>,
     "clientId": <optional string client id to be used for authorization code flow>,
     "clientSecret": <optional string client secret to be used for authorization code flow>,
     "adminToken": <string bearer token to be passed by front end agents to create credential offers>,
     "authorizationEndpoint": <optional authorization server to be used for authorized code flow>,
     "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
-    "statusLists": <optional status list specifications>
+    "statusLists": <optional status list specifications>,
+    "did": <did alias or did name as configured in the did section above>,
+    "usesNonces": <boolean value that indicates if a nonce value should be generated in the access token>
 }
 ```
 
-The `options` attribute contains a `correlationId` attribute that matches the same attribute in the metadata configurations. This `options` attribute also contains an `issuerOpts` attribute that has a `didOpts` attribute with an `identifierOpts` attribute that can contain an `identifier` or `alias` attribute that links to the predefined keys. This deep link has historic reasons.
-
-```json
-{
-    ...
-    "options": {
-        "correlationId": <correlationId matching the metadata>,
-        "issuerOpts": {
-            "didOpts": {
-                "identifierOpts": {
-                    "alias": <alias that matches the alias in the key definitions>
-                }
-            }
-        }
-    },
-    ...
-}
-```
+The definition is available in the `src/types/internal.ts` file, `IssuerConfiguration` interface.
 
 The statuslist configuration lists the available status lists for this issuer:
 
@@ -213,6 +187,9 @@ The statuslist configuration lists the available status lists for this issuer:
     ...
 }
 ```
+
+The `usesNonces` setting is used to enforce the use of nonce values in access tokens from external authorization servers. Because it it not known in advance if such AS entities do or do not use nonce values, their presence can be enforced with this setting. Please note that there is no way for the issuer to know if this nonce value is actually correct without having a separate api to check this. For this reason, using nonce values with external AS entities does not increase security. For the `pre-authorized_code` flow, nonce values _are_ used regardless of this setting.
+
 
 ### VCTs
 
@@ -236,6 +213,19 @@ Please see https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-08.html fo
 
 Main entry script is `src/agent.ts`
 This script first creates a basic Veramo Agent instance with all the relevant plugins. Then it configures the plugins by reading the json configurations. Finally it sets up the Express server to serve the various endpoints.
+
+## Authorization Code Flow
+
+The Issuer application does _not_ implement an AS server. Instead, it allows configuration of an external authorization server using the `authorizationEndpoint` configuration parameter. This value is automatically transferred to the correct `metadata` parameter.
+
+The issuer tries to decode the `access token` returned by the AS to see if it implements RFC 9068: https://datatracker.ietf.org/doc/html/rfc9068
+This RFC describes how to encode the `access token` as a `JWT` so that the consumer RP can both establish the authenticity and does not need to
+call an additional token introspection endpoint. For this to work, the issuer tries to find the AS OAuth configuration setup and determines the 
+`jwk_uri_endpoint` to preload the JWKs used by the AS for encoding the token.
+
+If the `access token` is a JWT, the issuer tries to retrieve the `issuer_state` attribute from it to determine the current issuance session. Based on
+the session, the issuer will then determine the credential subject data. There is currently no implementation to retrieve additional data based
+on the authenticated user, like requesting a user info endpoint or further dissecting the `access token`.
 
 ## Status Lists
 
@@ -288,6 +278,7 @@ The setup has the following endpoints for the back-end API:
 POST `<base URL>/<institute>/api/create-offer`
 
 This creates a credential offer in the agent database based on supplied credentials. The request contains a JSON object:
+
 ```json
 {
     "credentials": ["array of string"],
@@ -309,8 +300,8 @@ Please note the following:
 
 - the example displays two grant types. Usually only one of either is used (the front-end-issuer either has authenticated the user, or it has not). Which one is used depends on the configuration of the back-end-issuer for this specific instance
 - in the `authorization_code.issuer_state` field, the example shows the content `generate`. This is a special-case situation forcing the back-end-issuer to generate a new state value. Preferably the `issuer_state` was left undefined, but that may cause the entire `authorization_code` object to be removed by intermediate libraries. To prevent that, fill the `issuer_state` with the special `generate` value. The response will provide the actual state identifier used for this session
-- the `pre-authorized_code` field can be undefined, in which case a random code is generated. However, to prevent the grant containing an empty object which may be removed by the intermediate libraries, the value `generate` may be used to force a random state code, like for the `issuer_state` in the previous paragraph
-- the 'tx_code' can either be a boolean or an object. If boolean 'true', a pin code of 4 digits is generated. If it is an object, it is expected to contain attributes `input_mode` ('text' or 'numeric' (default)), `length` (default: 4) and a `description` (default 'PIN'). This information is transferred to the `tx_code` attribute of the pre-auth-grant in the offer and used to generate the `txCode` return value.
+- the `pre-authorized_code` field can be undefined, in which case a random code is generated. However, to prevent the grant containing an empty object which may be removed by the intermediate libraries, the value `generate` may be used to force a random state code, like for the `issuer_state` above
+- the `tx_code` can either be a boolean or an object. If boolean `true`, a pin code of 4 digits is generated. If it is an object, it is expected to contain attributes `input_mode` ('text' or 'numeric' (default)), `length` (default: 4) and a `description` (default 'PIN'). This information is transferred to the `tx_code` attribute of the pre-auth-grant in the offer and used to generate the `txCode` return value.
 
 The `credentialMetadata` attribute can contain settings about the credential. Currently the following are defined:
 
@@ -344,9 +335,12 @@ This returns an object as follows:
     "createdAt":1725356725408,
     "lastUpdatedAt":1725356725408,
     "status":"CREDENTIAL_ISSUED",
+    "requests": <optional request data object>,
     "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9"
 }
 ```
+
+The `requests` object contains data about the incoming and outgoing requests for this issuance state. It can be used for debugging purposes to see what kind of data flows in and out in the protocol.
 
 The `uuid` attribute is only available when an actual credential was issued to the wallet. This `uuid` can be used by the issuing front-end
 to interface with the revocation api as defined below.
@@ -359,7 +353,7 @@ The following statuses are currently supported:
 - CREDENTIAL_ISSUED: the credential offer was successfully completed
 
 The time between `ACCESS_TOKEN_CREATED` and `CREDENTIAL_ISSUED` is very short in practice. There is no manual
-step in between. Between `OFFER_URI_RETRIEVED` and `ACCESS_TOKEN_GRANTED`, the wallet requests both the 
+step in between. Between `OFFER_URI_RETRIEVED` and `ACCESS_TOKEN_CREATED`, the wallet requests both the
 transaction code and asks the user if he/she wants to accept the credential.
 
 #### List Credentials
@@ -375,7 +369,7 @@ is optional):
     "state": <filter based on a specific unique state previously used by the front-end issuer>,
     "holder": <filter based on the holder key specification of a wallet>,
     "credential": <filter based on the credential type>,
-    'primaryId": <filter based on the primary identifier for a credential (the unique user id)>,
+    "primaryId": <filter based on the primary identifier for a credential (the unique user id)>,
     "issuanceDate": <filter on credentials issued after this date>
 }
 ```
@@ -388,8 +382,7 @@ and saved-updated dates. This data can be used in further interactions.
 POST `<base URL>/<institute>/api/revoke-credential`
 
 This endpoint allows an issuer to list the credentials it has previously issued. This can be used in use cases where
-users want to revoke or re-issue/refresh credentials. The POST data field can contain filtering options (each field
-is optional):
+users want to revoke or re-issue/refresh credentials.:
 
 ```json
 {
@@ -399,12 +392,10 @@ is optional):
 }
 ```
 
-The endpoint returns a JSON array containing a `status` value indicating the status of the revocation:
+The endpoint returns a JSON object containing a `status` attribute indicating the status of the revocation:
 
-```
-REVOKED: credential was revoked (bit is set)
-WAS_REVOKED: credential was already set to revoked, state has not changed
-UNREVOKED: credential was unrevoked (bit not set)
-WAS_UNREVOKED: credential was not revoked, state has not changed
-UNKNOWN: status list cannot be determined, bit was never reserved, etc.
-```
+- `REVOKED`: credential was revoked (bit is set)
+- `WAS_REVOKED`: credential was already set to revoked, state has not changed
+- `UNREVOKED`: credential was unrevoked (bit not set)
+- `WAS_UNREVOKED`: credential was not revoked, state has not changed
+- `UNKNOWN`: status list cannot be determined, bit was never reserved, etc.
