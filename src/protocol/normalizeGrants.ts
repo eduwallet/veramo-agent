@@ -30,7 +30,7 @@ import { APIGrants } from 'types/api/credentialOffer';
                 description: description
             }
         }
-        if (txCode === false) {
+        else if (Object.keys(apiGrants[PRE_AUTHORIZED_CODE_GRANT]).includes('tx_code')) {
             delete apiGrants[PRE_AUTHORIZED_CODE_GRANT].tx_code;
         }
         if (!preAuthorizedCode || preAuthorizedCode == 'generate') {
