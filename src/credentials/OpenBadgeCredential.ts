@@ -1,5 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credentials');
 import { BaseCredential } from "./BaseCredential";
-import { debug } from "utils/logger";
 import { CredentialProofData, CredentialResult } from "types/internal";
 import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig";
 import { CredentialDisplay } from "types/specification/metadata";

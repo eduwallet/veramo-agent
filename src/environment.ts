@@ -1,6 +1,4 @@
 import {config as dotenvConfig} from "dotenv-flow";
-import { debug } from "utils/logger";
-debug('reading dot env file');
 dotenvConfig()
 
 import {resolve} from "path";

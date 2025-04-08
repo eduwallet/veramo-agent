@@ -1,5 +1,5 @@
-import Debug from 'debug'
-const debug = Debug(`eduwallet:plugin`)
+import Debug from 'debug';
+const debug = Debug('issuer:plugins');
 
 import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStore, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
 import { DataStore, DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from '@veramo/data-store'

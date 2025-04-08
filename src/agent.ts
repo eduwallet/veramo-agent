@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug("agent:main");
+const debug = Debug('issuer:agent');
 import { createAgent, TAgent } from '@veramo/core'
 import { initialiseServer } from './server';
 import { setupPlugins, TAgentTypes } from './plugins';

@@ -1,4 +1,3 @@
-
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm'
 
 export class M20241014_credpid1728908115914 implements MigrationInterface {

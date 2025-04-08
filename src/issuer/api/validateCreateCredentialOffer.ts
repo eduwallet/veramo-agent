@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug('server:validateCreateCredentialOffer');
+const debug = Debug('issuer:api');
 import { Issuer } from "issuer/Issuer";
 import { ErrorCodes } from 'types/api';
 import { CreateCredentialOfferRequest } from "types/api/credentialOffer";

@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug('server:validateGetCredentialOffer');
+const debug = Debug('issuer:api');
 import { Request } from 'express'
 import { Issuer } from 'issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from 'types/api';
@@ -7,7 +7,7 @@ import { ApiState } from 'types/internal';
 
 export function validateGetCredentialOffer(issuer:Issuer, request:Request)
 {
-    debug("validating get-credential-offer", request);
+    debug("validating get-credential-offer", request.params);
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     const { id } = request.params;
     const session = issuer.getSessionById(id);

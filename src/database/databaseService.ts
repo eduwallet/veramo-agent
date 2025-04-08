@@ -1,9 +1,8 @@
-import Debug from 'debug'
+import Debug from 'debug';
+const debug = Debug('issuer:db');
 import { DataSource } from 'typeorm'
 import { dbConfig } from './config'
 import { DB_SCHEMA } from 'environment';
-
-const debug = Debug(`database:service`)
 
 /**
  * Todo, move to a class

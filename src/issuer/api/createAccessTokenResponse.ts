@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug("server:createAccessToken");
+const debug = Debug('issuer:api');
 import { AccessTokenResponse } from 'types/specification/access_token';
 import { Issuer } from 'issuer/Issuer';
 import { CredentialOfferStatus } from 'types/api';

@@ -1,9 +1,10 @@
+import Debug from 'debug';
+const debug = Debug('issuer:endpoints');
 import { Request, Response} from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { createAccessTokenResponse } from 'issuer/api/createAccessTokenResponse';
 import { Issuer } from 'issuer/Issuer'
 import { openObserverLog } from 'utils/openObserverLog';
-import { debug } from 'utils/logger'
 import { TokenRequest, TokenResponse } from 'types/specification/access_token'
 import { validateAccessTokenRequest } from 'issuer/api/validateAccessTokenRequest'
 import { ErrorCodes } from 'types/api'

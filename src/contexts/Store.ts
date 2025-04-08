@@ -1,9 +1,10 @@
+import Debug from 'debug';
+const debug = Debug('issuer:context');
 /*
  * Instantiate context configurations
  */
 
 import { CONTEXT_CONFIGURATION_PATH } from "../environment";
-import { debug } from "utils/logger";
 import { loadJsonFiles } from "utils/generic";
 import { getBaseUrl } from "utils/getBaseUrl";
 

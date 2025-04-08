@@ -1,6 +1,5 @@
-
 import Debug from 'debug';
-const debug = Debug('agent:cli');
+const debug = Debug('issuer:cli');
 debug('start of cli.ts');
 import { getArgs } from "utils/args";
 debug('cli.ts: importing getDbConnection');

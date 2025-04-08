@@ -1,9 +1,10 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credentials');
 /*
  * Instantiate credential configurations
  */
 
 import { CREDENTIAL_CONFIGURATION_PATH } from "../environment";
-import { debug } from "utils/logger";
 import { loadJsonFiles } from "utils/generic";
 import { CredentialConfiguration } from "types/specification/metadata";
 

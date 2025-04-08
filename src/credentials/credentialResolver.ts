@@ -1,8 +1,9 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credentials');
 import { Issuer } from 'issuer/Issuer';
 import { AcademicBaseCredential } from './AcademicBaseCredential';
 import { PID } from './PID';
 import { OpenBadgeCredential } from './OpenBadgeCredential';
-import { debug } from 'utils/logger';
 import { GenericCredential } from './GenericCredential';
 import { AcademicEnrollmentCredential } from './AcademicEnrollmentCredential';
 import { getCredentialTypeFromConfig } from 'utils/getCredentialTypeFromConfig';

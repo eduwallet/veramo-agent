@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug("server:validateCredentialRequest");
+const debug = Debug('issuer:api');
 import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT';
 import { Request } from 'express'
 import { Issuer } from 'issuer/Issuer';

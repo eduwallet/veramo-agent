@@ -14,5 +14,5 @@ import Debug from 'debug'
  * DEBUG=agent:server:myNamespace yarn start:dev
  * ```
  */
-export const debug = Debug('agent:server')
+export const debug = Debug('issuer:log')
 

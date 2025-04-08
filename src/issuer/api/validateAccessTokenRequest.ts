@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug("server:validateAccessTokenRequest");
+const debug = Debug('issuer:api');
 import { Issuer } from "issuer/Issuer";
 import { PRE_AUTHORIZED_CODE } from "types/specification/credential_offer";
 import { ErrorCodes } from "types/api";

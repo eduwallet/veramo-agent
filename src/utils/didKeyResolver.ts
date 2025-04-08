@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug('util:didkey');
+const debug = Debug('issuer:didkey');
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
 import { getDidKeyResolver as veramoResolver } from '@veramo/did-provider-key';
 import { getDidKeyResolver as agentResolver } from './agentKeyResolver.js';

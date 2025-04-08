@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug('util:did');
+const debug = Debug('issuer:did');
 import {Resolver} from "did-resolver";
 import {KeyDIDProvider} from "@veramo/did-provider-key";
 import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";

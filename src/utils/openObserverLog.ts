@@ -1,5 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('issuer:logger');
 import { LOG_SERVICE, LOG_USER } from "environment";
-import { debug } from "utils/logger";
 
 export async function openObserverLog(state:string, endpoint: string, data:any)
 {

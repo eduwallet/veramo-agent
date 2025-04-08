@@ -1,7 +1,8 @@
+import Debug from 'debug';
+const debug = Debug('issuer:server');
 import express from 'express'
 import { ExpressSupport } from "@sphereon/ssi-express-support";
 import { Issuer } from "issuer/Issuer";
-import { debug } from 'utils/logger'
 
 import {
     accessToken,

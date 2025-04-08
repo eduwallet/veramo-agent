@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug('agent:issuer');
+const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";

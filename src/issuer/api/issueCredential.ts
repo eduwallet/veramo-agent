@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug("server:issueCredential");
+const debug = Debug('issuer:api');
 import { CredentialPayload, W3CVerifiableCredential } from "@veramo/core";
 import { getAgent } from "agent";
 import { credentialResolver } from "credentials/credentialResolver";

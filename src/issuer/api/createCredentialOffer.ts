@@ -1,5 +1,5 @@
 import Debug from 'debug';
-const debug = Debug("server:createCredentialOffer");
+const debug = Debug('issuer:api');
 import { Issuer } from '../Issuer';
 import { normalizeGrants } from '../../protocol/normalizeGrants';
 import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer';
