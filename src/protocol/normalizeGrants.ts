@@ -30,6 +30,9 @@ import { APIGrants } from 'types/api/credentialOffer';
                 description: description
             }
         }
+        if (txCode === false) {
+            delete apiGrants[PRE_AUTHORIZED_CODE_GRANT].tx_code;
+        }
         if (!preAuthorizedCode || preAuthorizedCode == 'generate') {
             preAuthorizedCode = createUniqueId();
             apiGrants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE] = preAuthorizedCode

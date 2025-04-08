@@ -166,3 +166,14 @@ test('copy description', () => {
     expect(preAuth.tx_code).toBeTruthy();
     expect(txCode.description).toBe('yolo');
 });
+
+test('remove tx_code:false from grant', () => {
+    let grant:APIGrants = {};
+    grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: false};
+    const newGrant = normalizeGrants(grant);
+    const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
+
+    expect(Object.keys(newGrant.grants).length).toBe(1);
+    expect(newGrant.grants[PRE_AUTHORIZED_CODE_GRANT]).toBeTruthy();
+    expect(preAuth.tx_code).toBeUndefined();
+});
