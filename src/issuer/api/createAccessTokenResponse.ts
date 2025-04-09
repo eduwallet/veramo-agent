@@ -29,7 +29,8 @@ export async function createAccessTokenResponse(issuer:Issuer,session:SessionSta
     // if using pre-authorised code flow, we do not have authorization_details
     // in our authorization request, hence the spec does not allow us to
     // use it in our token response.
-    // The only option left is to use the scope attribute
+    // The only option left is to use the scope attribute, which is actually
+    // required according to RFC6749 if it was not specified by the client
     response.scope = session.credentialId!;
 
     if (issuer.usesNonces) {

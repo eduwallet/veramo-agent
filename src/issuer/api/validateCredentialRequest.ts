@@ -76,15 +76,21 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
 
-    const type = getTypeFromRequest(request.body as CredentialRequest, { filterVerifiableCredential: true }) || '';
+    let credentialDataSet:any = null;
+    if (request.body.credential_identifier) {
+        credentialDataSet = session.credentialDataSets[request.body.credential_identifier];
+    }
 
-    // new style requests: the type is a credential_identifier identifying a specific dataset in our session
-    let credentialDataSet = session.credentialDataSets[type];
     if (!credentialDataSet) {
-        // old style, where we specify the type in the request and how that it matches the configuration
-        const credentialConfiguration = issuer.getCredentialConfiguration(type);
+        // see if we have a set based on the session credential id
+        credentialDataSet = session.credentialDataSets[session.credentialId];
+    }
+
+    if (!credentialDataSet) {
+        // if we did not get a credentialDataSet back, we rely on the id as documented in the session
+        const credentialConfiguration = issuer.getCredentialConfiguration(session.credentialId);
         if (credentialConfiguration === null) {
-            debug("invalid because credential configuration could not be found", type);
+            debug("invalid because credential configuration could not be found", session.credentialId);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Credential type not found";
             return error;
@@ -97,7 +103,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
             return error;
         }
         credentialDataSet = {
-            credentialId: type,
+            credentialId: session.credentialId,
             credentialConfiguration,
             data: {} // we hope the credential implementation can determine the required values itself
         };
@@ -237,31 +243,3 @@ function extractBearerToken (authorizationHeader?: string): string | undefined
 {
     return authorizationHeader ? /Bearer (.*)/i.exec(authorizationHeader)?.[1] : undefined;
 };
-
-function getTypeFromRequest(credentialRequest: CredentialRequest, opts?: { filterVerifiableCredential: boolean }) {
-    // If a wallet returns a credential_identifier, it points to a specific set of data in our session.
-    // It is mandatory that wallets return that identifier in the request if supplied.
-    if (credentialRequest.credential_identifier) {
-        // return the credential_identifier, the issuer will sort it out
-        return credentialRequest.credential_identifier;
-    }
-
-    // This part tests for the requested type, which should match the type as mentioned in the metadata
-    // definitions. Each format has its own specific extensions to the credential request
-    if (['jwt_vc', 'jwt_vc_json'].includes(credentialRequest.format || '')) {
-        const request = credentialRequest as CredentialRequestJwtVC;
-        const types = request.credential_definition!.type.filter((i:string) => i != 'VerifiableCredential');
-        return types.length > 0 ? types[0] : '';
-    }
-    else if (['jwt_vc_json-ld', 'ldp_vc'].includes(credentialRequest.format || '')) {
-        const request = credentialRequest as CredentialRequestLdpVC;
-        const types = request.credential_definition!.type.filter((i:string) => i != 'VerifiableCredential');
-        return types.length > 0 ? types[0] : '';
-    }
-    else if (['vc+sd-jwt', 'dc+sd-jwt'].includes(credentialRequest.format || '')) {
-        const request = credentialRequest as CredentialRequestSdJwt;
-        return request.vct;
-    }
-    return '';
-}
-  
