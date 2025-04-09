@@ -37,7 +37,7 @@ export function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequ
     if (sessionHasExpired(session)) {
         debug("invalid because the session expired");
         issuer.removeSession(session);
-        error.error = ErrorCodes.EXPIRED;
+        error.error = ErrorCodes.INVALID_REQUEST; // EXPIRED is not allowed according to the specs
         error.description = "Session expired, please try again";
         return error;
     }

@@ -18,17 +18,19 @@ export async function createAccessTokenResponse(issuer:Issuer,session:SessionSta
 
     const access_token = await generateAccessToken(issuer, session);
     debug("signed token", access_token);
+    // https://www.rfc-editor.org/rfc/rfc6749.html#section-5
     const response: AccessTokenResponse = {
         access_token,
         token_type: 'bearer',
         expires_in: TOKEN_EXPIRY / 1000,
-        authorization_pending: false,
-        authorization_details: [{
-            type: 'openid-credential',
-            credential_configuration_id: session.credentialId!,
-            credential_configurations: [session.credentialId!]
-        }]
-    }
+        // refresh_token is optional
+    };
+
+    // if using pre-authorised code flow, we do not have authorization_details
+    // in our authorization request, hence the spec does not allow us to
+    // use it in our token response.
+    // The only option left is to use the scope attribute
+    response.scope = session.credentialId!;
 
     if (issuer.usesNonces) {
         const cNonce = createUniqueId();

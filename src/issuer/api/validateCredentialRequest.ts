@@ -239,14 +239,13 @@ function extractBearerToken (authorizationHeader?: string): string | undefined
 };
 
 function getTypeFromRequest(credentialRequest: CredentialRequest, opts?: { filterVerifiableCredential: boolean }) {
-    // This issuer uses the credential_identifiers attribute of authorization details.
-    // It is mandatory that wallets return that identifier in the request
+    // If a wallet returns a credential_identifier, it points to a specific set of data in our session.
+    // It is mandatory that wallets return that identifier in the request if supplied.
     if (credentialRequest.credential_identifier) {
         // return the credential_identifier, the issuer will sort it out
         return credentialRequest.credential_identifier;
     }
 
-    // So this is old-style, dead code if wallets implement things correctly
     // This part tests for the requested type, which should match the type as mentioned in the metadata
     // definitions. Each format has its own specific extensions to the credential request
     if (['jwt_vc', 'jwt_vc_json'].includes(credentialRequest.format || '')) {
