@@ -68,9 +68,13 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
           removeOriginalFields: true,
           fetchRemoteContexts: true,
           domain: issuer.did!.did,
-          header: {
-            kid: issuer.did!.did
-          }
+          // TODO: This was left out because the Paradym wallet has issues with it. Although the iss claim of the
+          // credential is identical to the kid in the header, the Paradym wallet cannot resolve the kid and throws
+          // an error. If the kid is left out, it falls back to the iss claim and assumes it is a did. And resolves
+          // correctly.
+          //header: {
+          //  kid: issuer.did!.did
+          //}
         });
         w3cCredential = (proofFormat === 'jwt' && 'jwt' in result.proof ? result.proof.jwt : result) as W3CVerifiableCredential;
     }
