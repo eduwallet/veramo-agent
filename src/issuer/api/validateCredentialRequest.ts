@@ -75,6 +75,8 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         error.description = "No state found";
         return error;
     }
+    session.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
+    issuer.storeSession(session);
 
     let credentialDataSet:any = null;
     if (request.body.credential_identifier) {

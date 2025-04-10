@@ -14,9 +14,6 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     debug("issuing credential");
     const { session } = proofData;
     session.lastUpdatedAt = +new Date()
-    debug("updating session status");
-    session.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
-    issuer.storeSession(session);
 
     const nonce = createUniqueId();
     if (issuer.usesNonces) {
@@ -78,6 +75,11 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         });
         w3cCredential = (proofFormat === 'jwt' && 'jwt' in result.proof ? result.proof.jwt : result) as W3CVerifiableCredential;
     }
+
+    debug("updating session status");
+    session.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
+    issuer.storeSession(session);
+
     const retval = { 
         credential: w3cCredential,
         ...(issuer.usesNonces ? {c_nonce: nonce} : {})
