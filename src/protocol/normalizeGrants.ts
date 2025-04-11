@@ -17,7 +17,7 @@ import { APIGrants } from 'types/api/credentialOffer';
     }
   
     if (apiGrants[PRE_AUTHORIZED_CODE_GRANT]) {
-        if (typeof(apiGrants[PRE_AUTHORIZED_CODE_GRANT]) !== 'object') {
+        if (typeof(apiGrants[PRE_AUTHORIZED_CODE_GRANT]) !== 'object' || Array.isArray(apiGrants[PRE_AUTHORIZED_CODE_GRANT])) {
             apiGrants[PRE_AUTHORIZED_CODE_GRANT] = {};
         }
         preAuthorizedCode = apiGrants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE]
