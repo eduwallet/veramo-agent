@@ -132,8 +132,8 @@ export class BaseCredential
             delete baseCredential.credentialSubject;
         }
 
-        baseCredential.issuer = this.issuer.metadata.credential_issuer;
-        baseCredential.iss = this.issuer.metadata.credential_issuer;
+        baseCredential.issuer = this.issuer.did.did; // metadata.credential_issuer;
+        baseCredential.iss = this.issuer.did.did; //metadata.credential_issuer;
         if (credential.expirationDate) {
             baseCredential.exp = moment(credential.expirationDate).unix();
         }
