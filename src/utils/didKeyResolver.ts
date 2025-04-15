@@ -1,7 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:didkey');
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
-import { getDidKeyResolver as veramoResolver } from '@veramo/did-provider-key';
+import { getDidKeyResolver as veramoResolver } from '../packages/did-key-provider';
 import { getDidKeyResolver as agentResolver } from './agentKeyResolver.js';
 import { jwk } from '@transmute/did-key.js';
 

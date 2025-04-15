@@ -20,7 +20,15 @@ export class X25519 extends CryptoKey {
         this.publicKeyBytes = x25519.getPublicKey(this.privateKeyBytes);
     }
 
-    importFromDid(didKey: string): void {
+    toJWK() {
+      return {
+          kty: 'OKP',
+          crv: 'X25519',
+          x: Buffer.from(this.publicKeyBytes).toString('base64url'),
+      };
+  }
+
+  importFromDid(didKey: string): void {
         if(!didKey.startsWith('did:key:z6LS')) {
             throw new Error("X25519 did:key must start with did:key:z6LS prefix");
         }
