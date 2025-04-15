@@ -26,6 +26,15 @@ export class Secp256r1 extends CryptoKey {
         this.publicKeyBytes = this.hexToBytes(keypair.getPublic(true, 'hex'));
     }
 
+    toJWK() {
+        return {
+            kty: 'EC',
+            crv: 'P-256',
+            x: Buffer.from(this.publicKeyBytes.slice(1, 33)).toString('base64url'),
+            y: Buffer.from(this.publicKeyBytes.slice(33)).toString('base64url')
+        };
+    }
+
     importFromDid(didKey: string): void {
         if (!didKey.startsWith('did:key:zDn')) {
             throw new Error('Secp256r1 did:key must start with did:key:zDn prefix');

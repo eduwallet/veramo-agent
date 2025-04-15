@@ -13,9 +13,9 @@ import {
   IKeyManagerSignEthTXArgs,
   IKeyManagerSignJWTArgs,
   ManagedKeyInfo,
-  MinimalImportableKey
+  MinimalImportableKey,
+  schema
 } from '@veramo/core-types'
-import { schema } from '@veramo/core-types'
 import * as u8a from 'uint8arrays'
 
 /**

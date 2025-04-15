@@ -20,6 +20,14 @@ export class Ed25519 extends CryptoKey {
         this.publicKeyBytes = ed25519.getPublicKey(this.privateKeyBytes);
     }
 
+    toJWK() {
+        return {
+            kty: 'OKP',
+            crv: 'Ed25519',
+            x: Buffer.from(this.publicKeyBytes).toString('base64url'),
+        };
+    }
+
     importFromDid(didKey: string): void {
         if (!didKey.startsWith('did:key:z6Mk')) {
             throw new Error("Ed25519 did:key must start with did:key:z6Mk prefix");

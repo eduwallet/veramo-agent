@@ -1,6 +1,7 @@
 import { fromString, toString } from 'uint8arrays'
 import { BaseName, encode } from 'multibase'
 import { varint } from 'multiformats'
+import { ManagedKeyInfo } from '@veramo/core-types';
 
 export enum SupportedVerificationMethods {
     'JsonWebKey2020',
@@ -46,9 +47,19 @@ export abstract class CryptoKey {
 
     abstract createPrivateKey():void;
     abstract algorithms():string[];
+    abstract toJWK():any;
     abstract importFromDid(didKey:string):void;
     didDocument(method?:SupportedVerificationMethods):any {
         return {};
+    }
+
+    importFromManagedKey(mkey:ManagedKeyInfo) {
+        if (mkey.publicKeyHex) {
+            this.publicKeyBytes = this.hexToBytes(mkey.publicKeyHex);
+        }
+        if (mkey.privateKeyHex) {
+            this.privateKeyBytes = this.hexToBytes(mkey.privateKeyHex);
+        }
     }
 
     async sign(algorithm:string, data:Uint8Array):Promise<string> {
@@ -88,6 +99,7 @@ export abstract class CryptoKey {
         return this.bytesToMultibase(this.publicKey());
     };
 
+    hasPublicKey():boolean { return this.publicKeyBytes && this.publicKeyBytes.length; }
     hasPrivateKey():boolean { return this.privateKeyBytes && this.privateKeyBytes.length; }
     exportPrivateKey():string { return this.bytesToHex(this.privateKeyBytes); }
    

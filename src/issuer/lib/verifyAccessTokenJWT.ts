@@ -1,6 +1,7 @@
 import { Issuer } from "#root/issuer/Issuer";
 import { ManagedKeyInfo } from "@veramo/core";
 import { jwtVerify } from "jose";
+import { Factory } from "#root/crypto/Factory";
 
 /*
  * This routine validates the access token JWT, if it is a JWT
@@ -41,31 +42,10 @@ async function getVerificationKey(issuer:Issuer, protectedHeader:any, jws?:any):
 }
 
 function veramoKeyToJWK(managedKey: ManagedKeyInfo) {
-    if (!managedKey.publicKeyHex) {
+    const key = Factory.createFromManagedKey(managedKey);
+
+    if (!key.hasPublicKey()) {
         throw new Error('Key does not have a public key hex');
     }
-
-    // Convert hex to Uint8Array
-    const keyBytes = Uint8Array.from(Buffer.from(managedKey.publicKeyHex, 'hex'));
-
-    // Map Veramo key type to JWK format
-    let jwk: any = {};
-    if (managedKey.type === 'Ed25519') {
-        jwk = {
-            kty: 'OKP',
-            crv: 'Ed25519',
-            x: Buffer.from(keyBytes).toString('base64url'),
-        };
-    } else if (managedKey.type.startsWith('Secp256k1')) {
-        jwk = {
-            kty: 'EC',
-            crv: 'secp256k1',
-            x: Buffer.from(keyBytes.slice(1, 33)).toString('base64url'),
-            y: Buffer.from(keyBytes.slice(33)).toString('base64url'),
-        };
-    } else {
-        throw new Error(`Unsupported key type: ${managedKey.type}`);
-    }
-
-    return jwk;
+    return key.toJWK();
 }

@@ -3,6 +3,7 @@ import { Ed25519 } from "./Ed25519";
 import { X25519 } from "./X25519";
 import { Secp256r1 } from './Secp256r1';
 import { Secp256k1 } from './Secp256k1';
+import { ManagedKeyInfo } from "@veramo/core-types";
 
 export const Factory = {
     createFromType: (keyType:string, privateKeyHex?:string):CryptoKey => {
@@ -49,6 +50,29 @@ export const Factory = {
             throw new Error("did key " + didKey.substring(0,8) + "... not supported.");
         }
         key.importFromDid(didKey);
+        return key;
+    },
+
+    createFromManagedKey(mkey:ManagedKeyInfo):CryptoKey {
+        let key:CryptoKey;
+        switch ((mkey.type as string).toLowerCase()) {
+            case 'ed25519':
+                key = new Ed25519();
+                break;
+            case 'x25519':
+                key = new X25519();
+                break;
+            case 'secp256r1':
+                key = new Secp256r1();
+                break;
+            case 'secp256k1':
+                key = new Secp256k1();
+                break;
+            default:
+                throw new Error("key type " + key.type + " notsupported");
+        }
+
+        key.importFromManagedKey(mkey);
         return key;
     }
 }

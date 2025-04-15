@@ -6,8 +6,8 @@ import { DataStore, DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from '@v
 import { DIDManager } from '@veramo/did-manager'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { CredentialPlugin } from '@veramo/credential-w3c'
-import { KeyManager } from '@veramo/key-manager';
-import { KeyManagementSystem } from '@veramo/kms-local';
+import { KeyManager } from './packages/keymanager/key-manager';
+import { KeyManagementSystem } from './packages/kms/key-management-system';
 
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018,
     SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } from '@sphereon/ssi-sdk.vc-handler-ld-local'
