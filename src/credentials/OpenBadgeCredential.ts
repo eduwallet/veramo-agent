@@ -28,11 +28,11 @@ export class OpenBadgeCredential extends BaseCredential {
     const type = getCredentialTypeFromConfig(credentialConfiguration!);
     const credentialDisplay:CredentialDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
-    const achievement = data.credential?.credentialSubject?.achievement ?? {};
+    const achievement = data?.achievement ?? {};
     debug('achievement', achievement);
 
-    const validFrom: string = data.credential?.validFrom;
-    const validUntil: string | undefined = data.credential?.validUntil;
+    const validFrom: string = data?.validFrom;
+    const validUntil: string | undefined = data?.validUntil;
 
     // TODO: Can the did ever be null? The sphereon types allow it, but it seems this
     // would not be a valid state in our actual badge and issuer setup. Probably
