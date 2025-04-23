@@ -29,7 +29,10 @@ export class OpenBadgeCredential extends BaseCredential {
     const credentialDisplay:CredentialDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
     const achievement = data?.achievement ?? {};
+<<<<<<< HEAD
     const result = data?.result ?? null; 
+=======
+>>>>>>> dfe287c (Fix in OB credential after change in parameter setup in an earlier commit)
     debug('achievement', achievement);
 
     const validFrom: string = data?.validFrom;
