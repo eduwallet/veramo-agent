@@ -1,22 +1,17 @@
 import {
   IKey,
-  KEY_ALG_MAPPING,
   ManagedKeyInfo,
   MinimalImportableKey,
-  RequireOnly,
   TKeyType,
 } from '@veramo/core-types'
 import {
   AbstractKeyManagementSystem,
   AbstractPrivateKeyStore,
-  Eip712Payload,
-  ImportablePrivateKey,
   ManagedPrivateKey,
 } from '@veramo/key-manager'
 
 import Debug from 'debug'
-import { CryptoKey } from '../../crypto/CryptoKey';
-import { Factory } from '../../crypto/Factory'
+import { CryptoKey, Factory } from '@muisit/cryptokey';
 
 const debug = Debug('eduwallet:kms:local')
 
@@ -88,14 +83,14 @@ export class KeyManagementSystem extends AbstractKeyManagementSystem {
     if (!algorithm) {
       algorithm = cryptoKey.algorithms()[0];
     }
-    return await cryptoKey.sign(algorithm, data);
+    return await cryptoKey.sign(algorithm, data, 'base64url');
   }
 
   /**
    * Converts a CryptoKey to {@link @veramo/core-types#ManagedKeyInfo}
    */
   private asManagedKeyInfo(ckey:CryptoKey, kid?:string): ManagedKeyInfo {
-    const publicKeyHex = ckey.publicKeyHex();
+    const publicKeyHex = ckey.exportPublicKey();
     return {
       type: ckey.keyType as TKeyType,
       kid: kid || publicKeyHex,

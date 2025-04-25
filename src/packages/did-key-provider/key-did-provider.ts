@@ -1,6 +1,6 @@
 import { IAgentContext, IIdentifier, IKey, IKeyManager, IService, RequireOnly } from '@veramo/core-types'
 import { AbstractIdentifierProvider } from '@veramo/did-manager'
-import { Factory } from '../../crypto/Factory';
+import { Factory } from '@muisit/cryptokey';
 
 import Debug from 'debug'
 

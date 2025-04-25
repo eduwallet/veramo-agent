@@ -1,7 +1,7 @@
 import { Issuer } from "#root/issuer/Issuer";
 import { ManagedKeyInfo } from "@veramo/core";
 import { jwtVerify } from "jose";
-import { Factory } from "#root/crypto/Factory";
+import { Factory } from "@muisit/cryptokey";
 
 /*
  * This routine validates the access token JWT, if it is a JWT
