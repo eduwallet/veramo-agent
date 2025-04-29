@@ -935,10 +935,10 @@
     "@mapbox/node-pre-gyp" "1.0.11"
     neon-cli "0.10.1"
 
-"@muisit/cryptokey@^1.0.0":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@muisit/cryptokey/-/cryptokey-1.0.1.tgz#f1c1b1fe4265b51a7c5d0b10b61ddf4ab6685cca"
-  integrity sha512-vEE81sZCyTZktf9FV54wiTG9FzVsniOf1CsfT1D1oVrLqqmX/7Ynazw9c68vNSfRQLXHlCcMZI+62ZU3EBaECQ==
+"@muisit/cryptokey@1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@muisit/cryptokey/-/cryptokey-1.0.3.tgz#25080565a2abdb6bc4ab4d3ae8021705916b238c"
+  integrity sha512-GuX0L0GVOLWErNk3Xvo/KE2reEGTTO6CW2VedHcaTh7Sd7iTCDvgN381LpVH6lvY49y0nqiq4QuAarclIcqvjg==
   dependencies:
     "@veramo/utils" "6.0.0"
     did-jwt "^8.0.11"
