@@ -10,7 +10,6 @@ import {DIDDocumentSection, IIdentifier} from "@veramo/core";
 import {didOptConfigs} from "environment";
 import { IDIDResult, KMS, DIDMethods } from 'types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
-import {generatePrivateKeyHex, TKeyType, toJwk} from "@sphereon/ssi-sdk-ext.key-utils";
 import { getDidKeyResolver } from "./didKeyResolver";
 import { getDidWebResolver } from './didWebResolver';
 
@@ -102,7 +101,6 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
         if (identifier) {
             console.log(`Identifier exists for DID ${opts.did}`)
             console.log(`${JSON.stringify(identifier)}`)
-            identifier.keys.map((key:any) => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
         } else {
             console.log(`No identifier for DID ${opts.did} exists yet. Will create the DID...`)
 
@@ -112,22 +110,15 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
             }
             if (opts.alias) {
                 args.alias = opts.alias;
-            }
-
-            // @ts-ignore
-            const privateKeyHex = generatePrivateKeyHex((args.options?.type ?? args.options.keyType ?? "Secp256k1") as TKeyType)
-            if (args.options && !('key' in args.options)) {
-                // @ts-ignore
-                args.options['key'] = {privateKeyHex}
-                // @ts-ignore
-            } else if (args.options && 'key' in args.options && args.options.key && typeof args.options?.key === 'object' && !('privateKeyHex' in args.options.key)) {
-                // @ts-ignore
-                args.options.key['privateKeyHex'] = privateKeyHex
+                if (opts.did && opts.did.startsWith('did:web:')) {
+                    args.alias = opts.did.substring(8);
+                }
+                else if (opts.alias.startsWith('did:web:')) {
+                    args.alias = opts.alias.substring(8);
+                }
             }
 
             identifier = await getAgent().didManagerCreate(args)
-            identifier!.keys.map((key:any) => console.log(`kid: ${key.kid}:\r\n ` + JSON.stringify(toJwk(key.publicKeyHex, key.type), null, 2)))
-
             console.log(`Identifier created for DID ${identifier.did}`)
             console.log(`${JSON.stringify(identifier, null, 2)}`)
         }

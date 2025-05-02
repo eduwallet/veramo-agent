@@ -4,7 +4,7 @@ import { AccessTokenResponse } from 'types/specification/access_token';
 import { Issuer } from 'issuer/Issuer';
 import { CredentialOfferStatus } from 'types/api';
 import { SessionState } from 'utils/SessionStateManager';
-import { JWT } from 'types/specification/jwt';
+import { JWT } from '#root/jwt/JWT';
 import { createUniqueId } from '#root/utils/createUniqueId';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
@@ -50,16 +50,15 @@ async function generateAccessToken(issuer:Issuer, session:SessionState)
     // JWT uses seconds for iat and exp
     const iat = new Date().getTime() / 1000
     const exp = iat + TOKEN_EXPIRY;
-    const jwt: JWT = {
-        header: { typ: 'JWT', alg: issuer.signingAlg(), kid: issuer.did.did },
-        payload: {
+    const jwt:JWT = new JWT();
+    jwt.header = { typ: 'JWT' };
+    jwt.payload = {
             iat,
             exp,
             iss: issuer.did!.did,
             ...(session.preAuthorizedCode && { issuer_state: session.preAuthorizedCode }),
             token_type: 'Bearer',
-        }
-    }
+    };
     debug("access token content", jwt);
     return await issuer.signToken(jwt);
 }

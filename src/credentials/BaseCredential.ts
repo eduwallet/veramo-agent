@@ -1,3 +1,5 @@
+import Debug from 'debug';
+const debug = Debug("issuer:credentials");
 import { SDJwtVcInstance, SdJwtVcPayload } from '@sd-jwt/sd-jwt-vc'
 import { DisclosureFrame, Signer } from '@sd-jwt/types'
 import { digest, generateSalt } from '@sd-jwt/crypto-nodejs';
@@ -123,26 +125,32 @@ export class BaseCredential
 
     private async signSDJwt(credential:CredentialPayload): Promise<string>
     {
-        let baseCredential = (credential as unknown) as SdJwtVcPayload;
-        // type must be set and it must have 2 entries at least, one of which is VerifiableCredential
+        debug("signing SD JWT");
         let type = credential.type?.filter((i:string)=> i != 'VerifiableCredential')[0];
-        // if we have a credentialSubject, convert it to a claims attribute
-        if (baseCredential.credentialSubject) {
-            baseCredential.claims = baseCredential.credentialSubject;
-            delete baseCredential.credentialSubject;
+        const vct = getVctForCredentialType(type!);
+
+        let baseCredential:SdJwtVcPayload = {
+            iss: this.issuer.did.did,
+            vct: vct.vct,
+            iat: moment().unix()
+        };
+        if (credential.cnf) {
+            baseCredential.cnf = credential.cnf;
         }
 
-        baseCredential.issuer = this.issuer.did.did; // metadata.credential_issuer;
-        baseCredential.iss = this.issuer.did.did; //metadata.credential_issuer;
+        // if we have a credentialSubject, convert it to claims
+        if (credential.credentialSubject) {
+            Object.keys(credential.credentialSubject).forEach((k) => {
+                baseCredential[k] = credential.credentialSubject![k];
+            })
+        }
+
         if (credential.expirationDate) {
             baseCredential.exp = moment(credential.expirationDate).unix();
         }
-        const vct = getVctForCredentialType(type!);
-        baseCredential.vct = vct!.vct!;
-        baseCredential.iat = moment().unix();
+
         // TODO: encode the baseCredential.status referring to the status list implementation
         // the spec does not define this explicitely
-
         const signer: Signer = async (data: string): Promise<string> => {
             return getAgent().keyManagerSign({ keyRef: this.issuer.keyRef, data })
         }
@@ -155,12 +163,13 @@ export class BaseCredential
           hashAlg: 'sha-256',
         });
     
-        let disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(type!);
-
+        let disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(vct);
+        debug("baseCredential", baseCredential);
+        debug("disclosureFrame", disclosureFrame);
         const sdcredential = await sdjwt.issue(baseCredential, disclosureFrame, {
           header: {
             typ: 'vc+sd-jwt',
-            ...(this.issuer.key!.kid !== undefined && { kid: this.issuer.key!.kid })
+            kid: '#' + this.issuer.key!.kid
           },
         })
     
@@ -168,10 +177,9 @@ export class BaseCredential
         return sdcredential;
     }
 
-    private createDisclosureFrameFromVct(credentialType:string):DisclosureFrame<SdJwtVcPayload>
+    private createDisclosureFrameFromVct(vct:any):DisclosureFrame<SdJwtVcPayload>
     {
         let disclosureFrame:DisclosureFrame<SdJwtVcPayload> = {};
-        const vct = getVctForCredentialType(credentialType);
         if (vct && vct.claims) {
             for (const claim of vct.claims) {
                 if (claim.path && (claim.sd === 'allowed' || claim.sd === 'always')) {
@@ -179,7 +187,7 @@ export class BaseCredential
                 }
             }
         }
-        return {"claims": disclosureFrame } as DisclosureFrame<SdJwtVcPayload>;
+        return disclosureFrame as DisclosureFrame<SdJwtVcPayload>;
     }
 
     private addPathToDisclosureFrame(disclosureFrame:DisclosureFrame<SdJwtVcPayload>, path:VctClaimPathElement[]): DisclosureFrame<SdJwtVcPayload>

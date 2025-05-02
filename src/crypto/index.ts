@@ -36,8 +36,8 @@ export const keyMapping: Record<TKeyType, string> = {
 export const algMapping: Record<TKeyType, Alg> = {
   Ed25519: Alg.EdDSA,
   X25519: Alg.EdDSA,
-  Secp256k1: Alg.ES256,
-  Secp256r1: Alg.ES256K,
+  Secp256k1: Alg.ES256K,
+  Secp256r1: Alg.ES256,
 //  RSA: Alg.RS512,
   Bls12381G1: Alg.ES256, // incorrect
   Bls12381G2: Alg.ES256 // incorrect

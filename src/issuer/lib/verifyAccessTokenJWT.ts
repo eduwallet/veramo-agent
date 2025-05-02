@@ -2,6 +2,7 @@ import { Issuer } from "#root/issuer/Issuer";
 import { ManagedKeyInfo } from "@veramo/core";
 import { jwtVerify } from "jose";
 import { Factory } from "@muisit/cryptokey";
+import { JWT } from "#root/jwt/JWT";
 
 /*
  * This routine validates the access token JWT, if it is a JWT
@@ -12,40 +13,27 @@ import { Factory } from "@muisit/cryptokey";
  * list of serverKeys we retrieved at startup.
  */
 
-export function verifyAccessTokenJWT(token:string, issuer:Issuer)
+export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
 {
-    return jwtVerify(token, (a:any, b?:any) => getVerificationKey(issuer, a, b), {
-        algorithms: ['RS256', 'EdDSA', 'ES256', 'ES256K']
-    });
+    // because we do not yet support RSA256 in CryptoKey, we use the jwk implementation
+    if (issuer.usesAuthorisedCodeFlow()) {
+        return await jwtVerify(token, (a:any, b?:any) => getVerificationKey(issuer, a, b), {
+            algorithms: ['RS256', 'EdDSA', 'ES256']
+        });   
+    }
+    else {
+        const jwt = JWT.fromToken(token);
+        const key = Factory.createFromManagedKey(issuer.key!);
+        if (await jwt.verify(key)) {
+            return jwt;
+        }
+    }
+    return null;
 }
 
 async function getVerificationKey(issuer:Issuer, protectedHeader:any, jws?:any): Promise<any> {
-    console.log('JWT Header:', protectedHeader);
-    switch (protectedHeader.alg) {
-        case 'EdDSA':
-        case 'ES256':
-        case 'ES256K':
-        case 'RS256':
-            if (issuer.usesAuthorisedCodeFlow()) {
-                if (protectedHeader.kid && issuer.serverKeys[protectedHeader.kid]) {
-                    return issuer.serverKeys[protectedHeader.kid];
-                }
-            }
-            else if (protectedHeader.kid === issuer.did!.did) {
-                return veramoKeyToJWK(issuer.key!);
-            }
-            break;
-        default:
-            throw new Error(`Algorithm not supported`);
+    if (protectedHeader.kid && issuer.serverKeys[protectedHeader.kid]) {
+        return issuer.serverKeys[protectedHeader.kid];
     }
     return {};
-}
-
-function veramoKeyToJWK(managedKey: ManagedKeyInfo) {
-    const key = Factory.createFromManagedKey(managedKey);
-
-    if (!key.hasPublicKey()) {
-        throw new Error('Key does not have a public key hex');
-    }
-    return key.toJWK();
 }
