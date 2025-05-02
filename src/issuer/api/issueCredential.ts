@@ -85,5 +85,6 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         ...(issuer.usesNonces ? {c_nonce: nonce} : {})
     };
     debug("returning", retval);
+    debug(issuer.exportKeyAsJwk());
     return retval;
 }

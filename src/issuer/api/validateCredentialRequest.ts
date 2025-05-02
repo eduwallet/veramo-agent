@@ -7,6 +7,9 @@ import { CredentialOfferStatus, ErrorCodes } from 'types/api';
 import { ApiState } from 'types/internal';
 import { CredentialRequest, CredentialRequestJwtVC, CredentialRequestLdpVC, CredentialRequestSdJwt } from 'types/specification/credential_request';
 import { SessionState } from 'utils/SessionStateManager';
+import { JWT } from '#root/jwt/JWT';
+import { getAgent } from '#root/agent';
+import { Factory } from '@muisit/cryptokey';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -134,7 +137,23 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-    const verificationResult = await issuer.verifyToken(credentialRequest.proof.jwt!);
+    const jwt = JWT.fromToken(credentialRequest.proof.jwt!);
+    if (!jwt.header.kid) {
+        debug("Proof is invalid because the issuer key is not set");
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid proof of possession";
+        return error;
+    }
+
+    const ckey = await issuer.resolveDidToKey(jwt.header.kid, 'verificationMethod');
+    if (!ckey) {
+        debug("Proof is invalid because the issuer key cannot be resolved");
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid proof of possession";
+        return error;
+    }
+    const verificationResult = await jwt.verify(ckey);
+    
     if (!verificationResult) {
         debug("Proof is invalid because the token could not be verified", verificationResult);
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -142,10 +161,14 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-    const { didResolution, did, decoded, alg } = verificationResult!;
-    const { didDocument } = didResolution;
-    const { header, payload } = decoded;
-    const { iss, aud, iat, nonce } = payload
+    let did = jwt.header.kid;
+    if (did.indexOf('#') > 0) {
+        did = did.substring(0, did.indexOf('#'));
+    }
+    const header = jwt.header;
+    const payload = jwt.payload;
+    const alg = header.alg;
+    const { iss, aud, iat, nonce } = payload;
 
     // checking the composition of the proof, which should normally be a no-brainer
     //
@@ -228,7 +251,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         }
     }
 
-    if (!did || !didDocument) {
+    if (!did) {
         debug("Proof is invalid because we could not find a did");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No did found";

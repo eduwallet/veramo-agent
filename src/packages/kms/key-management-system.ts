@@ -54,8 +54,14 @@ export class KeyManagementSystem extends AbstractKeyManagementSystem {
 
   async createKey({ type }: { type: TKeyType }): Promise<ManagedKeyInfo> {
     let cryptoKey = Factory.createFromType(type as string);
-    cryptoKey.createPrivateKey();
-    await this.importKey({ type: cryptoKey.keyType as any, privateKeyHex: cryptoKey.exportPrivateKey() })
+    try {
+      cryptoKey.createPrivateKey();
+      await this.importKey({ type: cryptoKey.keyType as any, privateKeyHex: cryptoKey.exportPrivateKey() })
+    }
+    catch(e) {
+      console.error(e);
+      throw e;
+    }
     return this.asManagedKeyInfo(cryptoKey);
   }
 
@@ -84,6 +90,15 @@ export class KeyManagementSystem extends AbstractKeyManagementSystem {
       algorithm = cryptoKey.algorithms()[0];
     }
     return await cryptoKey.sign(algorithm, data, 'base64url');
+  }
+
+  async getKey(keyRef:string) {
+    try {
+      const managedKey = await this.keyStore.getKey({ alias: keyRef })
+      return managedKey;
+    } catch (e) {
+      throw new Error(`key_not_found: No key entry found for kid=${keyRef}`)
+    }
   }
 
   /**

@@ -52,7 +52,7 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
 
     const cryptoKey = Factory.createFromType(key.type, key.privateKeyHex);
     cryptoKey.setPublicKey(key.publicKeyHex);
-    const methodSpecificId:string = cryptoKey.makeDidKeyIdentifier();
+    const methodSpecificId:string = cryptoKey.toDIDKey();
 
     const identifier: Omit<IIdentifier, 'provider'> = {
       did: 'did:key:' + methodSpecificId,

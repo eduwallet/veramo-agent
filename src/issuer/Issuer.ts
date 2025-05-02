@@ -3,34 +3,33 @@ const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";
-import { createJWT, decodeJWT, verifyJWT } from "did-jwt";
 import { JsonWebKey } from 'did-resolver';
 import { jwtDecode } from 'jwt-decode'
 import { StatusList } from "types/specification/statuslists";
 import { StatusListRevocationState } from 'types/api';
 import { IssuerConfiguration } from 'types/internal';
-import { JWT } from 'types/specification/jwt';
+import { JWT } from '#root/jwt/JWT';
 import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
 import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
 import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
 import { bytesToBase64 } from '@veramo/utils';
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
-debug('importing getAgent');
 import { getAgent } from 'agent';
 import { getCredentialConfigurationStore } from "credentials/Store";
-debug('importing getDbConnection from Issuer');
 import { getDbConnection } from "database";
 import { Credential, Claims } from "database/entities/Credential";
 import { getContextConfigurationStore } from 'contexts/Store';
 import { credentialDataChecker } from "credentials/credentialDataChecker";
-import { Alg, algMapping, keyMapping } from 'crypto/index';
+import { algMapping, keyMapping } from 'crypto/index';
 import { getVctForCredentialType } from 'vct/Store';
 import { getIdentifier, getIdentifierByAlias } from 'utils/did';
 import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
 import { createUniqueId } from '#root/utils/createUniqueId';
+import { Factory } from '@muisit/cryptokey';
+import { DIDDoc } from '#root/crypto/DIDDoc';
 
 export class Issuer
 {
@@ -94,59 +93,35 @@ export class Issuer
         }
     }
 
-    public signData(data: string | Uint8Array)
+    public async signData(data: Uint8Array)
     {
-        let dataString, encoding: 'base64' | undefined
-        const keyRef = this.keyRef;
-        if (!keyRef) {
-            throw Error('Cannot sign access tokens without a key ref')
-        }
-        if (typeof data === 'string') {
-            dataString = data
-            encoding = undefined
-        }
-        else {
-            dataString = bytesToBase64(data)
-            encoding = 'base64'
-        }
-        return getAgent().keyManagerSign({ keyRef, data: dataString, encoding });
+        return getAgent().keyManagerSign({ keyRef: this.keyRef, algorithm: this.algorithm(), data});
     }
 
     public async signToken(jwt: JWT) {
         if (!this.did?.did) {
             throw Error('No issuer configured for access tokens')
         }
-        const signer = (data:string | Uint8Array) => this.signData(data);
-        const signOptions = {
-            signer,
-            issuer: this.did!.did
-        }
-        const result = await createJWT(jwt.payload, signOptions, { ...jwt.header, typ: 'JWT', kid: this.did!.did })
-        return result
+        jwt.payload.iss = this.did!.did;
+        jwt.header.alg = this.algorithm();
+        await jwt.sign(async (data:Uint8Array) => this.signData(data));
+        return jwt.token;
     }
 
-    public async verifyToken(jwt:string)
+    public async verifyToken(token:string)
     {
-        const result = await verifyJWT(jwt, {
-            audience: this.metadata.credential_issuer,
-            resolver: {
-                resolve: async (didUrl:string, options?:DIDResolutionOptions) => {
-                    return await getAgent().resolveDid({ didUrl, options })
-                }
-            }
-        });
-
-        if (!result.verified) {
+        const jwt = JWT.fromToken(token);
+        const key = Factory.createFromManagedKey(this.key!);
+        const verified = await jwt.verify(key);
+        if (!verified) {
             return null;
         }
 
-        const decoded = decodeJWT(jwt);
-        const alg = decoded.header.alg;
-        const kid = decoded.header.kid;
+        const alg = jwt.header.alg;
+        const kid = jwt.header.kid;
         const did = (kid ?? '').split('#')[0]
         return {
-            decoded,
-            didResolution: result.didResolutionResult,
+            jwt,
             alg,
             kid,
             did
@@ -242,10 +217,6 @@ export class Issuer
             serviceEndpoint: this.metadata.credential_issuer
         }));
     
-        // ed25519 keys can also be converted to x25519 for key agreement
-        const keyAgreementKeyIds = allKeys
-            .filter((key:any) => ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(key.type as string))
-            .map((key:any) => key.kid)
         const signingKeyIds = allKeys
             .filter((key:any) => key.type !== 'X25519KeyAgreementKey2019')
             .map((key:any) => key.kid)
@@ -256,25 +227,10 @@ export class Issuer
             verificationMethod: allKeys,
             authentication: signingKeyIds,
             assertionMethod: signingKeyIds,
-            keyAgreement: keyAgreementKeyIds,
             service: [...services, ...(this.did?.services || [])],
         }
         
         return didDoc;
-    }
-
-    public signingAlg():Alg {
-        var keys:IKey[] = (this.did?.keys ?? []).filter((key:IKey) => key.kid == this.keyRef);
-        if (keys.length == 0 && this.did!.keys) {
-            keys = this.did!.keys;
-        }
-        if (keys.length) {
-            const key = keys[0];
-            if (algMapping[key.type]) {
-                return algMapping[key.type];
-            }
-        }
-        return Alg.ES256;
     }
 
     public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
@@ -511,5 +467,28 @@ export class Issuer
     public usesAuthorisedCodeFlow()
     {
         return this.metadata.authorization_servers && this.metadata.authorization_servers.length;
+    }
+
+    public async resolveDidToKey(did:string, method:string = "verificationMethod")
+    {
+        let keyRef = '';
+        // a hash cannot be the first character of a did
+        if (did.indexOf('#') > 0) {
+            keyRef = did.substring(did.indexOf('#') + 1);
+            did = did.substring(0, did.indexOf('#'));
+        }
+        const didDoc = await getAgent().resolveDid({ didUrl: did});
+        if (didDoc.didDocument) {
+            const document = new DIDDoc(didDoc.didDocument);
+            const fullkey = did + (keyRef === '' ? keyRef : ('#' + keyRef));
+            return document.findKey(fullkey, method);
+        }
+        return null;
+    }
+
+    public exportKeyAsJwk()
+    {
+        const ckey = Factory.createFromManagedKey(this.key!);
+        return ckey.toJWK();
     }
 }

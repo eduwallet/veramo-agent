@@ -11,7 +11,8 @@
     "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/main.js",
     "start:dev": "tsx --watch src/main.ts",
     "cli": "tsx src/cli.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "Michiel Uitdehaag <info@muisit.nl>",
@@ -19,7 +20,7 @@
   "private": false,
   "dependencies": {
     "@cef-ebsi/key-did-resolver": "^2.1.0",
-    "@muisit/cryptokey": "1.0.3",
+    "@muisit/cryptokey": "1.0.5",
     "@sd-jwt/core": "^0.9.2",
     "@sd-jwt/crypto-nodejs": "^0.9.2",
     "@sd-jwt/sd-jwt-vc": "^0.9.2",
