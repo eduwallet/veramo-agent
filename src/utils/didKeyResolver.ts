@@ -1,9 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:didkey');
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
-import { getDidKeyResolver as veramoResolver } from '../packages/did-key-provider';
-import { getDidKeyResolver as agentResolver } from './agentKeyResolver.js';
-import { jwk } from '@transmute/did-key.js';
+import { Factory } from '@muisit/cryptokey';
 
 const resolveDidKey = async (
     didUrl: string,
@@ -13,44 +11,18 @@ const resolveDidKey = async (
   ): Promise<DIDResolutionResult> => {
 
     try {
-        const resolver = agentResolver();
-        const retval = await resolver.key(didUrl, _parsed, _resolver, options);
-
-        if (!retval.didResolutionMetadata.error) {
-            debug("found resolution", retval);
-            return retval;
+        const key = await Factory.resolve(didUrl);
+        if (key) {
+            debug("found resolution using cryptokey");
+            return {
+                didDocumentMetadata: {},
+                didResolutionMetadata: {},
+                didDocument: Factory.toDIDDocument(key)
+            };
         }
     }
     catch (err: any) {
         debug('agent did:key: ', err);
-    }
-
-    try {
-        debug("trying veramo resolver for", didUrl);
-        const resolver = veramoResolver();
-        const retval = await resolver.key(didUrl, _parsed, _resolver, options);
-
-        if (!retval.didResolutionMetadata.error) {
-            debug("found resolution", retval);
-            return retval;
-        }
-    }
-    catch (err: any) {
-        debug('veramo did:key: ', err);
-    }
-
-    try {
-        debug("trying jwk resolver for", didUrl);
-        const retval = await jwk.resolve(didUrl);
-        debug("returning ", retval);
-        return {
-            didDocumentMetadata: {},
-            didResolutionMetadata: {},
-            didDocument: retval.didDocument
-        };
-    }
-    catch (err:any) {
-        debug('jwk did:key', err);
     }
 
     debug("returning key method not supported");
