@@ -1,8 +1,10 @@
+import Debug from 'debug';
+const debug = Debug('issuer:didweb');
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
-import {getResolver} from "web-did-resolver";
 import { getIdentifier } from './did';
-import { didOptConfigs } from 'environment';
+import { didOptConfigs } from '../environment';
 import { toDidDocument } from '@sphereon/ssi-sdk-ext.did-utils';
+import { Factory } from '@muisit/cryptokey';
 
 const resolveDidWeb = async (
     didUrl: string,
@@ -17,6 +19,7 @@ const resolveDidWeb = async (
             const did = opts.did;
             let identifier = did ? await getIdentifier(did) : undefined;
             if (identifier?.did == didUrl) {
+                debug("found local key");
                 return {
                     didDocument: toDidDocument(identifier)!,
                     didDocumentMetadata: {},
@@ -28,11 +31,14 @@ const resolveDidWeb = async (
     catch (err:any) {}
 
     try {
-        const resolver = getResolver();
-        const retval = await resolver.web(didUrl, _parsed, _resolver, options);
-
-        if (!retval.didResolutionMetadata.error) {
-          return retval;
+        const key = await Factory.resolve(didUrl);
+        if (key) {
+            debug("found resolution using cryptokey");
+            return {
+                didDocumentMetadata: {},
+                didResolutionMetadata: {},
+                didDocument: Factory.toDIDDocument(key)
+            };
         }
     }
     catch (err: any) {}
