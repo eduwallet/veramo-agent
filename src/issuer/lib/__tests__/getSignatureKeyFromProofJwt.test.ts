@@ -1,0 +1,53 @@
+import { expect, test} from 'vitest';
+import { JWT } from '#root/jwt/JWT';
+import { getSignatureKeyFromProofJwt } from "../getSignatureKeyFromProofJwt";
+
+test("Get from JWT with JWK", async () => {
+    // token received from wwwallet
+    const token = "eyJhbGciOiJFUzI1NiIsInR5cCI6Im9wZW5pZDR2Y2ktcHJvb2Yrand0IiwiandrIjp7ImNydiI6IlAtMjU2IiwiZXh0Ijp0cnVlLCJrZXlfb3BzIjpbInZlcmlmeSJdLCJrdHkiOiJFQyIsIngiOiJzclJ2QkRjeE04b3BCWERKLVU0TUlsc2NUWk1udlZabnNldU04OFdKRTZjIiwieSI6IndCZVR1aG15SFdBeVFDaURLNGdJMzcxRVNDcjd6OGVmQ3VUVnI0S1hSNG8ifX0.eyJhdWQiOiJodHRwczovL2FnZW50LmRldi5lZHV3YWxsZXQubmwvYXV0aCIsImlzcyI6Il8wYzNhMzE3N2Q1M2JhYjAxOTZiOWY2Njk5M2Y1OTE0ODdmM2EwMGViNzkiLCJjbGllbnRfaWQiOiJfMGMzYTMxNzdkNTNiYWIwMTk2YjlmNjY5OTNmNTkxNDg3ZjNhMDBlYjc5IiwiaWF0IjoxNzQ2NjkyMzQ5fQ.gfts1wRg_AgoZCDdPk5l_kywMhXoNjSCqgOGznYUaWxRrAPpCAjNRjz6_TmKwlKF2-cs5N5I-vZ5lATndrhABA";
+    const jwt = JWT.fromToken(token);
+
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    expect(ckey !== null).toBeTruthy();
+    expect(ckey!.keyType).toBe('Secp256r1');
+});
+
+test("Get from JWT with did:jwk", async () => {
+    // token received from a concocted Insomnia example
+    const token = "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDpqd2s6ZXlKamNuWWlPaUpRTFRJMU5pSXNJbXRwWkNJNklpMDViWFJLY0VST1QweFZhVWRGYVc0d1UzQlpjak56VDBaQlpqWTViekpPTkZRelQwUmlOSGxrYTJNaUxDSnJkSGtpT2lKRlF5SXNJbmdpT2lJd1Z6UktibGhLUVc1RmJVNVJNVXg1Y3pSaU1WTk5hSEF3V25CTFpHWmxVbUUwVms5UFNsOUZibHBSSWl3aWVTSTZJbEpMVUVwM1VrUXhORzVpT0ZWRVYwRm1YM0JYUm10V2FWODFka2RxV1VsMVdtUkVha1J3VWt0ME0yc2lmUT09Iy05bXRKcEROT0xVaUdFaW4wU3BZcjNzT0ZBZjY5bzJONFQzT0RiNHlka2MiLCJ0eXAiOiJvcGVuaWQ0dmNpLXByb29mK2p3dCJ9.eyJhdWQiOiJodHRwczovL2FnZW50LmRldi5lZHV3YWxsZXQubmwvYXV0aCIsImV4cCI6MTc0NTgzMzU3NywiaWF0IjoxNzQ1ODI5OTc3LCJpc3MiOiJkaWQ6andrOmV5SmpjbllpT2lKUUxUSTFOaUlzSW10cFpDSTZJaTA1YlhSS2NFUk9UMHhWYVVkRmFXNHdVM0JaY2pOelQwWkJaalk1YnpKT05GUXpUMFJpTkhsa2EyTWlMQ0pyZEhraU9pSkZReUlzSW5naU9pSXdWelJLYmxoS1FXNUZiVTVSTVV4NWN6UmlNVk5OYUhBd1duQkxaR1psVW1FMFZrOVBTbDlGYmxwUklpd2llU0k2SWxKTFVFcDNVa1F4Tkc1aU9GVkVWMEZtWDNCWFJtdFdhVjgxZGtkcVdVbDFXbVJFYWtSd1VrdDBNMnNpZlE9PSJ9.jgjwMi8o7wXGJylRvgKQ_E-KV2jvXRSRt8WBGtGRR9j2C6k_XzcwxjmbEBmYY5a3cNQiNsZQ-sY-BjZ3oAF4pA";
+    const jwt = JWT.fromToken(token);
+
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    expect(ckey !== null).toBeTruthy();
+    expect(ckey!.keyType).toBe('Secp256r1');
+});
+
+test("Get from JWT with did:jwk2", async () => {
+    // token received from Unime wallet
+    const token = "eyJ0eXAiOiJvcGVuaWQ0dmNpLXByb29mK2p3dCIsImFsZyI6IkVTMjU2Iiwia2lkIjoiZGlkOmp3azpleUpoYkdjaU9pSkZVekkxTmlJc0ltTnlkaUk2SWxBdE1qVTJJaXdpYTJsa0lqb2lNVzlyZEV4M1JFRjJNbTU0T1ZwSlJFNDRlVmRJVFRWdExVVXhhSHBhTkhFMmRIZFJjVnBoTkd4eGN5SXNJbXQwZVNJNklrVkRJaXdpZUNJNklqWjROVzFVZFZGelNXYzVYMFV3VUZWU1prcEVVV2N0V1ZSRmMwVkhTMDFtVkUxc1lYRlZWVFF4YURRaUxDSjVJam9pU0VSNmR6bEtibk4xWmtkemEwWjZOMEozZEc5M2JsOTBjRzV0VGxGU1ltZEhUakZOV25kUmJWTlZSU0o5IzAifQ.eyJpc3MiOiJkaWQ6andrOmV5SmhiR2NpT2lKRlV6STFOaUlzSW1OeWRpSTZJbEF0TWpVMklpd2lhMmxrSWpvaU1XOXJkRXgzUkVGMk1tNTRPVnBKUkU0NGVWZElUVFZ0TFVVeGFIcGFOSEUyZEhkUmNWcGhOR3h4Y3lJc0ltdDBlU0k2SWtWRElpd2llQ0k2SWpaNE5XMVVkVkZ6U1djNVgwVXdVRlZTWmtwRVVXY3RXVlJGYzBWSFMwMW1WRTFzWVhGVlZUUXhhRFFpTENKNUlqb2lTRVI2ZHpsS2JuTjFaa2R6YTBaNk4wSjNkRzkzYmw5MGNHNXRUbEZTWW1kSFRqRk5XbmRSYlZOVlJTSjkiLCJhdWQiOiJodHRwczovL2FnZW50LmRldi5lZHV3YWxsZXQubmwvc2FuZGJveCIsImlhdCI6MTU3MTMyNDgwMCwibm9uY2UiOiJjNjBjMWYxNzNjNzg0NDEzYTBmMTZhMGNjNThjYTE1YiJ9.XBUYWKM2aa7hUUFSjJ9y4QW-IT5xgf4JjuIa4M96wIvcYvfWu7u8wenjl7YV-hkVgmUSjnaZNdcmTXMHSJ3lHg";
+    const jwt = JWT.fromToken(token);
+
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    expect(ckey !== null).toBeTruthy();
+    expect(ckey!.keyType).toBe('Secp256r1');
+});
+
+test("Get from JWT with did:jwk3", async () => {
+    // token received from Sphereon wallet
+    const token = "eyJ0eXAiOiJvcGVuaWQ0dmNpLXByb29mK2p3dCIsImFsZyI6IkVTMjU2Iiwia2lkIjoiZGlkOmp3azpleUpoYkdjaU9pSkZVekkxTmlJc0luVnpaU0k2SW5OcFp5SXNJbXQwZVNJNklrVkRJaXdpWTNKMklqb2lVQzB5TlRZaUxDSjRJam9pVmpKQ2JHVkZPRk5VYkZRek5HSnBMVTlmUW1wMFNVSlhWMUZpYjJOUWNsZFVTbWxhVXpnelZFZFdPQ0lzSW5raU9pSjBYM1kxY21wcGFFMWZhSE5JTUZGcVdqaDViMjgwTVVaWVdYUk5jMDR0T0ROWFluaHFUV0ZqWTE4d0luMCMwIn0.eyJhdWQiOiJodHRwczovL2FnZW50LmRldi5lZHV3YWxsZXQubmwvc2FuZGJveCIsImlhdCI6MTc0NjY5NjM0MiwiZXhwIjoxNzQ2Njk3MDAyLCJub25jZSI6IjVhNjBlYzhhMTAxNDRiODBhMDExYTAwY2U2ZGUyMTI5IiwiaXNzIjoiZGlkOmp3azpleUpoYkdjaU9pSkZVekkxTmlJc0luVnpaU0k2SW5OcFp5SXNJbXQwZVNJNklrVkRJaXdpWTNKMklqb2lVQzB5TlRZaUxDSjRJam9pVmpKQ2JHVkZPRk5VYkZRek5HSnBMVTlmUW1wMFNVSlhWMUZpYjJOUWNsZFVTbWxhVXpnelZFZFdPQ0lzSW5raU9pSjBYM1kxY21wcGFFMWZhSE5JTUZGcVdqaDViMjgwTVVaWVdYUk5jMDR0T0ROWFluaHFUV0ZqWTE4d0luMCIsImp0aSI6ImVhNGQyOGY3LWQ3OTItNGZkMC04YjM1LWI2Njg3ZTVmY2JiYSJ9.nbUlrnvqoPAk7V6rkYRQi-eBQGAdZEdEn-rCzO7oWVXtSb8oiAiXfzUIEbnv0njJGArQNoOkYa2f7TyKknu3gA";
+    const jwt = JWT.fromToken(token);
+
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    expect(ckey !== null).toBeTruthy();
+    expect(ckey!.keyType).toBe('Secp256r1');
+});
+
+test("Get from JWT with did:jwk3", async () => {
+    // token received from local-veramo-agent
+    const token = "eyJ0eXAiOiJvcGVuaWQ0dmNpLXByb29mK2p3dCIsImFsZyI6IkVTMjU2Iiwia2lkIjoiZGlkOmp3azpleUpoYkdjaU9pSkZVekkxTmlJc0luVnpaU0k2SW5OcFp5SXNJbXQwZVNJNklrVkRJaXdpWTNKMklqb2lVQzB5TlRZaUxDSjRJam9pU0RSdmRIRXpUbkZUV1Vka2FtSmlOalppV0hOeFpYRnplRzFyVGxoWlpFOHdPR0o2TUdSUWJIcGpTU0lzSW5raU9pSm9lSFJ3VlU1Q1VFcDFXVWc1WlZkbGREaDRYMDFwVjBWM01VcFBWMFJWWlU1T1IwSlZRMVZqYm1GUkluMCMwIn0.eyJpYXQiOjE3NDY2OTY2NDYsImV4cCI6MTc0NjY5NzMwNiwiYXVkIjoiaHR0cHM6Ly9hZ2VudC5kZXYuZWR1d2FsbGV0Lm5sL3NhbmRib3giLCJub25jZSI6IjUyM2FjOWEyZDA0YjQ5NDBiNzk3YzYyNDllYzM3MmRiIiwiaXNzIjoiZGlkOmp3azpleUpoYkdjaU9pSkZVekkxTmlJc0luVnpaU0k2SW5OcFp5SXNJbXQwZVNJNklrVkRJaXdpWTNKMklqb2lVQzB5TlRZaUxDSjRJam9pU0RSdmRIRXpUbkZUV1Vka2FtSmlOalppV0hOeFpYRnplRzFyVGxoWlpFOHdPR0o2TUdSUWJIcGpTU0lzSW5raU9pSm9lSFJ3VlU1Q1VFcDFXVWc1WlZkbGREaDRYMDFwVjBWM01VcFBWMFJWWlU1T1IwSlZRMVZqYm1GUkluMCJ9.8HAdMMJTIMh9QxSont03_cJ3mkVLULO7qXZqHPOWJsZKCuyl-4sw4tNLC1akIpDGnvqreDz2zFvey7bSNbS7pA";
+    const jwt = JWT.fromToken(token);
+
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    expect(ckey !== null).toBeTruthy();
+    expect(ckey!.keyType).toBe('Secp256r1');
+});
