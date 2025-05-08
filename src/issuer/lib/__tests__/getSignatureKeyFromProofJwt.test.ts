@@ -51,3 +51,13 @@ test("Get from JWT with did:jwk3", async () => {
     expect(ckey !== null).toBeTruthy();
     expect(ckey!.keyType).toBe('Secp256r1');
 });
+
+test("Get from JWT with did:key", async () => {
+    // token received from earlier implementation of wwwallet in pre-auth code flow
+    const token = "eyJhbGciOiJFUzI1NiIsInR5cCI6Im9wZW5pZDR2Y2ktcHJvb2Yrand0Iiwia2lkIjoiZGlkOmtleTp6MmRtekQ4MWNnUHg4VmtpN0pidXVNbUZZcldQZ1lveXR5a1VaM2V5cWh0MWo5S2JuZGkzcWdIUVZCNXpXclBjQzh4N0Q3dnhCWktjQXZtZVN1NmhKUWk4MmRZdjl2Q2dOQUo0ZWFNUHdoY3RFVFI2TjNYeFk5RlZNN3RQd0N3b3FEYWZ0cXlvUWpUNkhTWDFrTlFjWjhZWnh2WGY1UEU2OVNvdXdxWXVTTlN3Y0d2M1R6In0.eyJub25jZSI6IjZkNDMwYzMxNGU4NjQ2YWQ4Zjg2ZjQwNjU2ZjQzYzVkIiwiYXVkIjoiaHR0cHM6Ly9hZ2VudC5kZXYuZWR1d2FsbGV0Lm5sL3NhbmRib3giLCJpc3MiOiJ3d1dhbGxldCIsImNsaWVudF9pZCI6Ind3V2FsbGV0IiwiaWF0IjoxNzQ2NzA0MjQzfQ.lMHi4-rFzp7Sr75tBeeYwHg8mrT_hCWU5NLzocL5y8DxHkAYRunXWkm6ZWfLRfETlhjYSSHIrUkOl7Oh84y-Fg";
+    const jwt = JWT.fromToken(token);
+
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    expect(ckey !== null).toBeTruthy();
+    expect(ckey!.keyType).toBe('Secp256r1');
+});
