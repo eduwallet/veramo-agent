@@ -138,7 +138,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     }
 
     const jwt = JWT.fromToken(credentialRequest.proof.jwt!);
-    if (!jwt.header.kid) {
+    if (!jwt.header.kid && !jwt.header.jwk) {
         debug("Proof is invalid because the issuer key is not set");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid proof of possession";
