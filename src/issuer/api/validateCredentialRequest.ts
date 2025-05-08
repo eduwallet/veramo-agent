@@ -5,11 +5,10 @@ import { Request } from 'express'
 import { Issuer } from 'issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from 'types/api';
 import { ApiState } from 'types/internal';
-import { CredentialRequest, CredentialRequestJwtVC, CredentialRequestLdpVC, CredentialRequestSdJwt } from 'types/specification/credential_request';
+import { CredentialRequest } from 'types/specification/credential_request';
 import { SessionState } from 'utils/SessionStateManager';
 import { JWT } from '#root/jwt/JWT';
-import { getAgent } from '#root/agent';
-import { Factory } from '@muisit/cryptokey';
+import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -145,7 +144,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-    const ckey = await issuer.resolveDidToKey(jwt.header.kid, 'verificationMethod');
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
     if (!ckey) {
         debug("Proof is invalid because the issuer key cannot be resolved");
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -268,3 +267,4 @@ function extractBearerToken (authorizationHeader?: string): string | undefined
 {
     return authorizationHeader ? /Bearer (.*)/i.exec(authorizationHeader)?.[1] : undefined;
 };
+
