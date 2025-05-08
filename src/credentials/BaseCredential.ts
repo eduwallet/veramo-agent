@@ -54,7 +54,7 @@ export class BaseCredential
 
     public async handleAttributes(proofData: CredentialProofData, type:string, mainCredentialIdentifierClaim:string, result:CredentialResult): Promise<CredentialResult>
     {
-        const { session, credentialDataSet, keys } = proofData;
+        const { session, credentialDataSet, key, did } = proofData;
         const { data } = credentialDataSet;
 
         if (data._exp) {
@@ -67,7 +67,7 @@ export class BaseCredential
             result = this.handleExpirationDate(result, session.metaData.expiration);
         }
         if (this.automaticallyBindHolder) {
-            result = this.bindHolder(result, keys);
+            result = this.bindHolder(result, did);
         }
 
         const credential = result.credential as CredentialPayload;
@@ -211,28 +211,23 @@ export class BaseCredential
         return disclosureFrame;
     }
 
-    private bindHolder(result:CredentialResult, keys:StringKeyedObject)
+    private bindHolder(result:CredentialResult, did:string)
     {
         // Bind credential to the provided proof of possession
         if (['dc+sd-jwt', 'vc+sd-jwt'].includes(result.format!)) {
             // https://www.rfc-editor.org/rfc/rfc7800.html
             if (!result.credential.cnf) {
-                if (keys.kid) {
-                    result.credential.cnf = {kid: keys.kid};
-                }
-                else if(keys.jwk) {
-                    result.credential.cnf = {jwk: keys.jwk};
-                }
+                result.credential.cnf = {kid: did};
             }
         }
-        else if (keys.did) {
+        else {
             // the credentialSubject can be a single object, or an array of objects. 
             // If it is an array, it supposedly refers to several subjects and we cannot
             // simply guess which is the actual holder, nor if all refer to the holder
             // Hence we only do automatic holder binding if the credentialSubject is not a list
             const credential = result.credential as CredentialPayload;
             if (!Array.isArray(credential) && !(credential.credentialSubject as CredentialSubject).id) {
-                (credential.credentialSubject as CredentialSubject).id = keys.did;
+                (credential.credentialSubject as CredentialSubject).id = did;
             }
         }
         return result;
