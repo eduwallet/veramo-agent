@@ -1045,10 +1045,10 @@
     zod "^3.23.8"
     zod-to-json-schema "^3.24.1"
 
-"@muisit/cryptokey@1.0.12":
-  version "1.0.12"
-  resolved "https://registry.yarnpkg.com/@muisit/cryptokey/-/cryptokey-1.0.12.tgz#a7f9cf4af1f6b84730879d77f08318acfcf0070b"
-  integrity sha512-ilyeLMORgaBe5PFbRN/df2pJSj0ngT28tpXrX+hD44UVJg3oHDaQHGXny7PfHfD+2vxrwNE0uyga3PzhnkjShg==
+"@muisit/cryptokey@1.0.13":
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/@muisit/cryptokey/-/cryptokey-1.0.13.tgz#cf7dcbe2eae7fe765ba6de9807efcc37848058a0"
+  integrity sha512-Cum0af7pXmQ9OcTsext+LTFijCAiiOGJYfFEMnAe2yAkWXNxamW1Eo8HrfW8RV9TbDbHQ0L29mgkhDtxi6lAdA==
   dependencies:
     "@veramo/utils" "6.0.0"
     did-jwt "^8.0.11"
