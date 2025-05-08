@@ -56,7 +56,8 @@ export interface CredentialProofData {
     session:IssuerSessionData;
     credentialDataSet:CredentialDataSet;
     nonce:string;
-    keys: StringKeyedObject;
+    key: any;
+    did: string;
 }
 
 export interface CredentialResult {

@@ -9,6 +9,7 @@ import { CredentialRequest } from 'types/specification/credential_request';
 import { SessionState } from 'utils/SessionStateManager';
 import { JWT } from '#root/jwt/JWT';
 import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt';
+import { Factory } from '@muisit/cryptokey';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -120,7 +121,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     }
 
     // return a CredentialProofData object
-    error.data = { session, credentialDataSet, nonce: error.data.nonce, keys: { kid: error.data.kid, jwk: error.data.jwk, did: error.data.did }};
+    error.data = { session, credentialDataSet, nonce: error.data.nonce, key: error.data.key, did: error.data.did};
     debug("credential request is valid");
     return error;
 }
@@ -160,15 +161,8 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-    let did = jwt.header.kid;
-    if (did.indexOf('#') > 0) {
-        did = did.substring(0, did.indexOf('#'));
-    }
     const header = jwt.header;
-    const payload = jwt.payload;
     const alg = header.alg;
-    const { iss, aud, iat, nonce } = payload;
-
     // checking the composition of the proof, which should normally be a no-brainer
     //
     // we are not going to check the validity of the signature and whether the header
@@ -194,11 +188,21 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
 
-    // kid: optional. If present it must be a did. The did-jwt library extracts this
-    // jwk: optional, used instead of kid. did-jwt does not support this
-    // x5c: optional, used instead of kid. did-jwt does not support this
+    // kid: optional. If present it must be a did
+    // jwk: optional, used instead of kid. 
+    // x5c: optional, used instead of kid. not supported at the moment
     // trust_chain: optional, OIDFed information
+    let did = header.kid;
+    if (did && did.indexOf('#') > 0) {
+        did = did.substring(0, did.indexOf('#'));
+    }
+    else {
+        // create a did from the key material so we can use it as credentialSubject id
+        did = Factory.toDIDJWK(ckey);
+    }
 
+    const payload = jwt.payload;
+    const { iss, aud, iat, nonce } = payload;
     // in the body:
     // iss: optional, must not be present for pre-auth, contains client_id
     if (session.issuerState && !iss) {
@@ -258,7 +262,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     }
 
     // return the did of the proof, this is the holder key
-    error.data = {did, nonce, kid: header.kid, jwk: header.jwk};
+    error.data = {did, nonce, key: ckey};
     debug("Proof is valid");
     return error;
 }

@@ -1,7 +1,5 @@
 import { fromString, toString } from 'uint8arrays';
-import { CryptoKey, Factory } from '@muisit/cryptokey';
-import { IKey } from '@veramo/core';
-import { getAgent } from '#root/agent';
+import { CryptoKey } from '@muisit/cryptokey';
 
 export class JWT {
     public token:string;
