@@ -177,3 +177,17 @@ test('remove tx_code:false from grant', () => {
     expect(newGrant.grants[PRE_AUTHORIZED_CODE_GRANT]).toBeTruthy();
     expect(preAuth.tx_code).toBeUndefined();
 });
+
+test('convert empty array to empty object grant', () => {
+    let grant:APIGrants = {};
+    grant[PRE_AUTHORIZED_CODE_GRANT] = [];
+    const newGrant = normalizeGrants(grant);
+    const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
+
+    expect(Object.keys(newGrant.grants).length).toBe(1);
+    expect(newGrant.grants[PRE_AUTHORIZED_CODE_GRANT]).toBeTruthy();
+    expect(Array.isArray(newGrant.grants[PRE_AUTHORIZED_CODE_GRANT])).toBeFalsy();
+    expect(newGrant.grants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE]).toBeDefined();
+    expect(newGrant.grants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE].length).toBe(32);
+    expect(preAuth.tx_code).toBeUndefined();
+});
