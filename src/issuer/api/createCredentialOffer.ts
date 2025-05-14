@@ -63,12 +63,12 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
 
     if (preAuthorizedCode) {
         debug("using pre-authorized_code", preAuthorizedCode);
-        session.preAuthorizedCode = preAuthorizedCode;
+        session.state = preAuthorizedCode;
         issuer.authorizationState.set(preAuthorizedCode, session.id);
     }
     if (issuerState) {
         debug("using issuerState", issuerState);
-        session.issuerState = issuerState;
+        session.state = issuerState;
         issuer.authorizationState.set(issuerState, session.id);
     }
 

@@ -7,6 +7,7 @@ export { DataStoreORM } from './dataStoreORM'
 import { Key } from './entities/Key'
 import { Identifier } from './entities/Identifier'
 import { PrivateKey } from './entities/PrivateKey'
+import { Credential } from './entities/Credential';
 
 /**
  * The TypeORM entities used by this package.
@@ -19,20 +20,13 @@ export const Entities = [
   Key,
   Identifier,
   PrivateKey,
+  Credential,
 ]
 
-/**
- * Helper function to concatenate multiple arrays of TypeORM entities.
- *
- * This array CAN be used when creating a TypeORM connection.
- *
- * @public
- */
-export const entitiesConcat = (...entityArrays: unknown[][]) =>
-  entityArrays.reduce((acc, entityArray) => acc.concat(entityArray), [])
 export {
   Key,
   Identifier,
   PrivateKey,
+  Credential,
 }
 export { migrations } from './migrations/index.js'

@@ -1,7 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:plugins');
 
-import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStore, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
+import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
 import { DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from './packages/datastore'
 import { DIDManager } from '@veramo/did-manager'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
@@ -13,7 +13,7 @@ import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd255
     SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } from '@sphereon/ssi-sdk.vc-handler-ld-local'
 
 import { DIDMethods } from './types';
-import { getDbConnection } from './database'
+import { getDbConnection } from './database/databaseService'
 import { createDidProviders } from "./utils/did";
 import { resolver } from './resolver';
 import { getContextConfigurationStore } from 'contexts/Store'

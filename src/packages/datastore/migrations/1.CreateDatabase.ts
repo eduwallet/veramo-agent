@@ -1,21 +1,17 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
-import Debug from 'debug'
-import { migrationGetTableName } from './migration-functions.js'
-
-const debug = Debug('issuer:migration')
+import { migrationGetTableName } from './migration-functions'
 
 /**
  * Create the database layout for Veramo 3.0
  *
  * @public
  */
-export class CreateDatabase1747127220001 implements MigrationInterface {
-  name = 'CreateDatabase1747127220001' // Used in case this class gets minified, which would change the classname
+export class CreateDatabase1717127220001 implements MigrationInterface {
+  name = 'CreateDatabase1717127220001';
 
   async up(queryRunner: QueryRunner): Promise<void> {
     const dateTimeType: string = queryRunner.connection.driver.mappedDataTypes.createDate as string
 
-    debug(`creating identifier table`)
     await queryRunner.createTable(
       new Table({
         name: migrationGetTableName(queryRunner, 'identifier'),
@@ -37,7 +33,6 @@ export class CreateDatabase1747127220001 implements MigrationInterface {
       true,
     )
 
-    debug(`creating key table`)
     await queryRunner.createTable(
       new Table({
         name: migrationGetTableName(queryRunner, 'key'),
@@ -60,7 +55,6 @@ export class CreateDatabase1747127220001 implements MigrationInterface {
       true,
     )
 
-    debug(`creating new private-key table`)
     await queryRunner.createTable(
       new Table({
         name: migrationGetTableName(queryRunner, 'private-key'),
@@ -85,6 +79,14 @@ export class CreateDatabase1747127220001 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    throw new Error('illegal_operation: cannot roll back initial migration')
+    if (await queryRunner.hasTable('private-key')) {
+      await queryRunner.dropTable('private-key', true, true, true);
+    }
+    if (await queryRunner.hasTable('key')) {
+      await queryRunner.dropTable('key', true, true, true);
+    }
+    if (await queryRunner.hasTable('identifier')) {
+      await queryRunner.dropTable('identifier', true, true, true);
+    }
   }
 }

@@ -12,13 +12,12 @@ import { JWT } from '#root/jwt/JWT';
 import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
 import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
 import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
-import { bytesToBase64 } from '@veramo/utils';
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
 import { getAgent } from 'agent';
 import { getCredentialConfigurationStore } from "credentials/Store";
-import { getDbConnection } from "database";
-import { Credential, Claims } from "database/entities/Credential";
+import { getDbConnection } from "#root/database/databaseService";
+import { Credential } from "#root/packages/datastore/index";
 import { getContextConfigurationStore } from 'contexts/Store';
 import { credentialDataChecker } from "credentials/credentialDataChecker";
 import { algMapping, keyMapping } from 'crypto/index';
@@ -171,7 +170,7 @@ export class Issuer
             dbCred.uuid = createUniqueId();
             dbCred.state = session.state;
             dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
-            dbCred.claims = credential.credentialSubject as Claims;
+            dbCred.claims = credential.credentialSubject;
             if (credential.expirationDate) {
                 dbCred.expirationDate = moment((credential.expirationDate as string) || undefined).toDate();
             }
@@ -181,6 +180,7 @@ export class Issuer
             dbCred.holder = session.holder || '';
             dbCred.credpid = session.principalCredentialId || '';
             dbCred.issuer = this.name;
+            dbCred.metadata = this.getCredentialConfiguration(session.credentialId);
             dbCred.credentialId = session.credentialId || '';
             if (credential.credentialStatus && typeof(credential.credentialStatus) == 'object') {
                 dbCred.statuslists = credential.credentialStatus;
@@ -269,12 +269,12 @@ export class Issuer
             // to all credentials defined in the set
             if (this.metadata['@context'] && this.metadata['@context'].length) {
                 const contextStore = getContextConfigurationStore();
-                return this.metadata['@context'].map((item) => {
+                return this.metadata['@context'].map((item:string) => {
                     if (contextStore[item]) {
                         return contextStore[item].fullPath!;
                     }
                     return null;
-                }).filter((i) => i !== null) as string[];
+                }).filter((i:string) => i !== null) as string[];
             }
         }
         return [];

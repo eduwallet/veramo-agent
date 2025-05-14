@@ -56,7 +56,7 @@ async function generateAccessToken(issuer:Issuer, session:SessionState)
             iat,
             exp,
             iss: issuer.did!.did,
-            ...(session.preAuthorizedCode && { issuer_state: session.preAuthorizedCode }),
+            issuer_state: session.state,
             token_type: 'Bearer',
     };
     debug("access token content", jwt);

@@ -1,19 +1,15 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
+import { migrationGetTableName } from './migration-functions'
 
-export class M20241008_credentials1728382223150 implements MigrationInterface {
+export class Credentials1728382223150 implements MigrationInterface {
+  name = 'Credentials1728382223150';
+
   async up(queryRunner: QueryRunner): Promise<void> {
-    function getTableName(givenName: string): string {
-        return (
-            queryRunner.connection.entityMetadatas.find((meta) => meta.givenTableName === givenName)?.tableName ||
-            givenName
-        )
-    }
-  
     const dateTimeType: string = queryRunner.connection.driver.mappedDataTypes.createDate as string
 
     await queryRunner.createTable(
         new Table({
-          name: getTableName('credential'),
+          name: migrationGetTableName(queryRunner, 'credential'),
           columns: [
             { name: 'id', type: "int", isPrimary: true, isGenerated: true, generationStrategy: "increment" },
             { name: 'state', type: 'varchar', isPrimary: true },
@@ -25,6 +21,10 @@ export class M20241008_credentials1728382223150 implements MigrationInterface {
             { name: 'expirationDate', type: dateTimeType, isNullable: true },
             { name: 'saveDate', type: dateTimeType },
             { name: 'updateDate', type: dateTimeType },
+            { name: 'credpid', type: 'varchar', isNullable: true},
+            { name: 'issuer', type: 'varchar', isNullable: true},
+            { name: 'credentialId', type: 'varchar', isNullable: true},
+            { name: 'uuid', type: 'varchar', isNullable: true}
           ],
         }),
         true,

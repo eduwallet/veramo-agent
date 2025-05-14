@@ -1,3 +1,4 @@
+import { StringKeyedObject } from '#root/types/index';
 import {
     Entity,
     Column,
@@ -6,18 +7,6 @@ import {
     BeforeInsert,
     BeforeUpdate,
 } from 'typeorm'
-
-export interface Metadata {
-    [x:string]: any
-}
-
-export interface Claims {
-    [x:string]: any
-};
-
-export interface StatusLists {
-    [x:string]: any;
-}
 
 @Entity('credential')
 export class Credential extends BaseEntity {
@@ -51,15 +40,15 @@ export class Credential extends BaseEntity {
 
     @Column({ type: 'simple-json' })
     //@ts-ignore
-    metadata: Metadata
+    metadata: StringKeyedObject;
 
     @Column({ type: 'simple-json' })
     //@ts-ignore
-    claims: Claims
+    claims: StringKeyedObject
 
     @Column({ type: 'simple-json', nullable: true })
     //@ts-ignore
-    statuslists?: StatusLists
+    statuslists?: StringKeyedObject
 
     @Column('timestamp')
     //@ts-ignore

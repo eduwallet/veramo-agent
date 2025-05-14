@@ -119,6 +119,8 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         debug("invalid proof");
         return error;
     }
+    session.holder = error.data.did;
+    issuer.storeSession(session);
 
     // return a CredentialProofData object
     error.data = { session, credentialDataSet, nonce: error.data.nonce, key: error.data.key, did: error.data.did};

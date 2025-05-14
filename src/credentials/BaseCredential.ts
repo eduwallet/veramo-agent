@@ -10,7 +10,6 @@ import { CredentialPayload, CredentialStatusReference, CredentialSubject } from 
 import { getVctForCredentialType } from "vct/Store";
 import { CredentialProofData, CredentialResult } from "types/internal";
 import { VctClaimPathElement } from "types/specification/vct";
-import { StringKeyedObject } from "types";
 
 export interface ClaimList {
     [x:string]: any
