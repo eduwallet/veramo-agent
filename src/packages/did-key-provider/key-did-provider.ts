@@ -1,6 +1,6 @@
 import { IAgentContext, IIdentifier, IKey, IKeyManager, IService, RequireOnly } from '@veramo/core-types'
 import { AbstractIdentifierProvider } from '@veramo/did-manager'
-import { Factory } from '@muisit/cryptokey';
+import { Factory, CryptoKey } from '@muisit/cryptokey';
 
 import Debug from 'debug'
 
@@ -52,10 +52,10 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
 
     const cryptoKey = Factory.createFromType(key.type, key.privateKeyHex);
     cryptoKey.setPublicKey(key.publicKeyHex);
-    const methodSpecificId:string = cryptoKey.toDIDKey();
+    const methodSpecificId:string = Factory.toDIDKey(cryptoKey);
 
     const identifier: Omit<IIdentifier, 'provider'> = {
-      did: 'did:key:' + methodSpecificId,
+      did: methodSpecificId,
       controllerKeyId: key.kid,
       keys: [key],
       services: [],

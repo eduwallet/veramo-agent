@@ -1,4 +1,4 @@
-import {Entities, migrations as VeramoDataStoreMigrations } from '@veramo/data-store'
+import {Entities, migrations as DataStoreMigrations } from '#root/packages/datastore/index'
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions'
 import {DB_NAME, DB_SCHEMA, DB_HOST, DB_USER, DB_PORT, DB_PASSWORD} from "../environment";
 import { migrations } from './migrations';
@@ -22,7 +22,7 @@ export const dbConfig: PostgresConnectionOptions = {
     Credential
   ],
   migrations: [
-    ...VeramoDataStoreMigrations,
+    ...DataStoreMigrations,
     ...migrations
   ],
   migrationsRun: false, // We run migrations from code to ensure proper ordering with Redux

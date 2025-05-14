@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('issuer:plugins');
 
 import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStore, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
-import { DataStore, DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from '@veramo/data-store'
+import { DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from './packages/datastore'
 import { DIDManager } from '@veramo/did-manager'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { CredentialPlugin } from '@veramo/credential-w3c'
@@ -30,8 +30,7 @@ export async function setupPlugins(): Promise<IAgentPlugin[]>
 
     debug("creating list of plugins");
     return [
-        new DataStore(dbConnection), // Veramo
-        new DataStoreORM(dbConnection), // Veramo
+        new DataStoreORM(dbConnection),
         new KeyManager({
             store: new KeyStore(dbConnection),
             kms: {
@@ -67,7 +66,6 @@ export async function setupPlugins(): Promise<IAgentPlugin[]>
 export type TAgentTypes = IDIDManager &
     IResolver &
     IKeyManager &
-    IDataStore &
     IDataStoreORM &
     ICredentialVerifier &
     ICredentialIssuer;
