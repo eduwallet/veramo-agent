@@ -2,11 +2,11 @@ import Debug from 'debug';
 const debug = Debug('issuer:api');
 import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT';
 import { Request } from 'express'
-import { Issuer } from 'issuer/Issuer';
-import { CredentialOfferStatus, ErrorCodes } from 'types/api';
-import { ApiState } from 'types/internal';
-import { CredentialRequest } from 'types/specification/credential_request';
-import { SessionState } from 'utils/SessionStateManager';
+import { Issuer } from '#root/issuer/Issuer';
+import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
+import { ApiState } from '#root/types/internal';
+import { CredentialRequest } from '#root/types/specification/credential_request';
+import { SessionState } from '#root/utils/SessionStateManager';
 import { JWT } from '#root/jwt/JWT';
 import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
