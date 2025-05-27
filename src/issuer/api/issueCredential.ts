@@ -84,7 +84,6 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         credential: w3cCredential,
         ...(issuer.usesNonces ? {c_nonce: nonce} : {})
     };
-    debug("returning", retval);
-    debug(issuer.exportKeyAsJwk());
+    debug("returning credential", retval);
     return retval;
 }

@@ -1,5 +1,4 @@
 import { Issuer } from "#root/issuer/Issuer";
-import { ManagedKeyInfo } from "@veramo/core";
 import { jwtVerify } from "jose";
 import { Factory } from "@muisit/cryptokey";
 import { JWT } from "#root/jwt/JWT";
@@ -23,7 +22,7 @@ export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
     }
     else {
         const jwt = JWT.fromToken(token);
-        const key = Factory.createFromManagedKey(issuer.key!);
+        const key = await Factory.createFromManagedKey(issuer.key!);
         if (await jwt.verify(key)) {
             return jwt;
         }

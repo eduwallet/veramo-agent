@@ -485,10 +485,4 @@ export class Issuer
         }
         return null;
     }
-
-    public exportKeyAsJwk()
-    {
-        const ckey = Factory.createFromManagedKey(this.key!);
-        return ckey.toJWK();
-    }
 }

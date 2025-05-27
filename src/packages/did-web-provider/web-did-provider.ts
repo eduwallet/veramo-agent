@@ -1,20 +1,15 @@
-import { IAgentContext, IIdentifier, IKey, IKeyManager, IService, RequireOnly } from '@veramo/core-types'
+import { IAgentContext, IIdentifier, IKey, IKeyManager, IService, RequireOnly, MinimalImportableKey } from '@veramo/core-types'
 import { AbstractIdentifierProvider } from '@veramo/did-manager'
 import { Factory } from '@muisit/cryptokey';
-import Debug from 'debug'
 import { CreateIdentifierArgs, CreateIdentifierOptions } from '#root/types/index';
-import { IKeyManagerCreateArgs, MinimalImportableKey } from '@veramo/core';
+import Debug from 'debug'
+import { IKeyManagerCreateArgs } from '@veramo/core';
 
-const debug = Debug('packages:did-key:identifier-provider')
+const debug = Debug('issuer:did-web')
 
 type IContext = IAgentContext<IKeyManager>
 
-/**
- * {@link @veramo/did-manager#DIDManager} identifier provider for `did:key` identifiers
- *
- * @beta This API may change without a BREAKING CHANGE notice.
- */
-export class KeyDIDProvider extends AbstractIdentifierProvider {
+export class WebDIDProvider extends AbstractIdentifierProvider {
   private defaultKms: string
 
   constructor(options: { defaultKms: string }) {
@@ -22,7 +17,7 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
     this.defaultKms = options.defaultKms
   }
 
-  async createIdentifier(args:CreateIdentifierArgs, context:IContext): Promise<Omit<IIdentifier, 'provider'>> {
+  async createIdentifier(args:CreateIdentifierArgs,context: IContext): Promise<Omit<IIdentifier, 'provider'>> {
     const keyType = (args.options?.keyType && args.options.keyType) || 'Ed25519'
     const key = await this.importOrGenerateKey(
       {
@@ -37,7 +32,7 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
 
     const cryptoKey = await Factory.createFromType(key.type, key.privateKeyHex);
     cryptoKey.setPublicKey(key.publicKeyHex);
-    const methodSpecificId:string = await Factory.toDIDKey(cryptoKey);
+    const methodSpecificId:string = 'did:web:' + args.alias;
 
     const identifier: Omit<IIdentifier, 'provider'> = {
       did: methodSpecificId,
@@ -58,7 +53,7 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
     },
     context: IAgentContext<IKeyManager>,
   ): Promise<IIdentifier> {
-    throw new Error('KeyDIDProvider updateIdentifier not implemented.')
+    throw new Error('WebDIDProvider updateIdentifier not implemented.')
   }
 
   async deleteIdentifier(identifier: IIdentifier, context: IContext): Promise<boolean> {
@@ -72,28 +67,28 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
     { identifier, key, options }: { identifier: IIdentifier; key: IKey; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider addKey not implemented')
+    throw Error('WebDIDProvider addKey not implemented')
   }
 
   async addService(
     { identifier, service, options }: { identifier: IIdentifier; service: IService; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider addService not implemented')
+    throw Error('WebDIDProvider addService not implemented')
   }
 
   async removeKey(
     args: { identifier: IIdentifier; kid: string; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider removeKey not implemented')
+    throw Error('WebDIDProvider removeKey not implemented')
   }
 
   async removeService(
     args: { identifier: IIdentifier; id: string; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider removeService not implemented')
+    throw Error('WebDIDProvider removeService not implemented')
   }
 
   private async importOrGenerateKey(

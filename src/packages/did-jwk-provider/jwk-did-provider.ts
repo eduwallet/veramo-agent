@@ -1,20 +1,15 @@
-import { IAgentContext, IIdentifier, IKey, IKeyManager, IService, RequireOnly } from '@veramo/core-types'
+import { IAgentContext, IIdentifier, IKey, IKeyManager, IService, RequireOnly, MinimalImportableKey } from '@veramo/core-types'
 import { AbstractIdentifierProvider } from '@veramo/did-manager'
 import { Factory } from '@muisit/cryptokey';
-import Debug from 'debug'
 import { CreateIdentifierArgs, CreateIdentifierOptions } from '#root/types/index';
-import { IKeyManagerCreateArgs, MinimalImportableKey } from '@veramo/core';
+import Debug from 'debug'
+import { IKeyManagerCreateArgs } from '@veramo/core';
 
-const debug = Debug('packages:did-key:identifier-provider')
+const debug = Debug('verifier:did-jwk')
 
 type IContext = IAgentContext<IKeyManager>
 
-/**
- * {@link @veramo/did-manager#DIDManager} identifier provider for `did:key` identifiers
- *
- * @beta This API may change without a BREAKING CHANGE notice.
- */
-export class KeyDIDProvider extends AbstractIdentifierProvider {
+export class JwkDIDProvider extends AbstractIdentifierProvider {
   private defaultKms: string
 
   constructor(options: { defaultKms: string }) {
@@ -37,7 +32,7 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
 
     const cryptoKey = await Factory.createFromType(key.type, key.privateKeyHex);
     cryptoKey.setPublicKey(key.publicKeyHex);
-    const methodSpecificId:string = await Factory.toDIDKey(cryptoKey);
+    const methodSpecificId:string = await Factory.toDIDJWK(cryptoKey);
 
     const identifier: Omit<IIdentifier, 'provider'> = {
       did: methodSpecificId,
@@ -58,7 +53,7 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
     },
     context: IAgentContext<IKeyManager>,
   ): Promise<IIdentifier> {
-    throw new Error('KeyDIDProvider updateIdentifier not implemented.')
+    throw new Error('JwkDIDProvider updateIdentifier not implemented.')
   }
 
   async deleteIdentifier(identifier: IIdentifier, context: IContext): Promise<boolean> {
@@ -72,28 +67,28 @@ export class KeyDIDProvider extends AbstractIdentifierProvider {
     { identifier, key, options }: { identifier: IIdentifier; key: IKey; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider addKey not implemented')
+    throw Error('JwkDIDProvider addKey not implemented')
   }
 
   async addService(
     { identifier, service, options }: { identifier: IIdentifier; service: IService; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider addService not implemented')
+    throw Error('JwkDIDProvider addService not implemented')
   }
 
   async removeKey(
     args: { identifier: IIdentifier; kid: string; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider removeKey not implemented')
+    throw Error('JwkDIDProvider removeKey not implemented')
   }
 
   async removeService(
     args: { identifier: IIdentifier; id: string; options?: any },
     context: IContext,
   ): Promise<any> {
-    throw Error('KeyDIDProvider removeService not implemented')
+    throw Error('JwkDIDProvider removeService not implemented')
   }
 
   private async importOrGenerateKey(

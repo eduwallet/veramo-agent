@@ -17,6 +17,17 @@ export enum DIDMethods {
     DID_WEB = 'web'
 }
 
+export interface CreateIdentifierOptions {
+    keyType?: string;
+    privateKeyHex?: string     ;
+}
+
+export interface CreateIdentifierArgs {
+    kms?: string;
+    alias?: string;
+    options?: CreateIdentifierOptions;
+}
+
 export interface IDIDOpts {
     did?: string
     alias?: string;

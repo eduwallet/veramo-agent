@@ -20,18 +20,14 @@
   "license": "Apache-2.0",
   "private": false,
   "dependencies": {
-    "@cef-ebsi/key-did-resolver": "^2.1.0",
-    "@muisit/cryptokey": "1.0.13",
+    "@muisit/cryptokey": "^1.1.1",
     "@sd-jwt/core": "^0.9.2",
     "@sd-jwt/crypto-nodejs": "^0.9.2",
     "@sd-jwt/sd-jwt-vc": "^0.9.2",
     "@sphereon/ssi-express-support": "0.29.0",
-    "@sphereon/ssi-sdk-ext.did-provider-jwk": "0.24.0",
-    "@sphereon/ssi-sdk-ext.did-resolver-jwk": "0.23.0",
     "@sphereon/ssi-sdk-ext.did-utils": "0.24.0",
     "@sphereon/ssi-sdk-ext.key-utils": "0.24.0",
     "@sphereon/ssi-sdk.vc-handler-ld-local": "0.29.0",
-    "@transmute/did-key.js": "^0.3.0-unstable.10",
     "@veramo/core": "6.0.0",
     "@veramo/credential-ld": "6.0.0",
     "@veramo/credential-w3c": "6.0.0",
@@ -39,8 +35,6 @@
     "@veramo/did-discovery": "6.0.0",
     "@veramo/did-jwt": "6.0.0",
     "@veramo/did-manager": "6.0.0",
-    "@veramo/did-provider-key": "6.0.0",
-    "@veramo/did-provider-web": "6.0.0",
     "@veramo/did-resolver": "6.0.0",
     "debug": "4.3.5",
     "did-jwt": "^7.4.7",
@@ -56,8 +50,7 @@
     "postinstall": "^0.10.3",
     "string-width": "^4.2.3",
     "tsconfig-paths": "^4.2.0",
-    "uuid": "^11.1.0",
-    "web-did-resolver": "^2.0.27"
+    "uuid": "^11.1.0"
   },
   "files": [
     "src/**/*",

@@ -1,15 +1,15 @@
 import Debug from 'debug';
 const debug = Debug('issuer:did');
 import {Resolver} from "did-resolver";
-import {KeyDIDProvider} from "../packages/did-key-provider/key-did-provider.js";
-import {getDidJwkResolver} from "@sphereon/ssi-sdk-ext.did-resolver-jwk";
-import {WebDIDProvider} from "@veramo/did-provider-web";
-import {JwkDIDProvider} from "@sphereon/ssi-sdk-ext.did-provider-jwk";
+import {KeyDIDProvider} from "../packages/did-key-provider/key-did-provider";
+import {WebDIDProvider} from "../packages/did-web-provider/web-did-provider";
+import {JwkDIDProvider} from "../packages/did-jwk-provider/jwk-did-provider";
 import { getAgent } from "agent";
-import {DIDDocumentSection, IIdentifier} from "@veramo/core";
+import {DIDDocumentSection, IIdentifier, IDIDManagerCreateArgs} from "@veramo/core";
 import {didOptConfigs} from "environment";
-import { IDIDResult, KMS, DIDMethods } from 'types';
+import { IDIDResult, KMS, DIDMethods, IDIDOpts } from 'types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
+import { getDidJwkResolver } from "./didJwkResolver";
 import { getDidKeyResolver } from "./didKeyResolver";
 import { getDidWebResolver } from './didWebResolver';
 
@@ -88,7 +88,7 @@ export async function getDefaultKid({did, verificationMethodName, verificationMe
 
 
 export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
-    const result = didOptConfigs.asArray.map(async opts => {
+    const result = didOptConfigs.asArray.map(async (opts:IDIDOpts) => {
         debug(`DID config found for: ${opts.did}`)
         let identifier;
         if (opts.did) {
@@ -104,12 +104,13 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
         } else {
             console.log(`No identifier for DID ${opts.did} exists yet. Will create the DID...`)
 
-            let args = opts.createArgs
+            let args:IDIDManagerCreateArgs = opts.createArgs
             if (!args) {
                 args = {options: {}}
             }
             if (opts.alias) {
                 args.alias = opts.alias;
+                // for did:web, the alias is used to create the identifier
                 if (opts.did && opts.did.startsWith('did:web:')) {
                     args.alias = opts.did.substring(8);
                 }

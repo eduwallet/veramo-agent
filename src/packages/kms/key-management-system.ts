@@ -36,7 +36,7 @@ export class KeyManagementSystem extends AbstractKeyManagementSystem {
     if (!args.type || !args.privateKeyHex) {
       throw new Error('invalid_argument: type and privateKeyHex are required to import a key')
     }
-    const cryptoKey = Factory.createFromType(args.type, args.privateKeyHex);
+    const cryptoKey = await Factory.createFromType(args.type, args.privateKeyHex);
     const managedKey:ManagedKeyInfo = this.asManagedKeyInfo(cryptoKey, args.kid);
     await this.keyStore.importKey({ alias: managedKey.kid, ...args })
     debug('imported key', managedKey.type, managedKey.publicKeyHex)
@@ -45,17 +45,17 @@ export class KeyManagementSystem extends AbstractKeyManagementSystem {
 
   async listKeys(): Promise<ManagedKeyInfo[]> {
     const privateKeys = await this.keyStore.listKeys({})
-    const managedKeys = privateKeys.map((key) => {
-      const ckey = Factory.createFromType(key.type, key.privateKeyHex);
+    const managedKeys = privateKeys.map(async (key) => {
+      const ckey = await Factory.createFromType(key.type, key.privateKeyHex);
       return this.asManagedKeyInfo(ckey);
     });
-    return managedKeys
+    return Promise.all(managedKeys);
   }
 
   async createKey({ type }: { type: TKeyType }): Promise<ManagedKeyInfo> {
-    let cryptoKey = Factory.createFromType(type as string);
+    let cryptoKey = await Factory.createFromType(type as string);
     try {
-      cryptoKey.createPrivateKey();
+      await cryptoKey.createPrivateKey();
       await this.importKey({ type: cryptoKey.keyType as any, privateKeyHex: cryptoKey.exportPrivateKey() })
     }
     catch(e) {
@@ -85,7 +85,7 @@ export class KeyManagementSystem extends AbstractKeyManagementSystem {
       throw new Error(`key_not_found: No key entry found for kid=${keyRef.kid}`)
     }
 
-    let cryptoKey = Factory.createFromType(managedKey.type, managedKey.privateKeyHex);
+    let cryptoKey = await Factory.createFromType(managedKey.type, managedKey.privateKeyHex);
     if (!algorithm) {
       algorithm = cryptoKey.algorithms()[0];
     }
