@@ -2,16 +2,24 @@ import moment from "moment";
 import { CredentialStatusReference } from "@veramo/core";
 import { StringKeyedObject } from "#root/types/index";
 import { CredentialConfiguration } from "#root/types/specification/metadata";
-import { CredentialType } from "./types/CredentialType";
 import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
-import { SDJWT } from "./formats/SDJWT.js";
+
+export interface LanguageLabel
+{
+    value: string;
+    locale: string;
+}
+export interface Dictionary {
+    [x:string]: LanguageLabel[];
+}
 
 export class Credential
 {
     public issuer?:Issuer;
     public data:StringKeyedObject = {};
     public metaData:StringKeyedObject = {};
+    public dictionary:Dictionary = {};
     public id?:string; // the identifier in the credential data set for this session
     public principalId?:string; // a globally unique identifier for this type and issuer
     public type:string = 'GenericCredential';
@@ -19,7 +27,7 @@ export class Credential
     public configuration?:CredentialConfiguration;
     public credential:any; // basic readable data
     public output:any; // signed, proofed data, possibly encoded
-    public contexts:string[] = ["https://www.w3.org/2018/credentials/v1"];
+    public contexts:string[] = [];
 
     public automaticallyBindHolder = true;
 
@@ -41,9 +49,6 @@ export class Credential
         }
         if (this.metaData.expiration) {
             this.handleExpirationDate(this.metaData.expiration);
-        }
-        if (this.automaticallyBindHolder) {
-            this.bindHolder();
         }
         this.metaData.issuanceDate = moment().toISOString();
 
@@ -104,23 +109,22 @@ export class Credential
         }
     }
 
-    private bindHolder()
+    public addDictionaryValue(key:string, value:string, language:string)
     {
-        // Bind credential to the provided proof of possession
-        if (['dc+sd-jwt', 'vc+sd-jwt'].includes(this.type)) {
-            // https://www.rfc-editor.org/rfc/rfc7800.html
-            if (!this.metaData.metaData.cnf) {
-                this.metaData.cnf = {kid: this.holder};
-            }
+        if (!this.dictionary[key]) {
+            this.dictionary[key] = [];
         }
-        else {
-            // the credentialSubject can be a single object, or an array of objects. 
-            // If it is an array, it supposedly refers to several subjects and we cannot
-            // simply guess which is the actual holder, nor if all refer to the holder
-            // Hence we only do automatic holder binding if the credentialSubject is not a list
-            if (!Array.isArray(this.data) && this.data.id) {
-                this.data.id = this.holder;
+        let found = false;
+        this.dictionary[key] = this.dictionary[key].map((v:LanguageLabel) => {
+            if (v.locale == language) {
+                v.value = value;
+                found = true;
             }
+            return v;
+        });
+
+        if (!found) {
+            this.dictionary[key].push({value, locale:language});
         }
     }
 }

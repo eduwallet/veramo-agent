@@ -1,17 +1,12 @@
-import moment from "moment";
-import { CredentialStatusReference } from "@veramo/core";
 import { Credential } from "./Credential";
-import { StringKeyedObject } from "#root/types/index";
-import { CredentialConfiguration } from "#root/types/specification/metadata";
 import { CredentialType } from "./types/CredentialType";
-import { Issuer } from "#root/issuer/Issuer";
 import { AcademicBaseCredential } from "./types/AcademicBaseCredential";
 import { AcademicEnrollmentCredential } from "./types/AcademicEnrollmentCredential";
 import { PID } from "./types/PID";
 import { OpenBadgeCredential } from "./types/OpenBadgeCredential";
 import { GenericCredential } from "./types/GenericCredential";
-import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
-import { SDJWT } from "./formats/SDJWT.js";
+import { SDJWT } from "./formats/SDJWT";
+import { VCDM } from "./formats/VCDM";
 
 export class CredentialFactory
 {
@@ -58,8 +53,12 @@ export class CredentialFactory
         switch (credential.configuration.format) {
             case 'dc+sd-jwt':
             case 'vc+sd-jwt':
-                const sdjwt = new SDJWT(credential);
+                const sdjwt = new SDJWT(credential, credential.configuration.format);
                 await sdjwt.sign();
+            case 'jwt_vc_json':
+            case 'vc+jwt':
+                const vcjwt = new VCDM(credential, credential.configuration.format);
+                await vcjwt.sign();
                 
         }
         return true;

@@ -1,4 +1,6 @@
 import { CredentialProofData } from "#root/types/internal";
+import { CredentialDisplay } from "#root/types/specification/metadata";
+import { Credential } from "../Credential.js";
 
 export interface ClaimList {
     [x:string]: any
@@ -22,5 +24,41 @@ export abstract class CredentialType
             return true;
         }
         return false;
+    }
+
+    protected setCredentialDisplay(credential:Credential)
+    {
+        if (credential.configuration?.display) {
+            for (const display of credential.configuration.display) {
+                if (display.name) {
+                    credential.addDictionaryValue('name', display.name, display.locale ?? 'en_US');
+                }
+                if (display.description) {
+                    credential.addDictionaryValue('description', display.description, display.locale ?? 'en_US');
+                }
+            }
+        }
+    }
+
+    protected setIssuer(credential:Credential)
+    {
+        if (credential.issuer) {
+            const display = (credential.i.metadata.display ?? [{}]);
+            for (const label of display) {
+                if (label.name) {
+                    credential.addDictionaryValue('issuer_name', label.name, label.locale ?? 'en_US');
+                }
+                else {
+                    credential.addDictionaryValue('issuer_name', credential.issuer.options.baseUrl, label.locale ?? 'en_US');
+                }
+                if (label.description) {
+                    credential.addDictionaryValue('issuer_description', label.description, label.locale ?? 'en_US');
+                }
+            }
+
+            if (!display || display.length == 0) {
+                credential.addDictionaryValue('issuer_name', credential.issuer.options.baseUrl, 'en_US');
+            }
+        }
     }
 }

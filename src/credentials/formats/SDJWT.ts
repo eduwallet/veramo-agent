@@ -13,9 +13,11 @@ import { getAgent } from '#root/agent';
 export class SDJWT
 {
     private credential:Credential;
-    public constructor(credential:Credential)
+    private type:string = 'dc+sd-jwt';
+    public constructor(credential:Credential, type:string = 'dc+sd-jwt')
     {
         this.credential = credential;
+        this.type = type;
     }
 
     public async sign()
@@ -28,8 +30,9 @@ export class SDJWT
             vct: vct.vct,
             iat: moment().unix()
         };
-        if (this.credential.metaData.cnf) {
-            baseCredential.cnf = this.credential.metaData.cnf;
+        if (this.credential.automaticallyBindHolder && this.credential.holder) {
+            // https://www.rfc-editor.org/rfc/rfc7800.html
+            baseCredential.cnf = {kid: this.credential.holder};
         }
 
         // if we have a credentialSubject, convert it to claims
@@ -60,7 +63,8 @@ export class SDJWT
         let disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(vct);
         const sdcredential = await sdjwt.issue(baseCredential, disclosureFrame, {
           header: {
-            typ: 'vc+sd-jwt',
+            typ: this.type,
+            cty: 'vc',
             kid: '#' + this.credential.issuer!.key!.kid
           },
         });
