@@ -1,0 +1,70 @@
+import Debug from 'debug';
+const debug = Debug('issuer:jose');
+
+import { VCDM as VCDMType} from './VCDMTypes';
+import { VCDM } from "./VCDM";
+import { Credential } from '../Credential';
+import moment from 'moment';
+import { JWT } from '#root/jwt/JWT';
+
+export class JOSE
+{
+    private credential:Credential;
+    private type:string = 'vc+jwt';
+
+    public constructor(credential:Credential, type:string = 'vc+jwt')
+    {
+        this.credential = credential;
+        this.type = type;
+    }
+
+    public async sign()
+    {
+        debug("signing VCDM using JOSE");
+        const vcdm = new VCDM(this.credential);
+        const baseCredential = vcdm.build();
+        this.credential.output = await this.packCredential(baseCredential);
+    }
+
+    private async packCredential(baseCredential:VCDMType)
+    {
+        // https://www.w3.org/TR/vc-jose-cose/
+        // https://www.w3.org/TR/vc-jose-cose/#securing-with-jose
+        // "The unsecured verifiable credential is the payload"
+        const jwt = new JWT();
+        jwt.payload = baseCredential;
+
+        jwt.header.alg = this.credential.issuer!.algorithm();
+        jwt.header.kid = this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef;
+        jwt.header.typ = this.type;
+        jwt.header.cty = 'vc';
+
+        // It is RECOMMENDED to use the IANA JSON Web Token Claims registry and the IANA JSON
+        // Web Signature and Encryption Header Parameters registry to identify any claims and
+        // header parameters that might be confused with members defined by [VC-DATA-MODEL-2.0].
+        // These include but are not limited to: iss, kid, alg, iat, exp, and cnf. 
+        jwt.header.iss = this.credential.issuer!.did!.did;
+
+        // When the iat (Issued At) and/or exp (Expiration Time) JWT claims are present, they 
+        // represent the issuance and expiration time of the signature, respectively.
+        jwt.payload.iss = moment().unix();
+        if (this.credential.metaData.expirationDate) {
+            // signature at least expires at the expiration date of the credential itself
+            jwt.payload.iat = moment(this.credential.metaData.expirationDate).unix();
+        }
+
+        // Implementers SHOULD avoid setting JWT claims to values that conflict with the values of
+        // verifiable credential properties when a claim and property pair refer to the same
+        // conceptual entity, especially with pairs such as iss and issuer, jti and id, and
+        // sub and credentialSubject.id.
+        jwt.payload.iss = this.credential.issuer!.did!.did;
+        if (baseCredential.id) {
+            jwt.payload.jti = baseCredential.id;
+        }
+        if (baseCredential.credentialSubject.id) {
+            jwt.payload.sub = baseCredential.credentialSubject.id;
+        }
+
+        return await this.credential.issuer!.signToken(jwt);
+    }
+}

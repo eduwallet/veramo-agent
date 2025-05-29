@@ -6,7 +6,7 @@ import { PID } from "./types/PID";
 import { OpenBadgeCredential } from "./types/OpenBadgeCredential";
 import { GenericCredential } from "./types/GenericCredential";
 import { SDJWT } from "./formats/SDJWT";
-import { VCDM } from "./formats/VCDM";
+import { JOSE } from "./formats/JOSE";
 
 export class CredentialFactory
 {
@@ -56,9 +56,10 @@ export class CredentialFactory
                 const sdjwt = new SDJWT(credential, credential.configuration.format);
                 await sdjwt.sign();
             case 'jwt_vc_json':
+            case 'jwt_vc_json-ld':
             case 'vc+jwt':
-                const vcjwt = new VCDM(credential, credential.configuration.format);
-                await vcjwt.sign();
+                const jose = new JOSE(credential, credential.configuration.format);
+                await jose.sign();
                 
         }
         return true;

@@ -36,6 +36,7 @@
     "@veramo/did-jwt": "6.0.0",
     "@veramo/did-manager": "6.0.0",
     "@veramo/did-resolver": "6.0.0",
+    "cbor": "^10.0.3",
     "debug": "4.3.5",
     "did-jwt": "^7.4.7",
     "dotenv-flow": "^4.1.0",
