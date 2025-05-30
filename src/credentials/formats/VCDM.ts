@@ -14,7 +14,7 @@ export class VCDM
         this.credential = credential;
     }
 
-    public build()
+    public build():VCDMType
     {
         debug("creating VCDM");
 
@@ -23,7 +23,7 @@ export class VCDM
         let baseCredential:VCDMType = {
             "@context": ["https://www.w3.org/ns/credentials/v2", ...this.credential.contexts],
             type: ["VerifiableCredential", this.credential.type],
-            credentialSubject: this.credential.data,
+            credentialSubject: Object.assign({}, this.credential.data),
             issuer: {
                 // value of id can be a controlled identifier, a JWK (reference) or a did. In fact, it can be any url
                 id: this.credential.issuer!.did!.did,
@@ -80,11 +80,11 @@ export class VCDM
         if (this.credential.metaData.credentialStatus) {
             if (this.credential.metaData.credentialStatus.type) {
                 // only one entry
-                baseCredential.status = [this.credential.metaData.credentialStatus];
+                baseCredential.status = [Object.assign({}, this.credential.metaData.credentialStatus)];
             }
             else if (this.credential.metaData.credentialStatus.length) {
                 // array of entries
-                baseCredential.status = this.credential.metaData.credentialStatus;
+                baseCredential.status = this.credential.metaData.credentialStatus.slice();
             }
         }
     }

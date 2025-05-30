@@ -32,12 +32,16 @@ export class JOSE
         // https://www.w3.org/TR/vc-jose-cose/#securing-with-jose
         // "The unsecured verifiable credential is the payload"
         const jwt = new JWT();
-        jwt.payload = baseCredential;
+        jwt.payload = Object.assign({}, baseCredential);
 
-        jwt.header.alg = this.credential.issuer!.algorithm();
-        jwt.header.kid = this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef;
-        jwt.header.typ = this.type;
-        jwt.header.cty = 'vc';
+        // typ and cty are only defined for JSON-LD. The JOSE definition does not mention
+        // these headers, but they are not explicitely disallowed either
+        jwt.header = {
+            alg: this.credential.issuer!.algorithm(),
+            kid: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
+            typ: this.type,
+            cty: 'vc'
+        };
 
         // It is RECOMMENDED to use the IANA JSON Web Token Claims registry and the IANA JSON
         // Web Signature and Encryption Header Parameters registry to identify any claims and

@@ -7,7 +7,7 @@ import { getOrCreateDIDs } from "utils/did";
 import { initialiseIssuerStore } from 'issuer/Store';
 import { initialiseCredentialConfigurationStore } from 'credentials/Store';
 import { openObserverLog } from 'utils/openObserverLog';
-import { initialiseContextConfigurationStore } from 'contexts/Store';
+import { getContextConfigurationStore } from 'contexts/Store';
 import { initialiseVctConfigurationStore } from 'vct/Store';
 
 export var _agent:TAgent<TAgentTypes>|null = null;
@@ -20,7 +20,8 @@ export function getAgent():TAgent<TAgentTypes> {
 
 export async function main() {
     debug('Loading contexts');
-    await initialiseContextConfigurationStore().catch(e => console.error(e))
+    const contextStore = getContextConfigurationStore();
+    contextStore.init();
 
     debug('Loading vcts');
     await initialiseVctConfigurationStore().catch(e => console.error(e))

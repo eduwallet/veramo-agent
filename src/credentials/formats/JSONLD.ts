@@ -7,7 +7,6 @@ import { Credential } from '../Credential';
 import jsigs from 'jsonld-signatures';
 import { Issuer } from '#root/issuer/Issuer';
 import { getContextConfigurationStore } from '#root/contexts/Store';
-import { LdDefaultContexts } from '@sphereon/ssi-sdk.vc-handler-ld-local'
 import * as jsonld from 'jsonld';
 
 export class JSONLD
@@ -38,34 +37,35 @@ export class JSONLD
                 purpose: new jsigs.purposes.AssertionProofPurpose(),
                 documentLoader: this.documentLoader
             }
-        );     
+        );
+        console.error(signedVC);
+        // this adjusts the original object, but this is intentional. This allows us to use JSONLD
+        // in combination with JOSE to create an embedded and external signature
         baseCredential.proof = {
             type: 'JsonWebSignature2020',
             created: new Date().toISOString(),
             proofPurpose: 'assertionMethod',
             verificationMethod: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
-            jws, // or 'proofValue' or 'signatureValue' depending on the format
+            jws: signedVC.proof['https://w3id.org/security#jws'], // or 'proofValue' or 'signatureValue' depending on the format
         };
+        return baseCredential;
     }
 
     private documentLoader(url:string):any {
         const contextStore = getContextConfigurationStore();
-        let defaultContexts = new Map(LdDefaultContexts);
-        for (const key of Object.keys(contextStore)) {
-            defaultContexts.set(contextStore[key].fullPath!, contextStore[key]['document']);
-        }
-        if (defaultContexts.has(url)) {
+        const obj = contextStore.resolve(url);
+        if (obj) {
             return {
                 contextUrl: null,
                 documentUrl: url,
-                document: defaultContexts.get(url)
-            }
+                document: obj
+            };
         }
         return jsonld.documentLoaders.node(url);
     }
 }
 
-class CallbackSignature extends jsigs.LinkedDataSignature
+class CallbackSignature extends jsigs.suites.LinkedDataSignature
 {
     private issuer:Issuer;
 

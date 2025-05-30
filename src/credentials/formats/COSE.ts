@@ -5,7 +5,8 @@ import { VCDM as VCDMType} from './VCDMTypes';
 import { VCDM } from "./VCDM";
 import { Credential } from '../Credential';
 import moment from 'moment';
-import * as cbor from 'cbor';
+import * as cbor from 'cbor2';
+import { toString } from 'uint8arrays';
 
 export class COSE
 {
@@ -59,9 +60,11 @@ export class COSE
         };
         const protectedHeaderBytes = cbor.encode(protectedHeader);
 
+        // The typ (16) header parameter, as described in COSE "typ" (type) Header Parameter, SHOULD be application/vc+cose.
+        // The content type (3) header parameter SHOULD be application/vc
         const unprotectedHeader = {
-            typ: 'vc+jwt',
-            cty: 'vc',
+            typ: 'application/vc+cose',
+            cty: 'application/vc',
             kid: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
             iss: this.credential.issuer!.did!.did
         };
@@ -76,6 +79,7 @@ export class COSE
 
         const signature = await this.credential.issuer!.signData(sigStructureBytes);
 
+        // cose sign1 is a special case with only 1 signature (RFC8152 section 4.2)
         const coseSign1 = [
             protectedHeaderBytes,
             unprotectedHeader,
@@ -83,6 +87,6 @@ export class COSE
             Buffer.from(signature)
         ];
         const finalCoseObject = cbor.encode(coseSign1);
-        return finalCoseObject.toString('hex');
+        return toString(finalCoseObject, 'base64url');
     }
 }
