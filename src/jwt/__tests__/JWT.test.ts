@@ -1,15 +1,15 @@
 import { expect, test} from 'vitest';
 import { JWT } from '../JWT';
-import { Factory } from '@muisit/cryptokey';
+import { Factory, CryptoKey } from '@muisit/cryptokey';
 
 test('create JWT', async () => {
     const jwt = new JWT();
     jwt.header = {typ: 'JWT', alg: 'EdDSA'};
     jwt.payload = { claim: "something"};
 
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8",
         ),
     );
@@ -31,9 +31,9 @@ test('sign with Function', async () => {
     jwt.header = {typ: 'JWT', alg: 'EdDSA'};
     jwt.payload = { claim: "something"};
 
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8",
         ),
     );
@@ -51,9 +51,9 @@ test('sign with Function', async () => {
 });
 
 test('verify JWT', async () => {
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8",
         ),
     );
@@ -64,9 +64,9 @@ test('verify JWT', async () => {
 });
 
 test('verify JWT(2)', async () => {
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8",
         ),
     );
@@ -77,9 +77,9 @@ test('verify JWT(2)', async () => {
 });
 
 test('fail JWT verify:wrong key', async () => {
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a9", // wrong key
         ),
     );
@@ -90,9 +90,9 @@ test('fail JWT verify:wrong key', async () => {
 });
 
 test('fail JWT verify:wrong payload', async () => {
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8",
         ),
     );
@@ -104,9 +104,9 @@ test('fail JWT verify:wrong payload', async () => {
 });
 
 test('fail JWT verify:wrong payload', async () => {
-    const key = Factory.createFromType('Ed25519');
+    const key = await Factory.createFromType('Ed25519');
     key.initialisePrivateKey(
-        key.hexToBytes(
+        CryptoKey.hexToBytes(
           "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8",
         ),
     );
