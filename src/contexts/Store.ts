@@ -66,7 +66,7 @@ class ContextConfigurationStore {
 
             if (this.configuration[url].basePath && fs.existsSync(this.configuration[url].basePath)) {
                 const json = fs.readFileSync(this.configuration[url].basePath, 'utf8').toString();
-                console.error(json);
+
                 const obj = JSON.parse(json);
                 if (obj && Object.keys(obj).length > 0) {
                     return obj;

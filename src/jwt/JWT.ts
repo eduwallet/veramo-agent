@@ -56,8 +56,18 @@ export class JWT {
             this.header.alg = algUsed;
             this.header.kid = key.exportPublicKey();
         }
-        this.headerPart = this.encodeToBase64(this.header);
-        this.payloadPart = this.encodeToBase64(this.payload);
+        if (this.header) {
+            this.headerPart = this.encodeToBase64(this.header);
+        }
+        else if (!this.headerPart) {
+            this.headerPart = '';
+        }
+        if (this.payload) {
+            this.payloadPart = this.encodeToBase64(this.payload);
+        }
+        else if (!this.payloadPart) {
+            this.payloadPart = '';
+        }
         const data = Buffer.from(this.headerPart + '.' + this.payloadPart);
         if (typeof(key) != 'function') {
             this.signaturePart = await key.sign(algUsed, data, 'base64url');
@@ -81,7 +91,7 @@ export class JWT {
         return null;
     }
 
-    encodeToBase64(payload:any)
+    public encodeToBase64(payload:any)
     {
         const encoded = Buffer.from(JSON.stringify(payload));
         return toString(encoded, 'base64url');

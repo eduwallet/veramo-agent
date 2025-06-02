@@ -490,4 +490,10 @@ export class Issuer
         }
         return null;
     }
+
+    public async exportJWK()
+    {
+        const ckey = await Factory.createFromManagedKey(this.key!);
+        return ckey.toJWK();
+    }
 }
