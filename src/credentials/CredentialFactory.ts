@@ -32,7 +32,7 @@ export class CredentialFactory
         const instance = this.createInstance(credential);
 
         if (instance && credential.data && credential.issuer) {
-            return instance.check(this);
+            return instance.check(credential);
         }
         return false;
     }
@@ -43,7 +43,7 @@ export class CredentialFactory
         const instance = this.createInstance(credential);
 
         if (instance && credential.data && credential.issuer) {
-            await instance.resolve(this);
+            await instance.resolve(credential);
         }
         return true;
     }

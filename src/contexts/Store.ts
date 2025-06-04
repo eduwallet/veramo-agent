@@ -33,10 +33,10 @@ class ContextConfigurationStore {
         try {
             debug('Loading context configurations, path: ' + CONTEXT_CONFIGURATION_PATH);
             const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
-            this.configuration = configurations.asObject;
-            for (const key in _contextConfigurationStore) {
-                var cfg = this.configuration[key];
+            for (const key of Object.keys(configurations.asObject)) {
+                var cfg = configurations.asObject[key];
                 cfg.fullPath = getBaseUrl() + cfg.basePath;
+                debug("context full path is ", cfg.fullPath);
                 this.add(cfg.fullPath, cfg.document, cfg.basePath);
             }
         }
@@ -47,9 +47,11 @@ class ContextConfigurationStore {
 
     public add(url:string, doc:any, bp?:string)
     {
-        let jsonDoc = JSON.stringify(doc);
-        jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, url);
-        doc = JSON.parse(jsonDoc);
+        if (doc) {
+            let jsonDoc = JSON.stringify(doc);
+            jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, url);
+            doc = JSON.parse(jsonDoc);
+        }
         this.configuration[url] = {
             basePath: bp ?? '',
             document: doc,
@@ -72,6 +74,17 @@ class ContextConfigurationStore {
                     return obj;
                 }
             }
+        }
+        return null;
+    }
+
+    public keys() {
+        return Object.keys(this.configuration);
+    }
+
+    public get(key:string) {
+        if (this.configuration[key]) {
+            return this.configuration[key];
         }
         return null;
     }

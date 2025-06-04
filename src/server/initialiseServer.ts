@@ -37,10 +37,11 @@ export const initialiseServer = async () => {
   const contextStore = getContextConfigurationStore();
   const contextRouter = express.Router();
   expressSupport.express.use('/', contextRouter);
-  for (const key of Object.keys(contextStore)) {
-    const context = contextStore[key];
+  for (const key of contextStore.keys()) {
+    const context = contextStore.get(key);
     // only serve it if we have content. If there is no content, it is cached on disk
     if (context.document !== null) {
+      console.error('adding context path for ', context);
       getContext(contextRouter, context);
     }
   };
