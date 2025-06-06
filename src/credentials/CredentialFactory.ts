@@ -60,7 +60,6 @@ export class CredentialFactory
             case 'vc+jwt':
                 const jose = new JOSE(credential, credential.configuration.format);
                 await jose.sign();
-                
         }
         return true;
     }

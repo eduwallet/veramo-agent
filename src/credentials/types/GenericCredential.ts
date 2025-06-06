@@ -10,7 +10,9 @@ export class GenericCredential extends CredentialType
         this.setIssuer(credential);
         const context = credential.issuer.getCredentialContext(credential.type);
         if (context) {
-            credential.contexts.push(context);
+            for (const ctx of context) {
+                credential.contexts.push(ctx);
+            }
         }
         credential.principalId = createUniqueId();
     }

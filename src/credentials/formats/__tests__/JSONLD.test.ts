@@ -4,6 +4,7 @@ import { JSONLD } from '../JSONLD';
 import { Credential } from '../../Credential';
 import { getContextConfigurationStore } from '../../../contexts/Store';
 import { toString } from 'uint8arrays';
+import { VCDM } from '../VCDM';
 
 const context = {
     "@context": {
@@ -34,15 +35,14 @@ test('JSONLD conversion', async () => {
     issuer.did = {did: 'did:test:me', provider:'did:test', keys:[], services:[]};
     issuer.keyRef = '1234';
     issuer.key = {keyType: 'Ed25519', kid: '1234'};
+    let output = (new VCDM(credential)).build();
+    output = await JSONLD.sign(credential, output, '2025-01-01T02:02:02');
 
-    const jsonld = new JSONLD(credential, '2025-01-01T02:02:02');
-    await jsonld.sign();
-
-    expect(credential.output).toBeDefined();
-    expect(credential.output.proof).toBeDefined();
-    expect(credential.output.proof.type).toBe('JsonWebSignature2020');
-    expect(credential.output.proof.proofPurpose).toBe('assertionMethod');
-    expect(credential.output.proof.jws).toBe('eyJiNjQiOnRydWUsImNyaXQiOlsiYjY0Il19..ZXlKaU5qUWlPblJ5ZFdVc0ltTnlhWFFpT2xzaVlqWTBJbDE5LlJIdVR0Rk1IeWhBUFNxLU12R0ZNLXNzYUs3dXdWcjVkZlU5YjV4WHp2YUE0Nm5qdmdPWG5oaUhIMFFXbEVlVDN2cXpMb2pPTjQ2NnFjUHdNSTR4NkhR');
+    expect(output).toBeDefined();
+    expect(output.proof).toBeDefined();
+    expect(output.proof?.type).toBe('JsonWebSignature2020');
+    expect(output.proof?.proofPurpose).toBe('assertionMethod');
+    expect(output.proof?.jws).toBe('eyJiNjQiOnRydWUsImNyaXQiOlsiYjY0Il19..ZXlKaU5qUWlPblJ5ZFdVc0ltTnlhWFFpT2xzaVlqWTBJbDE5LlJIdVR0Rk1IeWhBUFNxLU12R0ZNLXNzYUs3dXdWcjVkZlU5YjV4WHp2YUE0Nm5qdmdPWG5oaUhIMFFXbEVlVDN2cXpMb2pPTjQ2NnFjUHdNSTR4NkhR');
     expect(dataToSign.length).toBe(123);
 });
 
@@ -52,7 +52,6 @@ test('JSONLD conversion with unspecced attributes', async () => {
     store.add("http://example.net", context);
     let dataToSign:any = null; 
     vi.spyOn(issuer, 'signData').mockImplementation(async (arg:Uint8Array):string => {
-        console.log('signing Data', toString(arg, 'utf-8'));
         dataToSign = arg;
         return toString(arg, 'base64url');
     });
@@ -70,14 +69,14 @@ test('JSONLD conversion with unspecced attributes', async () => {
     issuer.keyRef = '1234';
     issuer.key = {keyType: 'Ed25519', kid: '1234'};
 
-    const jsonld = new JSONLD(credential, '2025-01-01T02:02:02');
-    await jsonld.sign();
+    let output = (new VCDM(credential)).build();
+    output = await JSONLD.sign(credential, output, '2025-01-01T02:02:02');
 
-    expect(credential.output).toBeDefined();
-    expect(credential.output.proof).toBeDefined();
-    expect(credential.output.proof.type).toBe('JsonWebSignature2020');
-    expect(credential.output.proof.proofPurpose).toBe('assertionMethod');
-    expect(credential.output.proof.jws).toBe('eyJiNjQiOnRydWUsImNyaXQiOlsiYjY0Il19..ZXlKaU5qUWlPblJ5ZFdVc0ltTnlhWFFpT2xzaVlqWTBJbDE5LlJIdVR0Rk1IeWhBUFNxLU12R0ZNLXNzYUs3dXdWcjVkZlU5YjV4WHp2YUE0Nm5qdmdPWG5oaUhIMFFXbEVlVDN2cXpMb2pPTjQ2NnFjUHdNSTR4NkhR');
+    expect(output).toBeDefined();
+    expect(output.proof).toBeDefined();
+    expect(output.proof?.type).toBe('JsonWebSignature2020');
+    expect(output.proof?.proofPurpose).toBe('assertionMethod');
+    expect(output.proof?.jws).toBe('eyJiNjQiOnRydWUsImNyaXQiOlsiYjY0Il19..ZXlKaU5qUWlPblJ5ZFdVc0ltTnlhWFFpT2xzaVlqWTBJbDE5LlJIdVR0Rk1IeWhBUFNxLU12R0ZNLXNzYUs3dXdWcjVkZlU5YjV4WHp2YUE0Nm5qdmdPWG5oaUhIMFFXbEVlVDN2cXpMb2pPTjQ2NnFjUHdNSTR4NkhR');
     expect(dataToSign.length).toBe(123);
 });
 
@@ -116,13 +115,13 @@ test('JSONLD conversion with credential type context', async () => {
     issuer.keyRef = '1234';
     issuer.key = {keyType: 'Ed25519', kid: '1234'};
 
-    const jsonld = new JSONLD(credential, '2025-01-01T02:02:02');
-    await jsonld.sign();
+    let output = (new VCDM(credential)).build();
+    output = await JSONLD.sign(credential, output, '2025-01-01T02:02:02');
 
-    expect(credential.output).toBeDefined();
-    expect(credential.output.proof).toBeDefined();
-    expect(credential.output.proof.type).toBe('JsonWebSignature2020');
-    expect(credential.output.proof.proofPurpose).toBe('assertionMethod');
-    expect(credential.output.proof.jws).toBe('eyJiNjQiOnRydWUsImNyaXQiOlsiYjY0Il19..ZXlKaU5qUWlPblJ5ZFdVc0ltTnlhWFFpT2xzaVlqWTBJbDE5LlJIdVR0Rk1IeWhBUFNxLU12R0ZNLXNzYUs3dXdWcjVkZlU5YjV4WHp2YUR2eGtVX05MUVVYYTZaVDM0TmhlR1hHVFFoYTFQbFFzcG1fbzV5Z1BHTFp3');
+    expect(output).toBeDefined();
+    expect(output.proof).toBeDefined();
+    expect(output.proof?.type).toBe('JsonWebSignature2020');
+    expect(output.proof?.proofPurpose).toBe('assertionMethod');
+    expect(output.proof?.jws).toBe('eyJiNjQiOnRydWUsImNyaXQiOlsiYjY0Il19..ZXlKaU5qUWlPblJ5ZFdVc0ltTnlhWFFpT2xzaVlqWTBJbDE5LlJIdVR0Rk1IeWhBUFNxLU12R0ZNLXNzYUs3dXdWcjVkZlU5YjV4WHp2YUR2eGtVX05MUVVYYTZaVDM0TmhlR1hHVFFoYTFQbFFzcG1fbzV5Z1BHTFp3');
     expect(dataToSign.length).toBe(123);
 });

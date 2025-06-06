@@ -1,11 +1,13 @@
 import Debug from 'debug';
 const debug = Debug('issuer:vcdm');
 
-import { LanguageObject, VCDM as VCDMType} from './VCDMTypes';
 import { Credential } from '../Credential';
 import moment from 'moment';
+import { W3CJWT, W3C as W3CType } from './VCDMTypes.js';
 
-export class VCDM
+// https://www.w3.org/TR/vc-data-model/
+
+export class W3C
 {
     private credential:Credential;
 
@@ -14,13 +16,13 @@ export class VCDM
         this.credential = credential;
     }
 
-    public build():VCDMType
+    public build():W3CJWT
     {
-        debug("creating VCDM");
+        debug("creating W3C");
 
-        const issuerName = this.createLanguageObject('issuer_name');
-        const issuerDescription = this.createLanguageObject('issuer_description');
-        let baseCredential:VCDMType = {
+        const issuerName = this.getString('issuer_name');
+        const issuerDescription = this.getString('issuer_description');
+        let baseCredential:W3CType = {
             "@context": ["https://www.w3.org/ns/credentials/v2", ...this.credential.contexts],
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
@@ -31,51 +33,51 @@ export class VCDM
                 ...(issuerDescription != '' ? {description: issuerDescription} : {}),
             }
         };
+        console.log('base credential context', this.credential.contexts);
 
         // If present, id property's value MUST be a single URL, recommended to be machine readable
-        // name and description can be language objects
-        if (this.credential.dictionary['name']) {
-            baseCredential.name = this.createLanguageObject('name');
-        }
-        if (this.credential.dictionary['description']) {
-            baseCredential.description = this.createLanguageObject('description');
-        }
 
-        // Each object MAY also contain an id property to identify the subject, as described in Section 4.4 Identifiers.
+        // Each object MAY also contain an id property to identify the subject, as described in Section 4.2 Identifiers.
         if (this.credential.automaticallyBindHolder && !baseCredential.credentialSubject.id && this.credential.holder) {
             baseCredential.credentialSubject.id = this.credential.holder;
         }
 
+        if (this.credential.dictionary['name']) {
+            baseCredential.name = this.getString('name');
+        }
+        if (this.credential.dictionary['description']) {
+            baseCredential.description = this.getString('description');
+        }
+
         if (this.credential.metaData.issuanceDate) {
-            baseCredential.validFrom = moment(this.credential.metaData.issuanceDate).format('YYYY-MM-DDTHH:mm:ssZ');
+            baseCredential.issuanceDate = moment(this.credential.metaData.issuanceDate).format('YYYY-MM-DDTHH:mm:ssZ');
         }
         else {
-            baseCredential.validFrom = moment().format('YYYY-MM-DDTHH:mm:ssZ');
+            baseCredential.issuanceDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
         }
         if (this.credential.metaData.expirationDate) {
-            baseCredential.validUntil = moment(this.credential.metaData.expirationDate).format('YYYY-MM-DDTHH:mm:ssZ');
+            baseCredential.expirationDate = moment(this.credential.metaData.expirationDate).format('YYYY-MM-DDTHH:mm:ssZ');
         }
 
         this.addStatusListData(baseCredential);
-        return baseCredential;
+
+        return { vc: baseCredential };
     }
 
-    private createLanguageObject(value:string)
+    private getString(value:string)
     {
         if (this.credential.dictionary[value]) {
-            let retval:LanguageObject[] = [];
+            let retval:string = '';
             for (const label of this.credential.dictionary[value]) {
-                retval.push({
-                    "@value": label.value,
-                    "@language": label.locale
-                });
+                retval = label.value;
+                break;
             }
             return retval;
         }
         return '';
     }
 
-    private addStatusListData(baseCredential:VCDMType)
+    private addStatusListData(baseCredential:W3CType)
     {
         if (this.credential.metaData.credentialStatus) {
             if (this.credential.metaData.credentialStatus.type) {

@@ -2,7 +2,6 @@ import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
 import { VCDM as VCDMType} from './VCDMTypes';
-import { VCDM } from "./VCDM";
 import { Credential } from '../Credential';
 import jsigs from 'jsonld-signatures';
 import { Issuer } from '#root/issuer/Issuer';
@@ -14,31 +13,15 @@ import moment from 'moment';
 
 export class JSONLD
 {
-    private credential:Credential;
-    private type:string = 'vc+jwt';
-    private date:string;
-
-    public constructor(credential:Credential, date?:string)
-    {
-        this.credential = credential;
-        this.type = 'json_ld';
-        this.date = moment(date).toISOString();
-    }
-
-    public async sign()
+    public static async sign(credential:Credential, output: VCDMType, date?:string)
     {
         debug("signing VCDM using JSONLD");
-        const vcdm = new VCDM(this.credential);
-        const baseCredential = vcdm.build();
-        this.credential.output = await this.packCredential(baseCredential);
-    }
+        date = moment(date).toISOString();
 
-    private async packCredential(baseCredential:VCDMType)
-    {
         const signedVC = await jsigs.sign(
-            baseCredential,
+            output,
             {
-                suite: new CallbackSignature(this.credential.issuer!, this.date),
+                suite: new CallbackSignature(credential.issuer!, date),
                 purpose: new jsigs.purposes.AssertionProofPurpose(),
                 documentLoader: this.documentLoader,
                 expansionMap: false
@@ -47,17 +30,17 @@ export class JSONLD
 
         // this adjusts the original object, but this is intentional. This allows us to use JSONLD
         // in combination with JOSE to create an embedded and external signature
-        baseCredential.proof = {
+        output.proof = {
             type: 'JsonWebSignature2020',
             created: new Date().toISOString(),
             proofPurpose: 'assertionMethod',
-            verificationMethod: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
+            verificationMethod: credential.issuer!.did!.did + '#' + credential.issuer!.keyRef,
             jws: signedVC.proof['https://w3id.org/security#jws']
         };
-        return baseCredential;
+        return output;
     }
 
-    private documentLoader(url:string):any {
+    private static documentLoader(url:string):any {
         const contextStore = getContextConfigurationStore();
         const obj = contextStore.resolve(url);
         if (obj) {

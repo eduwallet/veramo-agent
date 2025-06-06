@@ -119,15 +119,15 @@ test('VCDM status lists', () => {
     let vcdm = new VCDM(credential);
     let result = vcdm.build();
     expect(result).toBeDefined();
-    expect(result.status).toBeDefined();
-    expect(result.status!.length).toBe(1);
-    expect(result.status![0].type).toBe('status');
+    expect(result.credentialStatus).toBeDefined();
+    expect(result.credentialStatus!.length).toBe(1);
+    expect(result.credentialStatus![0].type).toBe('status');
 
     credential.metaData.credentialStatus = ['a', 'b'];
     result = vcdm.build();
     expect(result).toBeDefined();
-    expect(result.status).toBeDefined();
-    expect(result.status!.length).toBe(2);
-    expect(result.status![0]).toBe('a');
-    expect(result.status![1]).toBe('b');
+    expect(result.credentialStatus).toBeDefined();
+    expect(result.credentialStatus!.length).toBe(2);
+    expect(result.credentialStatus![0]).toBe('a');
+    expect(result.credentialStatus![1]).toBe('b');
 });

@@ -183,7 +183,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     // typ: required, must be openid4vci-proof+jwt'
     // the did-jwt library predefines the typ header claim to always be JWT, which is
     // obviously not the case
-    if ((header.typ as string) !== 'openid4vci-proof+jwt') {
+    if ((header.typ as string) !== 'openid4vci-proof+jwt' && (header.typ as string) !== 'JWT') {
         debug("Proof is invalid because the JWT type is incorrect", header.typ);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid proof type";
@@ -200,7 +200,9 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     }
     else {
         // create a did from the key material so we can use it as credentialSubject id
-        did = Factory.toDIDJWK(ckey);
+        // this is a special case for wwwallet, which uses a jwk in the proof and hence
+        // does not have a regular did
+        did = await Factory.toDIDJWK(ckey);
     }
 
     const payload = jwt.payload;
@@ -265,7 +267,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
 
     // return the did of the proof, this is the holder key
     error.data = {did, nonce, key: ckey};
-    debug("Proof is valid");
+    debug("Proof is valid", did, nonce, ckey.type);
     return error;
 }
 
