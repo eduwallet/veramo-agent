@@ -13,11 +13,11 @@ const resolveDidKey: DIDResolver = async (
   options: any,
 ): Promise<DIDResolutionResult> => {
   try {
-    const cryptoKey = Factory.createFromDidKey(didUrl);
+    const cryptoKey = await Factory.createFromDIDKey(didUrl);
     return {
         didDocumentMetadata: {},
         didResolutionMetadata: {},
-        ...cryptoKey.didDocument(),
+        didDocument: null,// ...cryptoKey.didDocument(),
     }
   }
   catch (err: any) {

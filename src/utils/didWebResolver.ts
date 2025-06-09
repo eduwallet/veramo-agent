@@ -37,7 +37,7 @@ const resolveDidWeb = async (
             return {
                 didDocumentMetadata: {},
                 didResolutionMetadata: {},
-                didDocument: Factory.toDIDDocument(key)
+                didDocument: await Factory.toDIDDocument(key)
             };
         }
     }

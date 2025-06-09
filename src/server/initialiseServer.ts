@@ -5,8 +5,8 @@ import { dumpExpressRoutes } from 'utils/dumpExpressRoutes.js';
 import { getIssuerStore } from 'issuer/Store.js';
 import { createRoutesForIssuer } from './createRoutesForIssuer.js';
 import { bearerAdminForIssuer } from './bearerAdminForIssuer.js';
-import { getContextConfigurationStore } from "contexts/Store";
-import { getVctConfigurationStore } from "vct/Store";
+import { getContextConfigurationStore } from "contexts/Store.js";
+import { getVctConfigurationStore } from "vct/Store.js";
 import express from 'express'
 import { getContext } from "./endpoints/getContext.js";
 import { getVct } from "./endpoints/getVct.js";
