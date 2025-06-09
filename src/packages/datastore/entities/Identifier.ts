@@ -8,7 +8,7 @@ import {
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm'
-import { Key } from './Key'
+import { Key } from './Key.js'
 
 @Entity('identifier')
 @Index(['alias', 'provider'], { unique: true })

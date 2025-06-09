@@ -2,11 +2,11 @@ import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Issuer } from 'issuer/Issuer'
 import passport from 'passport';
-import { openObserverLog } from 'utils/openObserverLog';
-import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from 'types/api/credentialOffer';
-import { validateCreateCredentialOffer } from 'issuer/api/validateCreateCredentialOffer';
-import { createCredentialOffer } from 'issuer/api/createCredentialOffer';
-import { ErrorCodes } from 'types/api';
+import { openObserverLog } from 'utils/openObserverLog.js';
+import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from 'types/api/credentialOffer.js';
+import { validateCreateCredentialOffer } from 'issuer/api/validateCreateCredentialOffer.js';
+import { createCredentialOffer } from 'issuer/api/createCredentialOffer.js';
+import { ErrorCodes } from 'types/api.js';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     issuer.router!.post(createOfferPath,

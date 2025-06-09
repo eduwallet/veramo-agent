@@ -1,14 +1,14 @@
 import Debug from 'debug';
 const debug = Debug('issuer:agent');
 import { createAgent, TAgent } from '@veramo/core'
-import { initialiseServer } from './server';
-import { setupPlugins, TAgentTypes } from './plugins';
+import { initialiseServer } from './server/index.js';
+import { setupPlugins, TAgentTypes } from './plugins.js';
 import { getOrCreateDIDs } from "utils/did.js";
-import { initialiseIssuerStore } from 'issuer/Store';
-import { initialiseCredentialConfigurationStore } from 'credentials/Store';
-import { openObserverLog } from 'utils/openObserverLog';
-import { initialiseContextConfigurationStore } from 'contexts/Store';
-import { initialiseVctConfigurationStore } from 'vct/Store';
+import { initialiseIssuerStore } from 'issuer/Store.js';
+import { initialiseCredentialConfigurationStore } from 'credentials/Store.js';
+import { openObserverLog } from 'utils/openObserverLog.js';
+import { initialiseContextConfigurationStore } from 'contexts/Store.js';
+import { initialiseVctConfigurationStore } from 'vct/Store.js';
 
 export var _agent:TAgent<TAgentTypes>|null = null;
 export function getAgent():TAgent<TAgentTypes> { 

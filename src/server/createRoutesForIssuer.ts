@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('issuer:server');
 import express from 'express'
 import { ExpressSupport } from "@sphereon/ssi-express-support";
-import { Issuer } from "issuer/Issuer";
+import { Issuer } from "issuer/Issuer.js";
 
 import {
     accessToken,
@@ -16,8 +16,8 @@ import {
     getOAuthConfiguration,
     listCredentials,
     revokeCredential,
-} from './endpoints'
-import { getBasePath } from 'utils/getBasePath';
+} from './endpoints.js'
+import { getBasePath } from 'utils/getBasePath.js';
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
     var tokenPath = '/token';

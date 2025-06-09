@@ -130,7 +130,7 @@ export class BaseCredential
 
         let baseCredential:SdJwtVcPayload = {
             iss: this.issuer.did!.did,
-            vct: vct.vct,
+            vct: vct!.vct as string,
             iat: moment().unix()
         };
         if (credential.cnf) {

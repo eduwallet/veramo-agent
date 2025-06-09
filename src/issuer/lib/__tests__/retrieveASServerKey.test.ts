@@ -1,5 +1,5 @@
 import { expect, test, describe, beforeEach, vi, afterEach} from 'vitest';
-import { retrieveASServerKey } from '../retrieveASServerKey';
+import { retrieveASServerKey } from '../retrieveASServerKey.js';
 
 global.fetch = vi.fn();
 

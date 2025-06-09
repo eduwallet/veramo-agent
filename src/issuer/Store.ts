@@ -6,8 +6,8 @@
 import { METADATA_PATH, ISSUER_PATH } from "environment";
 import { loadJsonFiles } from "utils/generic.js";
 import { Issuer } from "./Issuer.js";
-import { IssuerConfiguration } from "types/internal";
-import { MetadataConfiguration } from "types/api/metadata";
+import { IssuerConfiguration } from "types/internal.js";
+import { MetadataConfiguration } from "types/api/metadata.js";
 
 export interface IssuerStore {
     [x:string]:Issuer;

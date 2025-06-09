@@ -1,10 +1,10 @@
 import Debug from 'debug';
 const debug = Debug('issuer:server');
 import { ExpressBuilder, ExpressCorsConfigurer } from "@sphereon/ssi-express-support";
-import { dumpExpressRoutes } from 'utils/dumpExpressRoutes';
-import { getIssuerStore } from 'issuer/Store';
-import { createRoutesForIssuer } from './createRoutesForIssuer';
-import { bearerAdminForIssuer } from './bearerAdminForIssuer';
+import { dumpExpressRoutes } from 'utils/dumpExpressRoutes.js';
+import { getIssuerStore } from 'issuer/Store.js';
+import { createRoutesForIssuer } from './createRoutesForIssuer.js';
+import { bearerAdminForIssuer } from './bearerAdminForIssuer.js';
 import { getContextConfigurationStore } from "contexts/Store";
 import { getVctConfigurationStore } from "vct/Store";
 import express from 'express'

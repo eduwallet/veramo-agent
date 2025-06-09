@@ -11,7 +11,7 @@ import { IDIDResult, KMS, DIDMethods, IDIDOpts } from 'types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
 import { getDidJwkResolver } from "./didJwkResolver.js";
 import { getDidKeyResolver } from "./didKeyResolver.js";
-import { getDidWebResolver } from './didWebResolver';
+import { getDidWebResolver } from './didWebResolver.js';
 
 export function createDidResolver() {
     return new Resolver({

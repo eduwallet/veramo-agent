@@ -1,9 +1,9 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
 import { Request } from 'express'
-import { Issuer } from 'issuer/Issuer';
-import { CredentialOfferStatus, ErrorCodes } from 'types/api';
-import { ApiState } from 'types/internal';
+import { Issuer } from 'issuer/Issuer.js';
+import { CredentialOfferStatus, ErrorCodes } from 'types/api.js';
+import { ApiState } from 'types/internal.js';
 
 export function validateGetCredentialOffer(issuer:Issuer, request:Request)
 {

@@ -1,5 +1,5 @@
 import { expect, test} from 'vitest';
-import { createUniqueId } from '../createUniqueId';
+import { createUniqueId } from '../createUniqueId.js';
 
 test("check length", () => {
     const id = createUniqueId();

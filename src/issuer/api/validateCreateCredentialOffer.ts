@@ -1,10 +1,10 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { Issuer } from "issuer/Issuer";
-import { ErrorCodes } from 'types/api';
-import { CreateCredentialOfferRequest } from "types/api/credentialOffer";
-import { ApiState } from "types/internal";
-import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification/credential_offer';
+import { Issuer } from "issuer/Issuer.js";
+import { ErrorCodes } from 'types/api.js';
+import { CreateCredentialOfferRequest } from "types/api/credentialOffer.js";
+import { ApiState } from "types/internal.js";
+import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification/credential_offer.js';
 
 
 export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):ApiState

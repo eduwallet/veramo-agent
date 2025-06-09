@@ -7,7 +7,7 @@ const debug = Debug('issuer:vct');
 import { VCT_CONFIGURATION_PATH } from "../environment.js";
 import { loadJsonFiles } from "utils/generic.js";
 import { getBaseUrl } from "utils/getBaseUrl.js";
-import { Vct } from "types/specification/vct";
+import { Vct } from "types/specification/vct.js";
 
 
 export interface VctConfiguration

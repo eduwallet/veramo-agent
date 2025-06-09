@@ -1,12 +1,12 @@
 import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { Issuer } from 'issuer/Issuer';
-import { getBaseUrl } from 'utils/getBaseUrl';
-import { openObserverLog } from 'utils/openObserverLog';
-import { ErrorCodes } from 'types/api';
-import { validateCredentialRequest } from 'issuer/api/validateCredentialRequest';
-import { issueCredential } from 'issuer/api/issueCredential';
-import { CredentialProofData } from 'types/internal';
+import { Issuer } from 'issuer/Issuer.js';
+import { getBaseUrl } from 'utils/getBaseUrl.js';
+import { openObserverLog } from 'utils/openObserverLog.js';
+import { ErrorCodes } from 'types/api.js';
+import { validateCredentialRequest } from 'issuer/api/validateCredentialRequest.js';
+import { issueCredential } from 'issuer/api/issueCredential.js';
+import { CredentialProofData } from 'types/internal.js';
 
 export function getCredential(issuer:Issuer, path:string)
 {

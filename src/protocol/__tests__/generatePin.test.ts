@@ -1,5 +1,5 @@
 import { expect, test} from 'vitest';
-import { generatePin } from '../generatePin';
+import { generatePin } from '../generatePin.js';
 
 test('numeric pin code of 4 characters', () => {
     let testRun = 100;

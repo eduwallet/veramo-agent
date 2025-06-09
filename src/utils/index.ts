@@ -1,2 +1,2 @@
-export * from './did'
-export * from './generic'
+export * from './did.js'
+export * from './generic.js'

@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
-import { migrationGetTableName } from './migration-functions'
+import { migrationGetTableName } from './migration-functions.js'
 
 /**
  * Create the database layout for Veramo 3.0

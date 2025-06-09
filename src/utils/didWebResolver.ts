@@ -1,8 +1,8 @@
 import Debug from 'debug';
 const debug = Debug('issuer:didweb');
 import { DIDResolutionOptions, DIDResolutionResult, ParsedDID, Resolvable } from 'did-resolver'
-import { getIdentifier } from './did';
-import { didOptConfigs } from '../environment';
+import { getIdentifier } from './did.js';
+import { didOptConfigs } from '../environment.js';
 import { toDidDocument } from '@sphereon/ssi-sdk-ext.did-utils';
 import { Factory } from '@muisit/cryptokey';
 

@@ -1,5 +1,5 @@
 import { expect, test} from 'vitest';
-import { JWT } from '../JWT';
+import { JWT } from '../JWT.js';
 import { Factory } from '@muisit/cryptokey';
 
 test('create JWT', async () => {

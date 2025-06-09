@@ -1,5 +1,5 @@
 import { env } from '@sphereon/ssi-express-support'
-import { trimEnd } from './stringFunctions'
+import { trimEnd } from './stringFunctions.js'
 
 export function getBaseUrl(url?: URL | string | undefined) {
     let baseUrl = url

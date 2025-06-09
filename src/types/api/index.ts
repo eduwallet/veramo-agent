@@ -1,4 +1,4 @@
-import { CredentialOfferStatus } from "types/api";
+import { CredentialOfferStatus } from "types/api.js";
 
 export interface ListCredentialsRequest {
     issuanceDate?:string;

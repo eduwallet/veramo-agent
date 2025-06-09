@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { Issuer } from 'issuer/Issuer';
+import { Issuer } from 'issuer/Issuer.js';
 
 export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined) {
     const path = `/.well-known/oauth-authorization-server`

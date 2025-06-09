@@ -1,7 +1,7 @@
 import { createUniqueId } from '#root/utils/createUniqueId';
-import { AUTHORIZATION_CODE_GRANT, Grants, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT } from '../types/specification/credential_offer';
-import { generatePin } from './generatePin';
-import { APIGrants } from 'types/api/credentialOffer';
+import { AUTHORIZATION_CODE_GRANT, Grants, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT } from '../types/specification/credential_offer.js';
+import { generatePin } from './generatePin.js';
+import { APIGrants } from 'types/api/credentialOffer.js';
 
  export function normalizeGrants(apiGrants: APIGrants) {
     let preAuthorizedCode: string | undefined = undefined

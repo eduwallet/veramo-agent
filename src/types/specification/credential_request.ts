@@ -1,5 +1,5 @@
 import { JWK } from 'jose'
-import { ClaimsList, NameSpacedClaimsList } from './metadata';
+import { ClaimsList, NameSpacedClaimsList } from './metadata.js';
 
 // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-request
 export type CredentialRequest = CredentialRequestBase &

@@ -1,6 +1,6 @@
 import { KeyMetadata } from '@veramo/core-types'
 import { Entity, Column, PrimaryColumn, BaseEntity, ManyToOne, Relation } from 'typeorm'
-import { Identifier } from './Identifier'
+import { Identifier } from './Identifier.js'
 
 /**
  * Represents some properties of a {@link @veramo/core-types#IKey | IKey} that are stored in a TypeORM

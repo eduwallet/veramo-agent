@@ -1,11 +1,11 @@
-export { accessToken }   from './accessToken'
-export { getCredential } from './getCredential'
-export { getCredentialOffer } from './getCredentialOffer';
-export { createCredentialOfferResponse } from './createCredentialOfferResponse';
-export { getMetadata } from './getMetadata';
-export { getIssueStatus } from './getIssueStatus';
-export { getDidSpec } from './getDidSpec';
-export { getOpenidConfiguration } from './getOpenidConfiguration';
-export { getOAuthConfiguration } from './getOAuthConfiguration';
-export { listCredentials } from './listCredentials';
-export { revokeCredential} from './revokeCredential';
+export { accessToken }   from './accessToken.js'
+export { getCredential } from './getCredential.js'
+export { getCredentialOffer } from './getCredentialOffer.js';
+export { createCredentialOfferResponse } from './createCredentialOfferResponse.js';
+export { getMetadata } from './getMetadata.js';
+export { getIssueStatus } from './getIssueStatus.js';
+export { getDidSpec } from './getDidSpec.js';
+export { getOpenidConfiguration } from './getOpenidConfiguration.js';
+export { getOAuthConfiguration } from './getOAuthConfiguration.js';
+export { listCredentials } from './listCredentials.js';
+export { revokeCredential} from './revokeCredential.js';

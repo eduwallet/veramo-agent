@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
-import { migrationGetTableName } from './migration-functions'
+import { migrationGetTableName } from './migration-functions.js'
 
 export class Credentials1728382223150 implements MigrationInterface {
   name = 'Credentials1728382223150';

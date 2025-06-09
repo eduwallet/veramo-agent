@@ -11,7 +11,7 @@ import {
   TPresentationColumns,
 } from '@veramo/core-types'
 import { schema } from '@veramo/core-types'
-import { Identifier } from './entities/Identifier'
+import { Identifier } from './entities/Identifier.js'
 import {
   Any,
   Between,

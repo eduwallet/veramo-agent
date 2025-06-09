@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express'
-import { VctConfiguration } from 'vct/Store';
+import { VctConfiguration } from 'vct/Store.js';
 
 export function getVct(router:Router, vct:VctConfiguration) {
     router!.get(vct.path, (request: Request, response: Response) => {

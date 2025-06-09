@@ -1,5 +1,5 @@
-import { getBaseUrl } from './getBaseUrl'
-import { trimBoth } from './stringFunctions'
+import { getBaseUrl } from './getBaseUrl.js'
+import { trimBoth } from './stringFunctions.js'
 
 export function getBasePath(url?: URL | string) {
     const basePath = new URL(getBaseUrl(url)).pathname

@@ -2,20 +2,20 @@ import Debug from 'debug';
 const debug = Debug('issuer:plugins');
 
 import { IAgentPlugin, ICredentialIssuer, ICredentialVerifier, IDataStoreORM, IDIDManager, IKeyManager, IResolver } from '@veramo/core'
-import { DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from './packages/datastore'
+import { DataStoreORM, DIDStore, KeyStore, PrivateKeyStore } from './packages/datastore.js'
 import { DIDManager } from '@veramo/did-manager'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { CredentialPlugin } from '@veramo/credential-w3c'
-import { KeyManager } from './packages/keymanager/key-manager';
-import { KeyManagementSystem } from './packages/kms/key-management-system';
+import { KeyManager } from './packages/keymanager/key-manager.js';
+import { KeyManagementSystem } from './packages/kms/key-management-system.js';
 
 import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd25519Signature2018,
     SphereonEd25519Signature2020, SphereonJsonWebSignature2020 } from '@sphereon/ssi-sdk.vc-handler-ld-local'
 
-import { DIDMethods } from './types';
-import { getDbConnection } from './database/databaseService'
+import { DIDMethods } from './types.js';
+import { getDbConnection } from './database/databaseService.js'
 import { createDidProviders } from "./utils/did.js";
-import { resolver } from './resolver';
+import { resolver } from './resolver.js';
 import { getContextConfigurationStore } from 'contexts/Store'
 
 export async function setupPlugins(): Promise<IAgentPlugin[]>
