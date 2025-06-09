@@ -196,6 +196,16 @@
   dependencies:
     jsep "^0.3.0"
 
+"@cef-ebsi/key-did-resolver@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@cef-ebsi/key-did-resolver/-/key-did-resolver-2.1.1.tgz#96302fa3ee1541a783cf0294e447ce571397f472"
+  integrity sha512-qXZBFaWVeeWaOm0wHIRuDnN1Cpe+TrHB4FFWloBBmRw+9taWDi4FuJtk011391uTW8CEh9Y3mMV3yUt+B32oTg==
+  dependencies:
+    did-resolver "^4.1.0"
+    lodash.isplainobject "^4.0.6"
+    multiformats "^9.6.2"
+    uint8arrays "3.1.1"
+
 "@danieldietrich/copy@^0.4.2":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@danieldietrich/copy/-/copy-0.4.2.tgz#c1cabfa499d8b473ba95413c446c1c1efae64d24"
@@ -5348,7 +5358,7 @@ jsonld@digitalcredentials/jsonld.js#v10.x:
     lru-cache "^6.0.0"
     rdf-canonize "^4.0.1"
 
-"jsonld@link:../../../../../../../../home/michiel/.cache/yarn/v6/npm-@sphereon-ssi-sdk-vc-handler-ld-local-0.29.0-8fb39c5abdb360f0e4798bb542692be5d263d195-integrity/node_modules/@sphereon/ssi-sdk.vc-handler-ld-local/../../node_modules/.pnpm/@digitalcredentials+jsonld@6.0.0/node_modules/@digitalcredentials/jsonld":
+"jsonld@link:../../../Library/Caches/Yarn/v6/npm-@sphereon-ssi-sdk-vc-handler-ld-local-0.29.0-8fb39c5abdb360f0e4798bb542692be5d263d195-integrity/node_modules/@sphereon/ssi-sdk.vc-handler-ld-local/../../node_modules/.pnpm/@digitalcredentials+jsonld@6.0.0/node_modules/@digitalcredentials/jsonld":
   version "0.0.0"
   uid ""
 

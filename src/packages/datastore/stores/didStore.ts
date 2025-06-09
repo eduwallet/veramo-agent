@@ -1,7 +1,7 @@
 import { IIdentifier, IKey } from '@veramo/core-types'
 import { AbstractDIDStore } from '@veramo/did-manager'
-import { Identifier } from '../entities/Identifier'
-import { Key } from '../entities/Key'
+import { Identifier } from '../entities/Identifier.js'
+import { Key } from '../entities/Key.js'
 import { IsNull, Not } from 'typeorm'
 
 import Debug from 'debug'
@@ -112,7 +112,7 @@ export class DIDStore extends AbstractDIDStore {
       key.publicKeyHex = argsKey.publicKeyHex
       key.kms = argsKey.kms
       key.meta = argsKey.meta
-      key.identifier = identifier.did
+      key.identifier = identifier.did as unknown as Identifier
       identifier.keys.push(key)
     }
 
@@ -136,7 +136,7 @@ export class DIDStore extends AbstractDIDStore {
       if (i.alias === null) {
         delete i.alias
       }
-      return i as IIdentifier
+      return i as unknown as IIdentifier
     })
   }
 }

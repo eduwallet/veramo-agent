@@ -1,7 +1,7 @@
 import { IKey, ManagedKeyInfo } from '@veramo/core-types'
 import { AbstractKeyStore } from '@veramo/key-manager'
 
-import { Key } from '../entities/Key'
+import { Key } from '../entities/Key.js'
 
 import Debug from 'debug'
 import { getDbConnection } from '#root/database/databaseService'
