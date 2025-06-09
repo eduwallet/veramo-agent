@@ -3,7 +3,7 @@ const debug = Debug('issuer:db');
 
 import { DataSource } from 'typeorm'
 import { dbConfig } from './config.js'
-import { DB_SCHEMA } from 'environment';
+import { DB_SCHEMA } from 'environment.js';
 
 /**
  * Todo, move to a class

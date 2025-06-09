@@ -3,7 +3,7 @@
  * data in the in-memory Veramo data store
  */
 
-import { METADATA_PATH, ISSUER_PATH } from "environment";
+import { METADATA_PATH, ISSUER_PATH } from "environment.js";
 import { loadJsonFiles } from "utils/generic.js";
 import { Issuer } from "./Issuer.js";
 import { IssuerConfiguration } from "types/internal.js";

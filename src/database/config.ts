@@ -1,5 +1,5 @@
 import {Entities, migrations } from '#root/packages/datastore/index'
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions'
+import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions.js'
 import {DB_NAME, DB_SCHEMA, DB_HOST, DB_USER, DB_PORT, DB_PASSWORD} from "../environment.js";
 
 export const dbConfig: PostgresConnectionOptions = {

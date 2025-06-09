@@ -3,7 +3,7 @@ dotenvConfig()
 
 import {resolve} from "path";
 import {loadJsonFiles} from "utils/generic.js";
-import {IDIDOpts} from "./types.js";
+import {IDIDOpts} from "./types/index.js";
 
 export const DB_CONNECTION_NAME = process.env.DB_CONNECTION_NAME ?? 'default'
 export const DB_NAME = process.env.DB_NAME ?? 'postgres'

@@ -32,8 +32,8 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (issuer.usesAuthorisedCodeFlow()) {
             // the issuer should be one of our authorization servers
-            if (!issuer.metadata.authorization_servers.includes(data.payload.iss)) {
-                debug("invalid because the access token issuer is not in our AS list", data.payload.iss);
+            if (!issuer.metadata.authorization_servers.includes(data!.payload.iss)) {
+                debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
                 return error;
@@ -41,15 +41,15 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         }
         else  {
             // we must have issued it ourselves
-            if (data.payload.iss != issuer.did?.did) {
-                debug("invalid because the token issuer is not our did", data.payload.iss);
+            if (data!.payload.iss != issuer.did?.did) {
+                debug("invalid because the token issuer is not our did", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
                 return error;
             }
         }
     
-        const stateid = data.payload.issuer_state;
+        const stateid = data!.payload.issuer_state;
         const sessionId = issuer.authorizationState.get(stateid);
 
         if (!sessionId) {

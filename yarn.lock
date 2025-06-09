@@ -1497,7 +1497,7 @@
     did-context "^3.1.1"
     ed25519-signature-2018-context "^1.1.0"
     ed25519-signature-2020-context "^1.1.0"
-    jsonld "link:../../../../../../../../home/michiel/.cache/yarn/v6/npm-@sphereon-ssi-sdk-vc-handler-ld-local-0.29.0-8fb39c5abdb360f0e4798bb542692be5d263d195-integrity/node_modules/@sphereon/ssi-sdk.vc-handler-ld-local/../../node_modules/.pnpm/@digitalcredentials+jsonld@6.0.0/node_modules/@digitalcredentials/jsonld"
+    jsonld "link:../../../Library/Caches/Yarn/v6/npm-@sphereon-ssi-sdk-vc-handler-ld-local-0.29.0-8fb39c5abdb360f0e4798bb542692be5d263d195-integrity/node_modules/@sphereon/ssi-sdk.vc-handler-ld-local/../../node_modules/.pnpm/@digitalcredentials+jsonld@6.0.0/node_modules/@digitalcredentials/jsonld"
     jsonld-signatures "^7.0.0"
 
 "@sphereon/ssi-sdk.vc-status-list-issuer-drivers@0.29.0":
@@ -2425,7 +2425,7 @@
     expo-modules-autolinking "^0.0.3"
     invariant "^2.2.4"
 
-"@veramo-community/lds-ecdsa-secp256k1-recovery2020@github:uport-project/EcdsaSecp256k1RecoverySignature2020":
+"@veramo-community/lds-ecdsa-secp256k1-recovery2020@github:uport-project/EcdsaSecp256k1RecoverySignature2020", "@veramo-community/lds-ecdsa-secp256k1-recovery2020@uport-project/EcdsaSecp256k1RecoverySignature2020":
   version "0.0.8"
   resolved "https://codeload.github.com/uport-project/EcdsaSecp256k1RecoverySignature2020/tar.gz/ab0db52de6f4e6663ef271a48009ba26e688ef9b"
   dependencies:
@@ -5330,7 +5330,7 @@ jsonld@^8.0.0:
     lru-cache "^6.0.0"
     rdf-canonize "^3.4.0"
 
-"jsonld@github:digitalcredentials/jsonld.js#v10.1.x":
+jsonld@digitalcredentials/jsonld.js#v10.1.x:
   version "8.3.3-0"
   resolved "https://codeload.github.com/digitalcredentials/jsonld.js/tar.gz/da0794d863eeb65faf27673d46d9cffa32e1b65a"
   dependencies:
@@ -5339,7 +5339,7 @@ jsonld@^8.0.0:
     lru-cache "^6.0.0"
     rdf-canonize "^4.0.1"
 
-"jsonld@github:digitalcredentials/jsonld.js#v10.x":
+jsonld@digitalcredentials/jsonld.js#v10.x:
   version "8.3.3-0"
   resolved "https://codeload.github.com/digitalcredentials/jsonld.js/tar.gz/14357f7a1181ae769ecc50fee9303468f17665ff"
   dependencies:
@@ -5348,7 +5348,7 @@ jsonld@^8.0.0:
     lru-cache "^6.0.0"
     rdf-canonize "^4.0.1"
 
-"jsonld@link:..\\..\\node_modules\\.pnpm\\@digitalcredentials+jsonld@6.0.0\\node_modules\\@digitalcredentials\\jsonld":
+"jsonld@link:../../../../../../../../home/michiel/.cache/yarn/v6/npm-@sphereon-ssi-sdk-vc-handler-ld-local-0.29.0-8fb39c5abdb360f0e4798bb542692be5d263d195-integrity/node_modules/@sphereon/ssi-sdk.vc-handler-ld-local/../../node_modules/.pnpm/@digitalcredentials+jsonld@6.0.0/node_modules/@digitalcredentials/jsonld":
   version "0.0.0"
   uid ""
 
@@ -7213,7 +7213,7 @@ uint8arrays@^4.0.6:
   dependencies:
     multiformats "^12.0.1"
 
-uint8arrays@^5.0.0, uint8arrays@^5.0.1:
+uint8arrays@^5.0.0, uint8arrays@^5.0.1, uint8arrays@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/uint8arrays/-/uint8arrays-5.1.0.tgz#14047c9bdf825d025b7391299436e5e50e7270f1"
   integrity sha512-vA6nFepEmlSKkMBnLBaUMVvAC4G3CTmO58C12y4sq6WPDOR7mOFYOi7GlrQ4djeSbP6JG9Pv9tJDM97PedRSww==
