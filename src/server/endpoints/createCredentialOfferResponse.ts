@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { Issuer } from 'issuer/Issuer'
+import { Issuer } from 'issuer/Issuer.js'
 import passport from 'passport';
 import { openObserverLog } from 'utils/openObserverLog.js';
 import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from 'types/api/credentialOffer.js';

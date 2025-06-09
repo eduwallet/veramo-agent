@@ -16,7 +16,7 @@ import {
     getOAuthConfiguration,
     listCredentials,
     revokeCredential,
-} from './endpoints.js'
+} from './endpoints/index.js'
 import { getBasePath } from 'utils/getBasePath.js';
 
 export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
