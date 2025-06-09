@@ -1,9 +1,9 @@
-import { SessionState } from 'utils/SessionStateManager';
-import { ErrorCodes } from './api';
-import { StringKeyedObject } from './index';
-import { StatusListsOption } from './specification';
-import { CredentialOffer } from './specification/credential_offer';
-import { CredentialConfiguration, CredentialFormat } from './specification/metadata';
+import { SessionState } from 'utils/SessionStateManager.js';
+import { ErrorCodes } from './api.js';
+import { StringKeyedObject } from './index.js';
+import { StatusListsOption } from './specification/statuslists.js';
+import { CredentialOffer } from './specification/credential_offer.js';
+import { CredentialConfiguration, CredentialFormat } from './specification/metadata.js';
 import { CredentialPayload } from '@veramo/core';
 
 // Session state as maintained by the Issuer in the whole process of creating an offer up
@@ -14,6 +14,9 @@ export interface IssuerSessionData extends SessionState {
     status: string;
     credentialOffer:CredentialOffer;
     metaData: StringKeyedObject;
+    credential: CredentialResult;
+    principalCredentialId: string;
+    credentialType: string;
     credentialId: string;
     credentialDataSets:StringKeyedObject;
     pinCode?:string;

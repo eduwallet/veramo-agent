@@ -5,7 +5,7 @@ import { PRE_AUTHORIZED_CODE } from "types/specification/credential_offer";
 import { ErrorCodes } from "types/api";
 import { ApiState } from "types/internal";
 import { GrantTypes, TokenRequest } from "types/specification/access_token";
-import { SessionState } from "utils/SessionStateManager";
+import { SessionState } from "utils/SessionStateManager.js";
 
 export function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest): ApiState {
     debug("validating access token request", tokenRequest);

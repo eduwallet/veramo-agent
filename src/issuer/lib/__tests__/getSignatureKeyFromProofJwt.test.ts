@@ -1,6 +1,6 @@
 import { expect, test} from 'vitest';
 import { JWT } from '#root/jwt/JWT';
-import { getSignatureKeyFromProofJwt } from "../getSignatureKeyFromProofJwt";
+import { getSignatureKeyFromProofJwt } from "../getSignatureKeyFromProofJwt.js";
 
 test("Get from JWT with JWK", async () => {
     // token received from wwwallet

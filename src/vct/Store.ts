@@ -4,9 +4,9 @@ const debug = Debug('issuer:vct');
  * Instantiate vct configurations
  */
 
-import { VCT_CONFIGURATION_PATH } from "../environment";
-import { loadJsonFiles } from "utils/generic";
-import { getBaseUrl } from "utils/getBaseUrl";
+import { VCT_CONFIGURATION_PATH } from "../environment.js";
+import { loadJsonFiles } from "utils/generic.js";
+import { getBaseUrl } from "utils/getBaseUrl.js";
 import { Vct } from "types/specification/vct";
 
 

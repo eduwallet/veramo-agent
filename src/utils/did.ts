@@ -1,16 +1,16 @@
 import Debug from 'debug';
 const debug = Debug('issuer:did');
 import {Resolver} from "did-resolver";
-import {KeyDIDProvider} from "../packages/did-key-provider/key-did-provider";
-import {WebDIDProvider} from "../packages/did-web-provider/web-did-provider";
-import {JwkDIDProvider} from "../packages/did-jwk-provider/jwk-did-provider";
+import {KeyDIDProvider} from "../packages/did-key-provider/key-did-provider.js";
+import {WebDIDProvider} from "../packages/did-web-provider/web-did-provider.js";
+import {JwkDIDProvider} from "../packages/did-jwk-provider/jwk-did-provider.js";
 import { getAgent } from "agent";
 import {DIDDocumentSection, IIdentifier, IDIDManagerCreateArgs} from "@veramo/core";
 import {didOptConfigs} from "environment";
 import { IDIDResult, KMS, DIDMethods, IDIDOpts } from 'types';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
-import { getDidJwkResolver } from "./didJwkResolver";
-import { getDidKeyResolver } from "./didKeyResolver";
+import { getDidJwkResolver } from "./didJwkResolver.js";
+import { getDidKeyResolver } from "./didKeyResolver.js";
 import { getDidWebResolver } from './didWebResolver';
 
 export function createDidResolver() {

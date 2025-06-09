@@ -3,7 +3,7 @@ const debug = Debug('issuer:agent');
 import { createAgent, TAgent } from '@veramo/core'
 import { initialiseServer } from './server';
 import { setupPlugins, TAgentTypes } from './plugins';
-import { getOrCreateDIDs } from "utils/did";
+import { getOrCreateDIDs } from "utils/did.js";
 import { initialiseIssuerStore } from 'issuer/Store';
 import { initialiseCredentialConfigurationStore } from 'credentials/Store';
 import { openObserverLog } from 'utils/openObserverLog';

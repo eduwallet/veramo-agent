@@ -1,7 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:cli');
 debug('start of cli.ts');
-import { getArgs } from "utils/args";
+import { getArgs } from "utils/args.js";
 debug('cli.ts: importing getDbConnection');
 import { getDbConnection, Credential } from "database";
 import { determineFieldLengths, FieldSettings } from 'utils/cli/determineFieldLengths';

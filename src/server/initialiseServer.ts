@@ -8,8 +8,8 @@ import { bearerAdminForIssuer } from './bearerAdminForIssuer';
 import { getContextConfigurationStore } from "contexts/Store";
 import { getVctConfigurationStore } from "vct/Store";
 import express from 'express'
-import { getContext } from "./endpoints/getContext";
-import { getVct } from "./endpoints/getVct";
+import { getContext } from "./endpoints/getContext.js";
+import { getVct } from "./endpoints/getVct.js";
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'

@@ -14,7 +14,7 @@ import { CredentialHandlerLDLocal, LdDefaultContexts, MethodNames, SphereonEd255
 
 import { DIDMethods } from './types';
 import { getDbConnection } from './database/databaseService'
-import { createDidProviders } from "./utils/did";
+import { createDidProviders } from "./utils/did.js";
 import { resolver } from './resolver';
 import { getContextConfigurationStore } from 'contexts/Store'
 

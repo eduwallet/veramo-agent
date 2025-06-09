@@ -4,8 +4,8 @@
  */
 
 import { METADATA_PATH, ISSUER_PATH } from "environment";
-import { loadJsonFiles } from "utils/generic";
-import { Issuer } from "./Issuer";
+import { loadJsonFiles } from "utils/generic.js";
+import { Issuer } from "./Issuer.js";
 import { IssuerConfiguration } from "types/internal";
 import { MetadataConfiguration } from "types/api/metadata";
 
