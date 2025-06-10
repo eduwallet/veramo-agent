@@ -29,7 +29,8 @@ export class OpenBadgeCredential extends BaseCredential {
     const credentialDisplay:CredentialDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
 
     const achievement = data?.achievement ?? {};
-    const result = data?.result ?? null; 
+    const result = data?.result ?? null;
+    const evidence = data?.evidence ?? null;
     debug('achievement', achievement);
 
     const validFrom: string = data?.validFrom;
@@ -74,6 +75,7 @@ export class OpenBadgeCredential extends BaseCredential {
         achievement,
         ...(result !== null && {result})
       },
+      ...(evidence !== null && {evidence}),
     }
     debug(`credential ${JSON.stringify(credential)}`);
 
