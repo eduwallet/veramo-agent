@@ -1,5 +1,5 @@
 
-import { CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurationLdpVC } from "types/specification/metadata";
+import { CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurationLdpVC } from "types/specification/metadata.js";
 
 export function getCredentialTypeFromConfig(config:CredentialConfiguration): string
 {

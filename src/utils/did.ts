@@ -1,17 +1,17 @@
 import Debug from 'debug';
 const debug = Debug('issuer:did');
 import {Resolver} from "did-resolver";
-import {KeyDIDProvider} from "../packages/did-key-provider/key-did-provider";
-import {WebDIDProvider} from "../packages/did-web-provider/web-did-provider";
-import {JwkDIDProvider} from "../packages/did-jwk-provider/jwk-did-provider";
-import { getAgent } from "agent";
+import {KeyDIDProvider} from "../packages/did-key-provider/key-did-provider.js";
+import {WebDIDProvider} from "../packages/did-web-provider/web-did-provider.js";
+import {JwkDIDProvider} from "../packages/did-jwk-provider/jwk-did-provider.js";
+import { getAgent } from "agent.js";
 import {DIDDocumentSection, IIdentifier, IDIDManagerCreateArgs} from "@veramo/core";
-import {didOptConfigs} from "environment";
-import { IDIDResult, KMS, DIDMethods, IDIDOpts } from 'types';
+import {didOptConfigs} from "environment.js";
+import { IDIDResult, KMS, DIDMethods, IDIDOpts } from 'types/index.js';
 import {mapIdentifierKeysToDocWithJwkSupport} from "@sphereon/ssi-sdk-ext.did-utils";
-import { getDidJwkResolver } from "./didJwkResolver";
-import { getDidKeyResolver } from "./didKeyResolver";
-import { getDidWebResolver } from './didWebResolver';
+import { getDidJwkResolver } from "./didJwkResolver.js";
+import { getDidKeyResolver } from "./didKeyResolver.js";
+import { getDidWebResolver } from './didWebResolver.js';
 
 export function createDidResolver() {
     return new Resolver({
@@ -104,7 +104,7 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
         } else {
             console.log(`No identifier for DID ${opts.did} exists yet. Will create the DID...`)
 
-            let args:IDIDManagerCreateArgs = opts.createArgs
+            let args:IDIDManagerCreateArgs | undefined = opts.createArgs
             if (!args) {
                 args = {options: {}}
             }

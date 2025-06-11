@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { Issuer } from 'issuer/Issuer';
+import { Issuer } from 'issuer/Issuer.js';
 
 export function getOpenidConfiguration(
     issuer:Issuer,

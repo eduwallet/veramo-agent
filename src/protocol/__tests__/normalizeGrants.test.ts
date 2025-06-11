@@ -1,7 +1,7 @@
 import { expect, test} from 'vitest';
 import { normalizeGrants } from '../normalizeGrants'
-import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT, PreAuthGrant, TxCode } from '../../types/specification/credential_offer';
-import type { APIGrants } from '../../types/api/credentialOffer';
+import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT, PreAuthGrant, TxCode } from '../../types/specification/credential_offer.js';
+import type { APIGrants } from '../../types/api/credentialOffer.js';
 
 test('generate authorization issuer state', () => {
     let grant:APIGrants = {};

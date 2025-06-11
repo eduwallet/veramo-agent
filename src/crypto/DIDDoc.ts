@@ -10,7 +10,7 @@ export class DIDDoc
         this.document = document;
     }
 
-    public findKey(keyRef:string, method:string = "verificationMethod"):CryptoKey|null
+    public async findKey(keyRef:string, method:string = "verificationMethod"): Promise<CryptoKey|null>
     {
         const keys = [
             ...(this.document[method] || []),
@@ -25,7 +25,7 @@ export class DIDDoc
         return null;
     }
 
-    public convertDIDDocumentKeyToCryptoKey(keyDoc:any):CryptoKey|null
+    public async convertDIDDocumentKeyToCryptoKey(keyDoc:any): Promise<CryptoKey|null>
     {
         // https://www.w3.org/TR/did-extensions-properties/#verification-method-types
         switch (keyDoc.type) {

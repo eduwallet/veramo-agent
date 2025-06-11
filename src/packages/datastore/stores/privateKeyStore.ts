@@ -3,7 +3,7 @@ import {
   ImportablePrivateKey,
   ManagedPrivateKey,
 } from '@veramo/key-manager'
-import { PrivateKey } from '../entities/PrivateKey'
+import { PrivateKey } from '../entities/PrivateKey.js'
 import { v4 as uuid4 } from 'uuid'
 import Debug from 'debug'
 import { getDbConnection } from '#root/database/databaseService'
@@ -48,11 +48,11 @@ export class PrivateKeyStore extends AbstractPrivateKeyStore {
       )
     }
     await keyRepo.save(key)
-    return key
+    return key as ManagedPrivateKey
   }
 
   async listKeys(): Promise<Array<ManagedPrivateKey>> {
     let keys = await (await getDbConnection()).getRepository(PrivateKey).find()
-    return keys;
+    return keys as ManagedPrivateKey[];
   }
 }

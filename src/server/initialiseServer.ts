@@ -1,15 +1,15 @@
 import Debug from 'debug';
 const debug = Debug('issuer:server');
 import { ExpressBuilder, ExpressCorsConfigurer } from "@sphereon/ssi-express-support";
-import { dumpExpressRoutes } from 'utils/dumpExpressRoutes';
-import { getIssuerStore } from 'issuer/Store';
-import { createRoutesForIssuer } from './createRoutesForIssuer';
-import { bearerAdminForIssuer } from './bearerAdminForIssuer';
-import { getContextConfigurationStore } from "contexts/Store";
-import { getVctConfigurationStore } from "vct/Store";
+import { dumpExpressRoutes } from 'utils/dumpExpressRoutes.js';
+import { getIssuerStore } from 'issuer/Store.js';
+import { createRoutesForIssuer } from './createRoutesForIssuer.js';
+import { bearerAdminForIssuer } from './bearerAdminForIssuer.js';
+import { getContextConfigurationStore } from "contexts/Store.js";
+import { getVctConfigurationStore } from "vct/Store.js";
 import express from 'express'
-import { getContext } from "./endpoints/getContext";
-import { getVct } from "./endpoints/getVct";
+import { getContext } from "./endpoints/getContext.js";
+import { getVct } from "./endpoints/getVct.js";
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'

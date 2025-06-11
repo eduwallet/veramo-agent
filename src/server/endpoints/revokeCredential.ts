@@ -1,9 +1,9 @@
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Request, Response } from 'express'
-import { Issuer } from 'issuer/Issuer';
+import { Issuer } from 'issuer/Issuer.js';
 import passport from 'passport';
-import { RevokeCredentialRequest } from 'types/api/index';
-import { ErrorCodes } from 'types/api';
+import { RevokeCredentialRequest } from 'types/api/index.js';
+import { ErrorCodes } from 'types/api.js';
 
 export function revokeCredential(issuer:Issuer, configPath:string) {
     issuer.router!.post(

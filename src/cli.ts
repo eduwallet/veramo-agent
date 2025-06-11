@@ -1,11 +1,12 @@
 import Debug from 'debug';
 const debug = Debug('issuer:cli');
 debug('start of cli.ts');
-import { getArgs } from "utils/args";
+import { getArgs } from "utils/args.js";
 debug('cli.ts: importing getDbConnection');
-import { getDbConnection, Credential } from "database";
-import { determineFieldLengths, FieldSettings } from 'utils/cli/determineFieldLengths';
-import { printField, printHeader } from 'utils/cli/printField';
+import { getDbConnection } from "./database/databaseService.js";
+import { Credential } from "./packages/datastore/entities/Credential.js";
+import { determineFieldLengths, FieldSettings } from 'utils/cli/determineFieldLengths.js';
+import { printField, printHeader } from 'utils/cli/printField.js';
 
 function printHelp()
 {

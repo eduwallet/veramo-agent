@@ -1,6 +1,6 @@
 import passport from 'passport';
 import { Strategy } from 'passport-http-bearer';
-import { Issuer } from 'issuer/Issuer';
+import { Issuer } from 'issuer/Issuer.js';
 
 export function bearerAdminForIssuer(issuer:Issuer) {
     passport.use(issuer.name + '-admin', new Strategy(

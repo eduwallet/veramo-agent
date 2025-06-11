@@ -1,12 +1,12 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { Issuer } from '../Issuer';
-import { normalizeGrants } from '../../protocol/normalizeGrants';
-import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer';
-import { CreateCredentialOfferRequest } from 'types/api/credentialOffer';
-import { CredentialOfferData } from 'types/specification/credential_offer';
-import { CreateCredentialData } from 'types/internal';
-import { CredentialOfferStatus } from 'types/api';
+import { Issuer } from '../Issuer.js';
+import { normalizeGrants } from '../../protocol/normalizeGrants.js';
+import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer.js';
+import { CreateCredentialOfferRequest } from 'types/api/credentialOffer.js';
+import { CredentialOfferData } from 'types/specification/credential_offer.js';
+import { CreateCredentialData } from 'types/internal.js';
+import { CredentialOfferStatus } from 'types/api.js';
 
 export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):CreateCredentialData {
     debug("creating credential offer", request);

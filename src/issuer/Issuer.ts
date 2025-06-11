@@ -5,25 +5,25 @@ import moment from "moment";
 import { Router } from "express";
 import { JsonWebKey } from 'did-resolver';
 import { jwtDecode } from 'jwt-decode'
-import { StatusList } from "types/specification/statuslists";
-import { StatusListRevocationState } from 'types/api';
-import { IssuerConfiguration } from 'types/internal';
+import { StatusList } from "types/specification/statuslists.js";
+import { StatusListRevocationState } from 'types/api.js';
+import { IssuerConfiguration } from 'types/internal.js';
 import { JWT } from '#root/jwt/JWT';
-import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
+import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata.js';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata.js';
 import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
-import { getAgent } from 'agent';
-import { getCredentialConfigurationStore } from "credentials/Store";
+import { getAgent } from 'agent.js';
+import { getCredentialConfigurationStore } from "credentials/Store.js";
 import { getDbConnection } from "#root/database/databaseService";
 import { Credential } from "#root/packages/datastore/index";
-import { getContextConfigurationStore } from 'contexts/Store';
-import { credentialDataChecker } from "credentials/credentialDataChecker";
-import { algMapping, keyMapping } from 'crypto/index';
-import { getVctForCredentialType } from 'vct/Store';
-import { getIdentifier, getIdentifierByAlias } from 'utils/did';
-import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
+import { getContextConfigurationStore } from 'contexts/Store.js';
+import { credentialDataChecker } from "credentials/credentialDataChecker.js";
+import { algMapping, keyMapping } from 'crypto/index.js';
+import { getVctForCredentialType } from 'vct/Store.js';
+import { getIdentifier, getIdentifierByAlias } from 'utils/did.js';
+import { SessionState, SessionStateManager } from 'utils/SessionStateManager.js';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
 import { createUniqueId } from '#root/utils/createUniqueId';
@@ -94,7 +94,7 @@ export class Issuer
 
     public async signData(data: Uint8Array)
     {
-        return getAgent().keyManagerSign({ keyRef: this.keyRef, algorithm: this.algorithm(), data});
+        return getAgent().keyManagerSign({ keyRef: this.keyRef, algorithm: this.algorithm(), data: data.toString() });
     }
 
     public async signToken(jwt: JWT) {
@@ -110,7 +110,7 @@ export class Issuer
     public async verifyToken(token:string)
     {
         const jwt = JWT.fromToken(token);
-        const key = Factory.createFromManagedKey(this.key!);
+        const key = await Factory.createFromManagedKey(this.key!);
         const verified = await jwt.verify(key);
         if (!verified) {
             return null;
@@ -170,7 +170,7 @@ export class Issuer
             dbCred.uuid = createUniqueId();
             dbCred.state = session.state;
             dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
-            dbCred.claims = credential.credentialSubject;
+            dbCred.claims = credential.credentialSubject as StringKeyedObject;
             if (credential.expirationDate) {
                 dbCred.expirationDate = moment((credential.expirationDate as string) || undefined).toDate();
             }
@@ -180,7 +180,7 @@ export class Issuer
             dbCred.holder = session.holder || '';
             dbCred.credpid = session.principalCredentialId || '';
             dbCred.issuer = this.name;
-            dbCred.metadata = this.getCredentialConfiguration(session.credentialId);
+            dbCred.metadata = this.getCredentialConfiguration(session.credentialId) as StringKeyedObject;
             dbCred.credentialId = session.credentialId || '';
             if (credential.credentialStatus && typeof(credential.credentialStatus) == 'object') {
                 dbCred.statuslists = credential.credentialStatus;
@@ -274,7 +274,7 @@ export class Issuer
                         return contextStore[item].fullPath!;
                     }
                     return null;
-                }).filter((i:string) => i !== null) as string[];
+                }).filter((i:string | null) => i !== null) as string[];
             }
         }
         return [];

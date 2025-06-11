@@ -1,11 +1,11 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { Issuer } from "issuer/Issuer";
-import { PRE_AUTHORIZED_CODE } from "types/specification/credential_offer";
-import { ErrorCodes } from "types/api";
-import { ApiState } from "types/internal";
-import { GrantTypes, TokenRequest } from "types/specification/access_token";
-import { SessionState } from "utils/SessionStateManager";
+import { Issuer } from "issuer/Issuer.js";
+import { PRE_AUTHORIZED_CODE } from "types/specification/credential_offer.js";
+import { ErrorCodes } from "types/api.js";
+import { ApiState } from "types/internal.js";
+import { GrantTypes, TokenRequest } from "types/specification/access_token.js";
+import { SessionState } from "utils/SessionStateManager.js";
 
 export function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest): ApiState {
     debug("validating access token request", tokenRequest);

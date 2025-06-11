@@ -10,7 +10,7 @@ export async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|nu
         ckey = await Factory.resolve(kid);
     }
     else if(jwt.header.jwk) {
-        ckey = Factory.createFromJWK(jwt.header.jwk);
+        ckey = await Factory.createFromJWK(jwt.header.jwk);
     }
     return ckey;
 }

@@ -1,8 +1,8 @@
 import { expect, test} from 'vitest';
-import { ErrorCodes } from '../../../types/api';
-import { GrantTypes, TokenRequest } from '../../../types/specification/access_token';
-import { Issuer } from '../../Issuer';
-import { validateAccessTokenRequest } from '../validateAccessTokenRequest';
+import { ErrorCodes } from '../../../types/api.js';
+import { GrantTypes, TokenRequest } from '../../../types/specification/access_token.js';
+import { Issuer } from '../../Issuer.js';
+import { validateAccessTokenRequest } from '../validateAccessTokenRequest.js';
 
 test('basic offer', () => {
     const tokenRequest:TokenRequest = {

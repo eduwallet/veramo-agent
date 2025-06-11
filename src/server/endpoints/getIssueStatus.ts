@@ -1,9 +1,9 @@
 import { sendErrorResponse } from '@sphereon/ssi-express-support'
 import { Request, Response } from 'express'
-import { Issuer } from 'issuer/Issuer';
+import { Issuer } from 'issuer/Issuer.js';
 import passport from 'passport';
-import { ErrorCodes } from 'types/api';
-import { IssueStatusResponse } from 'types/api/index';
+import { ErrorCodes } from 'types/api.js';
+import { IssueStatusResponse } from 'types/api/index.js';
 
 export function getIssueStatus(issuer:Issuer, checkPath:string) {
     issuer.router!.post(

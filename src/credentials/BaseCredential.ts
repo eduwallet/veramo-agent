@@ -3,13 +3,13 @@ const debug = Debug("issuer:credentials");
 import { SDJwtVcInstance, SdJwtVcPayload } from '@sd-jwt/sd-jwt-vc'
 import { DisclosureFrame, Signer } from '@sd-jwt/types'
 import { digest, generateSalt } from '@sd-jwt/crypto-nodejs';
-import { Issuer } from "issuer/Issuer";
-import { getAgent } from 'agent';
+import { Issuer } from "issuer/Issuer.js";
+import { getAgent } from 'agent.js';
 import moment from "moment";
 import { CredentialPayload, CredentialStatusReference, CredentialSubject } from "@veramo/core";
-import { getVctForCredentialType } from "vct/Store";
-import { CredentialProofData, CredentialResult } from "types/internal";
-import { VctClaimPathElement } from "types/specification/vct";
+import { getVctForCredentialType } from "vct/Store.js";
+import { CredentialProofData, CredentialResult } from "types/internal.js";
+import { VctClaimPathElement } from "types/specification/vct.js";
 
 export interface ClaimList {
     [x:string]: any
@@ -129,8 +129,8 @@ export class BaseCredential
         const vct = getVctForCredentialType(type!);
 
         let baseCredential:SdJwtVcPayload = {
-            iss: this.issuer.did.did,
-            vct: vct.vct,
+            iss: this.issuer.did!.did,
+            vct: vct!.vct as string,
             iat: moment().unix()
         };
         if (credential.cnf) {

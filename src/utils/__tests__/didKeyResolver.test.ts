@@ -1,5 +1,5 @@
 import { expect, test} from 'vitest';
-import { getDidKeyResolver } from '../didKeyResolver';
+import { getDidKeyResolver } from '../didKeyResolver.js';
 import {
     DIDDocument,
     DIDResolutionOptions,

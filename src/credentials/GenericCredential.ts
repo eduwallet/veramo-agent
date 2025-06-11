@@ -1,9 +1,9 @@
 
 import moment from 'moment';
-import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig";
-import { BaseCredential } from './BaseCredential';
-import { CredentialProofData, CredentialResult } from "types/internal";
-import { CredentialDisplay } from "types/specification/metadata";
+import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig.js";
+import { BaseCredential } from './BaseCredential.js';
+import { CredentialProofData, CredentialResult } from "types/internal.js";
+import { CredentialDisplay } from "types/specification/metadata.js";
 import { CredentialPayload } from '@veramo/core';
 
 export class GenericCredential extends BaseCredential

@@ -1,9 +1,9 @@
 import Debug from 'debug';
 const debug = Debug('issuer:credentials');
-import { BaseCredential } from "./BaseCredential";
-import { CredentialProofData, CredentialResult } from "types/internal";
-import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig";
-import { CredentialDisplay } from "types/specification/metadata";
+import { BaseCredential } from "./BaseCredential.js";
+import { CredentialProofData, CredentialResult } from "types/internal.js";
+import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig.js";
+import { CredentialDisplay } from "types/specification/metadata.js";
 import { CredentialPayload } from "@veramo/core";
 
 enum CredentialType {
