@@ -36,7 +36,6 @@
     "@veramo/did-jwt": "6.0.0",
     "@veramo/did-manager": "6.0.0",
     "@veramo/did-resolver": "6.0.0",
-    "cbor2": "^2.0.1",
     "debug": "4.3.5",
     "did-jwt": "^7.4.7",
     "dotenv-flow": "^4.1.0",
@@ -51,6 +50,7 @@
     "postinstall": "^0.10.3",
     "string-width": "^4.2.3",
     "tsconfig-paths": "^4.2.0",
+    "uint8arrays": "^5.1.0",
     "uuid": "^11.1.0"
   },
   "files": [

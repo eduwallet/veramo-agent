@@ -69,13 +69,9 @@ Make sure to install the environment file `.env` and  configurations in the `/co
 
 ### Docker Compose
 
-Alternatively, just run `docker compose build` and then `docker compose up` to
-install and run the agent, the database and the openobserver log container.
+Run `docker compose build` and then `docker compose up` to build and run the agent, the database and the openobserver log container.
 
-This *won't* install packages, so `yarn install` is still needed. The app
-directory is mounted read-only in docker. This way, we can inspect dependencies
-in intellisense/lsp while avoiding node_modules to get files and dirs that we
-cannot remove on the host.
+The Docker setup installs all dependencies inside the container, so there's no need to run `yarn install` locally unless you're developing outside of Docker.
 
 ## Configuration
 

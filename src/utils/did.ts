@@ -104,7 +104,7 @@ export async function getOrCreateDIDs(): Promise<IDIDResult[]> {
         } else {
             console.log(`No identifier for DID ${opts.did} exists yet. Will create the DID...`)
 
-            let args:IDIDManagerCreateArgs = opts.createArgs
+            let args:IDIDManagerCreateArgs|undefined = opts.createArgs
             if (!args) {
                 args = {options: {}}
             }

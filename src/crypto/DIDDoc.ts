@@ -10,7 +10,7 @@ export class DIDDoc
         this.document = document;
     }
 
-    public findKey(keyRef:string, method:string = "verificationMethod"):CryptoKey|null
+    public async findKey(keyRef:string, method:string = "verificationMethod"): Promise<CryptoKey|null>
     {
         const keys = [
             ...(this.document[method] || []),
@@ -18,14 +18,14 @@ export class DIDDoc
         ];
         for(const key of keys) {
             if (key.id == keyRef) {
-                return this.convertDIDDocumentKeyToCryptoKey(key);
+                return await this.convertDIDDocumentKeyToCryptoKey(key);
             }
         }
 
         return null;
     }
 
-    public convertDIDDocumentKeyToCryptoKey(keyDoc:any):CryptoKey|null
+    public async convertDIDDocumentKeyToCryptoKey(keyDoc:any): Promise<CryptoKey|null>
     {
         // https://www.w3.org/TR/did-extensions-properties/#verification-method-types
         switch (keyDoc.type) {
@@ -34,7 +34,7 @@ export class DIDDoc
             case 'EcdsaSecp256k1RecoveryMethod2020':
             case 'Ed25519VerificationKey2018':
                 if (keyDoc.publicKeyJwk) {
-                    return Factory.createFromJWK(keyDoc.publicKeyJwk);
+                    return await Factory.createFromJWK(keyDoc.publicKeyJwk);
                 }
                 else if(keyDoc.publicKeyHex) {
                     let keyType = 'Ed25519';
@@ -43,7 +43,7 @@ export class DIDDoc
                         case 'EcdsaSecp256k1RecoveryMethod2020': keyType = 'Secp256k1'; break;
                         case 'Ed25519VerificationKey2018': keyType = 'Ed25519'; break;
                     }
-                    return Factory.createFromManagedKey({
+                    return await Factory.createFromManagedKey({
                         kid: keyDoc.publicKeyHex,
                         type: keyType as TKeyType,
                         kms: "default",

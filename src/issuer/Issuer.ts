@@ -111,7 +111,7 @@ export class Issuer
     public async verifyToken(token:string)
     {
         const jwt = JWT.fromToken(token);
-        const key = Factory.createFromManagedKey(this.key!);
+        const key = await Factory.createFromManagedKey(this.key!);
         const verified = await jwt.verify(key);
         if (!verified) {
             return null;
@@ -279,7 +279,7 @@ export class Issuer
                         return contextStore[item].fullPath!;
                     }
                     return null;
-                }).filter((i:string) => i !== null) as string[];
+                }).filter((i:string|null) => i !== null) as string[];
             }
         }
         return [];
