@@ -10,7 +10,8 @@ services:
       - "db:db"
       - "log:log"
     volumes:
-      - .:/app:ro
+      - .src:/app/src:ro
+      - .patches:/app/patches:ro
       - /dev/null:/app/.env:ro # Ensure we don't use the host's .env file but set env vars explicitly
       - ./conf:/conf:ro
     environment:
