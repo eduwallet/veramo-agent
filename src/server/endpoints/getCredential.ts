@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { sendErrorResponse } from '@sphereon/ssi-express-support'
+import { sendErrorResponse } from '../sendErrorResponse'
 import { Issuer } from 'issuer/Issuer.js';
 import { getBaseUrl } from 'utils/getBaseUrl.js';
 import { openObserverLog } from 'utils/openObserverLog.js';

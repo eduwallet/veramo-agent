@@ -17,7 +17,7 @@ const resolveDidKey: DIDResolver = async (
     return {
         didDocumentMetadata: {},
         didResolutionMetadata: {},
-        didDocument: null,// ...cryptoKey.didDocument(),
+        didDocument: await Factory.toDIDDocument(cryptoKey),
     }
   }
   catch (err: any) {

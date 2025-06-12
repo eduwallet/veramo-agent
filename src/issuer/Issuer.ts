@@ -9,26 +9,27 @@ import { StatusList } from "types/specification/statuslists.js";
 import { StatusListRevocationState } from 'types/api.js';
 import { IssuerConfiguration } from 'types/internal.js';
 import { JWT } from '#root/jwt/JWT';
-import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata.js';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata.js';
-import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
+import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
+import { CredentialPayload, DIDDocument, IIdentifier, IKey } from '@veramo/core';
 import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
 import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
 import { getAgent } from 'agent.js';
 import { getCredentialConfigurationStore } from "credentials/Store.js";
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential } from "#root/packages/datastore/index";
-import { getContextConfigurationStore } from 'contexts/Store.js';
-import { credentialDataChecker } from "credentials/credentialDataChecker.js";
-import { algMapping, keyMapping } from 'crypto/index.js';
-import { getVctForCredentialType } from 'vct/Store.js';
-import { getIdentifier, getIdentifierByAlias } from 'utils/did.js';
-import { SessionState, SessionStateManager } from 'utils/SessionStateManager.js';
+import { Credential as CredentialEntity} from "#root/packages/datastore/index";
+import { getContextConfigurationStore } from 'contexts/Store';
+import { Credential } from "#root/credentials/Credential";
+import { algMapping, keyMapping } from 'crypto/index';
+import { getVctForCredentialType } from 'vct/Store';
+import { getIdentifier, getIdentifierByAlias } from 'utils/did';
+import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { Factory } from '@muisit/cryptokey';
 import { DIDDoc } from '#root/crypto/DIDDoc';
+import { CredentialFactory } from '#root/credentials/CredentialFactory';
 
 export class Issuer
 {
@@ -165,8 +166,8 @@ export class Issuer
     {
         if (session && credential && typeof(credential) !== 'string') {
             const dbConnection = await getDbConnection();
-            const repo = dbConnection.getRepository(Credential);
-            const dbCred = new Credential();
+            const repo = dbConnection.getRepository(CredentialEntity);
+            const dbCred = new CredentialEntity();
             dbCred.uuid = createUniqueId();
             dbCred.state = session.state;
             dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
@@ -198,9 +199,13 @@ export class Issuer
         //await this.vcIssuer.uris?.clearExpired();
     }
 
-    public checkCredentialData(credentialIds:string[], claims: any)
+    public checkCredentialData(type:string, claims: any)
     {
-        return credentialDataChecker(this, credentialIds[0], claims);
+        const credential = new Credential();
+        credential.issuer = this;
+        credential.type = type;
+        credential.data = claims;
+        return CredentialFactory.check(credential);
     }
 
     public getDidDoc ():DIDDocument {
@@ -484,5 +489,11 @@ export class Issuer
             return document.findKey(fullkey, method);
         }
         return null;
+    }
+
+    public async exportJWK()
+    {
+        const ckey = await Factory.createFromManagedKey(this.key!);
+        return ckey.toJWK();
     }
 }

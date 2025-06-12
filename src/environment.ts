@@ -17,6 +17,8 @@ export const DB_ENCRYPTION_KEY = process.env.DB_ENCRYPTION_KEY ?? '29739248cad1b
 export const LOG_SERVICE = process.env.LOG_SERVICE;
 export const LOG_USER = process.env.LOG_USER;
 
+export const BASEURL = process.env.BASEURL;
+
 //export const DID_PREFIX = 'did'
 export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) : resolve('../../conf')
 export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`

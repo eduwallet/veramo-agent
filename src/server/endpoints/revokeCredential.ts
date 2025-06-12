@@ -1,4 +1,4 @@
-import { sendErrorResponse } from '@sphereon/ssi-express-support'
+import { sendErrorResponse } from '../sendErrorResponse'
 import { Request, Response } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
 import passport from 'passport';

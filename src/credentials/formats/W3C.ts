@@ -1,0 +1,93 @@
+import Debug from 'debug';
+const debug = Debug('issuer:vcdm');
+
+import { Credential } from '../Credential';
+import moment from 'moment';
+import { W3CJWT, W3C as W3CType } from './VCDMTypes.js';
+
+// https://www.w3.org/TR/vc-data-model/
+
+export class W3C
+{
+    private credential:Credential;
+
+    public constructor(credential:Credential)
+    {
+        this.credential = credential;
+    }
+
+    public build():W3CJWT
+    {
+        debug("creating W3C");
+
+        const issuerName = this.getString('issuer_name');
+        const issuerDescription = this.getString('issuer_description');
+        let baseCredential:W3CType = {
+            "@context": ["https://www.w3.org/ns/credentials/v2", ...this.credential.contexts],
+            type: ["VerifiableCredential", this.credential.type],
+            credentialSubject: Object.assign({}, this.credential.data),
+            issuer: {
+                // value of id can be a controlled identifier, a JWK (reference) or a did. In fact, it can be any url
+                id: this.credential.issuer!.did!.did,
+                ...(issuerName != '' ? {name: issuerName} : {}),
+                ...(issuerDescription != '' ? {description: issuerDescription} : {}),
+            }
+        };
+        console.log('base credential context', this.credential.contexts);
+
+        // If present, id property's value MUST be a single URL, recommended to be machine readable
+
+        // Each object MAY also contain an id property to identify the subject, as described in Section 4.2 Identifiers.
+        if (this.credential.automaticallyBindHolder && !baseCredential.credentialSubject.id && this.credential.holder) {
+            baseCredential.credentialSubject.id = this.credential.holder;
+        }
+
+        if (this.credential.dictionary['name']) {
+            baseCredential.name = this.getString('name');
+        }
+        if (this.credential.dictionary['description']) {
+            baseCredential.description = this.getString('description');
+        }
+
+        if (this.credential.metaData.issuanceDate) {
+            baseCredential.issuanceDate = moment(this.credential.metaData.issuanceDate).format('YYYY-MM-DDTHH:mm:ssZ');
+        }
+        else {
+            baseCredential.issuanceDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
+        }
+        if (this.credential.metaData.expirationDate) {
+            baseCredential.expirationDate = moment(this.credential.metaData.expirationDate).format('YYYY-MM-DDTHH:mm:ssZ');
+        }
+
+        this.addStatusListData(baseCredential);
+
+        return { vc: baseCredential };
+    }
+
+    private getString(value:string)
+    {
+        if (this.credential.dictionary[value]) {
+            let retval:string = '';
+            for (const label of this.credential.dictionary[value]) {
+                retval = label.value;
+                break;
+            }
+            return retval;
+        }
+        return '';
+    }
+
+    private addStatusListData(baseCredential:W3CType)
+    {
+        if (this.credential.metaData.credentialStatus) {
+            if (this.credential.metaData.credentialStatus.type) {
+                // only one entry
+                baseCredential.credentialStatus = [Object.assign({}, this.credential.metaData.credentialStatus)];
+            }
+            else if (this.credential.metaData.credentialStatus.length) {
+                // array of entries
+                baseCredential.credentialStatus = this.credential.metaData.credentialStatus.slice();
+            }
+        }
+    }
+}

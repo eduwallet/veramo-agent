@@ -1,48 +1,26 @@
-import moment from 'moment';
-import { getCredentialTypeFromConfig } from "utils/getCredentialTypeFromConfig.js";
-import { toStringByJoin } from "utils/toStringByJoin.js";
-import { BaseCredential } from "./BaseCredential.js";
-import { CredentialProofData, CredentialResult } from "types/internal.js";
-import { CredentialDisplay } from "types/specification/metadata.js";
-import { CredentialPayload } from '@veramo/core';
+
+import { toStringByJoin } from "utils/toStringByJoin";
+import { Credential } from '../Credential';
+import { CredentialDisplay } from "types/specification/metadata";
+import { CredentialType } from "./CredentialType";
+import moment from "moment";
 
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
-export class PID extends BaseCredential
+export class PID extends CredentialType
 {
-    public async generate(proofData: CredentialProofData): Promise<CredentialResult> {
-        const display = (this.issuer.metadata.display ?? [{}])[0];
-        const { credentialDataSet } = proofData;
-        const { credentialConfiguration, data } = credentialDataSet;
-        const type = getCredentialTypeFromConfig(credentialConfiguration!);
-        const credentialDisplay:CredentialDisplay|undefined = credentialConfiguration?.display?.length ? credentialConfiguration.display[0] : undefined;
-
-        const issDate = data['issuance_date'];
-
-        const credential:CredentialPayload = {
-            "@context": ["https://www.w3.org/2018/credentials/v1"],
-            "type": ['VerifiableCredential', type], // reinsert the filtered-out VerifiableCredential
-            "issuer": {
-                id: this.issuer.did!.did,
-                name: display.name ?? this.issuer.options.baseUrl,
-                description: display.description ?? ''
-            },
-            "iss": this.issuer.did!.did,
-            'name': credentialDisplay?.name ?? '',
-            'description': credentialDisplay?.description ?? '',
-            "issuanceDate": moment(issDate, pidIssuanceFormat).toISOString(),
-            "credentialSubject": this.convertDataToClaims(data)
-        };
-
-        return await this.handleAttributes(proofData, type, 'personal_administrative_number', {
-            format: credentialConfiguration!.format,
-            credential: credential
-        });
+    public async resolve(credential:Credential) {
+        this.setCredentialDisplay(credential);
+        this.setIssuer(credential);
+        credential.data = this.convertDataToClaims(credential.data);
+        credential.principalId = credential.data['personal_administrative_number'];
+        credential.metaData.issuanceDate = moment(credential.data['issuance_date'], pidIssuanceFormat).toISOString();
+        return true;
     }
 
-    public check(claims: any)
+    public check(credential:Credential)
     {
-        const subject = this.convertDataToClaims(claims);
+        const subject = this.convertDataToClaims(credential.data);
         if (!this.claimPresent('personal_administrative_number', 'string', subject)) return false;
         if (!this.claimPresent('document_number', 'string', subject)) return false;
         if (!this.claimPresent('given_name', 'string', subject)) return false;

@@ -18,12 +18,12 @@ export function validateGetCredentialOffer(issuer:Issuer, request:Request)
         return error;
     }
     
-    if ([CredentialOfferStatus.ERROR, CredentialOfferStatus.CREDENTIAL_ISSUED].includes(session.status)) {
-        debug("invalid because session status is incorrect", session.status);
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "Credential offer status has expired";
-        return error;
-    }
+    //if ([CredentialOfferStatus.ERROR, CredentialOfferStatus.CREDENTIAL_ISSUED].includes(session.status)) {
+    //    debug("invalid because session status is incorrect", session.status);
+    //    error.error = ErrorCodes.INVALID_REQUEST;
+    //    error.description = "Credential offer status has expired";
+    //    return error;
+    //}
 
     if (!session.credentialOffer || !session.credentialOffer.grants) {
         debug("error because no credential offer found", session.credentialOffer);

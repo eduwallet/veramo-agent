@@ -1,7 +1,6 @@
 import Debug from 'debug';
 const debug = Debug('issuer:server');
-import express from 'express'
-import { ExpressSupport } from "@sphereon/ssi-express-support";
+import express, { Express } from 'express'
 import { Issuer } from "issuer/Issuer.js";
 
 import {
@@ -19,7 +18,7 @@ import {
 } from './endpoints/index.js'
 import { getBasePath } from 'utils/getBasePath.js';
 
-export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
+export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     var tokenPath = '/token';
     debug('creating routes for ', issuer.name);
     /*
@@ -30,7 +29,7 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
      */
     debug("initializing rest api using ", issuer.options);
     issuer.router = express.Router();
-    expressSupport.express.use(getBasePath(issuer.options.baseUrl), issuer.router);
+    app.use(getBasePath(issuer.options.baseUrl), issuer.router);
 
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
     debug("adding token path");

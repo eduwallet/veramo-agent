@@ -1,7 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:endpoints');
 import { Request, Response} from 'express'
-import { sendErrorResponse } from '@sphereon/ssi-express-support'
+import { sendErrorResponse } from '../sendErrorResponse'
 import { createAccessTokenResponse } from 'issuer/api/createAccessTokenResponse.js';
 import { Issuer } from 'issuer/Issuer.js'
 import { openObserverLog } from 'utils/openObserverLog.js';

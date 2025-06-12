@@ -1,14 +1,14 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT.js';
+import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT';
 import { Request } from 'express'
-import { Issuer } from 'issuer/Issuer.js';
-import { CredentialOfferStatus, ErrorCodes } from 'types/api.js';
-import { ApiState } from 'types/internal.js';
-import { CredentialRequest } from 'types/specification/credential_request.js';
-import { SessionState } from 'utils/SessionStateManager.js';
+import { Issuer } from '#root/issuer/Issuer';
+import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
+import { ApiState } from '#root/types/internal';
+import { CredentialRequest } from '#root/types/specification/credential_request';
+import { SessionState } from '#root/utils/SessionStateManager';
 import { JWT } from '#root/jwt/JWT';
-import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt.js';
+import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
@@ -32,7 +32,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (issuer.usesAuthorisedCodeFlow()) {
             // the issuer should be one of our authorization servers
-            if (!issuer.metadata.authorization_servers!.includes(data!.payload.iss)) {
+            if (!issuer.metadata.authorization_servers!.includes(data?.payload?.iss)) {
                 debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
@@ -41,15 +41,15 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         }
         else  {
             // we must have issued it ourselves
-            if (data!.payload.iss != issuer.did?.did) {
-                debug("invalid because the token issuer is not our did", data!.payload.iss);
+            if (data?.payload?.iss != issuer.did?.did) {
+                debug("invalid because the token issuer is not our did", data?.payload?.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
                 return error;
             }
         }
     
-        const stateid = data!.payload.issuer_state;
+        const stateid = data?.payload?.issuer_state;
         const sessionId = issuer.authorizationState.get(stateid);
 
         if (!sessionId) {
@@ -183,7 +183,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     // typ: required, must be openid4vci-proof+jwt'
     // the did-jwt library predefines the typ header claim to always be JWT, which is
     // obviously not the case
-    if ((header.typ as string) !== 'openid4vci-proof+jwt') {
+    if ((header.typ as string) !== 'openid4vci-proof+jwt' && (header.typ as string) !== 'JWT') {
         debug("Proof is invalid because the JWT type is incorrect", header.typ);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid proof type";
@@ -200,7 +200,9 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     }
     else {
         // create a did from the key material so we can use it as credentialSubject id
-        did = Factory.toDIDJWK(ckey);
+        // this is a special case for wwwallet, which uses a jwk in the proof and hence
+        // does not have a regular did
+        did = await Factory.toDIDJWK(ckey);
     }
 
     const payload = jwt.payload;
@@ -265,7 +267,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
 
     // return the did of the proof, this is the holder key
     error.data = {did, nonce, key: ckey};
-    debug("Proof is valid");
+    debug("Proof is valid", did, nonce, ckey.type);
     return error;
 }
 
