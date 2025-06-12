@@ -33,7 +33,6 @@ export class W3C
                 ...(issuerDescription != '' ? {description: issuerDescription} : {}),
             }
         };
-        console.log('base credential context', this.credential.contexts);
 
         // If present, id property's value MUST be a single URL, recommended to be machine readable
 
@@ -60,6 +59,7 @@ export class W3C
         }
 
         this.addStatusListData(baseCredential);
+        this.addEvidenceData(baseCredential);
 
         return { vc: baseCredential };
     }
@@ -87,6 +87,20 @@ export class W3C
             else if (this.credential.metaData.credentialStatus.length) {
                 // array of entries
                 baseCredential.credentialStatus = this.credential.metaData.credentialStatus.slice();
+            }
+        }
+    }
+
+    private addEvidenceData(baseCredential:W3CType)
+    {
+        if (this.credential.metaData.evidence) {
+            if (this.credential.metaData.evidence.type) {
+                // only one entry
+                baseCredential.evidence = [Object.assign({}, this.credential.metaData.evidence)];
+            }
+            else if (this.credential.metaData.evidence.length) {
+                // array of entries
+                baseCredential.evidence = this.credential.metaData.evidence.slice();
             }
         }
     }

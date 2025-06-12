@@ -57,6 +57,7 @@ export class VCDM
         }
 
         this.addStatusListData(baseCredential);
+        this.addEvidenceData(baseCredential);
         return baseCredential;
     }
 
@@ -85,6 +86,20 @@ export class VCDM
             else if (this.credential.metaData.credentialStatus.length) {
                 // array of entries
                 baseCredential.credentialStatus = this.credential.metaData.credentialStatus.slice();
+            }
+        }
+    }
+
+    private addEvidenceData(baseCredential:VCDMType)
+    {
+        if (this.credential.metaData.evidence) {
+            if (this.credential.metaData.evidence.type) {
+                // only one entry
+                baseCredential.evidence = [Object.assign({}, this.credential.metaData.evidence)];
+            }
+            else if (this.credential.metaData.evidence.length) {
+                // array of entries
+                baseCredential.evidence = this.credential.metaData.evidence.slice();
             }
         }
     }
