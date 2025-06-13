@@ -182,6 +182,11 @@
   resolved "https://registry.yarnpkg.com/@bitauth/libauth/-/libauth-1.19.1.tgz#713751bbc09815b667f8fe00a1cc5b0f3bf45dd1"
   integrity sha512-R524tD5VwOt3QRHr7N518nqTVR/HKgfWL4LypekcGuNQN8R4PWScvuRcRzrY39A28kLztMv+TJdiKuMNbkU1ug==
 
+"@cto.af/wtf8@0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@cto.af/wtf8/-/wtf8-0.0.2.tgz#0035df6e25eaadccd4c6289c91f5c373d20a402f"
+  integrity sha512-ATm4UQiKrdm5GnU6BvIwUDN+LDEtt23zuzKFpnfDT59ULAd0aMYm/nSFzbSO02garLcXumRC13PzNfa7BsfvSg==
+
 "@danieldietrich/copy@^0.4.2":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@danieldietrich/copy/-/copy-0.4.2.tgz#c1cabfa499d8b473ba95413c446c1c1efae64d24"
@@ -2506,6 +2511,13 @@ canonicalize@^2.0.0:
   resolved "https://registry.yarnpkg.com/canonicalize/-/canonicalize-2.1.0.tgz#92a20ecfb94e96591badf4977dc2fb1bfbc31dc5"
   integrity sha512-F705O3xrsUtgt98j7leetNhTWPe+5S72rlL5O4jA1pKqBVQ/dT1O1D6PFxmSXvc0SUOinWS57DKx0I3CHrXJHQ==
 
+cbor2@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/cbor2/-/cbor2-2.0.1.tgz#49c13e58527e11c5a12a668a516fd8a96cc325c9"
+  integrity sha512-9bE8+tueGxONyxpttNKkAKKcGVtAPeoSJ64AjVTTjEuBOuRaeeP76EN9BbmQqkz1ZeTP0QPvksNBKwvEutIUzQ==
+  dependencies:
+    "@cto.af/wtf8" "0.0.2"
+
 chai@^5.1.2:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/chai/-/chai-5.2.0.tgz#1358ee106763624114addf84ab02697e411c9c05"
@@ -3913,7 +3925,7 @@ jsonify@^0.0.1:
   resolved "https://registry.yarnpkg.com/jsonify/-/jsonify-0.0.1.tgz#2aa3111dae3d34a0f151c63f3a45d995d9420978"
   integrity sha512-2/Ki0GcmuqSrgFyelQq9M05y7PS0mEwuIzrf3f1fPqkVDVRvZrPZtVSMHxdgo8Aq0sxAOb/cr2aqqA3LeWHVPg==
 
-jsonld-signatures@^11.5.0:
+jsonld-signatures@11:
   version "11.5.0"
   resolved "https://registry.yarnpkg.com/jsonld-signatures/-/jsonld-signatures-11.5.0.tgz#020ad488bd1977c5169de3d2a4cc28a76dec2663"
   integrity sha512-Kdto+e8uvY/5u3HYkmAbpy52bplWX9uqS8fmqdCv6oxnCFwCTM0hMt6r4rWqlhw5/aHoCHJIRxwYb4QKGC69Jw==
@@ -3933,7 +3945,7 @@ jsonld@5.2.0:
     lru-cache "^6.0.0"
     rdf-canonize "^3.0.0"
 
-jsonld@^8.0.0:
+jsonld@8.3.3, jsonld@^8.0.0:
   version "8.3.3"
   resolved "https://registry.yarnpkg.com/jsonld/-/jsonld-8.3.3.tgz#08cc927833c8684e42319d4697cc8199c0908ffc"
   integrity sha512-9YcilrF+dLfg9NTEof/mJLMtbdX1RJ8dbWtJgE00cMOIohb1lIyJl710vFiTaiHTl6ZYODJuBd32xFvUhmv3kg==

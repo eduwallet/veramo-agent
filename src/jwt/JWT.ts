@@ -4,11 +4,11 @@ import { CryptoKey } from '@muisit/cryptokey';
 export class JWT {
     public token:string;
     public headerPart:string;
-    public payloadPart:string;
+    public payloadPart:string|Uint8Array; // support non-string data for JWS signatures
     public signaturePart:string;
 
-    public header:any;
-    public payload:any;
+    public header:any = null;
+    public payload:any = null;
 
 
     constructor() {
@@ -27,9 +27,7 @@ export class JWT {
             retval.headerPart = parts[1];
             retval.payloadPart = parts[2];
             retval.signaturePart = parts[3];
-
-            retval.header = retval.decodeFromBase64(retval.headerPart);
-            retval.payload = retval.decodeFromBase64(retval.payloadPart);
+            retval.decode();
         }
 
         if (!retval.header || !retval.payload || !retval.signaturePart
@@ -39,6 +37,16 @@ export class JWT {
         }
 
         return retval;
+    }
+
+    public decode()
+    {
+        if (this.headerPart.length > 0 && this.header === null) {
+            this.header = this.decodeFromBase64(this.headerPart);
+        }
+        if (this.payloadPart.length > 0 && this.payload === null) {
+            this.payload = this.decodeFromBase64(this.payloadPart);
+        }
     }
 
     async verify(key:CryptoKey)
@@ -78,7 +86,7 @@ export class JWT {
         this.token = this.headerPart + '.' + this.payloadPart + '.' + this.signaturePart;
     }
 
-    decodeFromBase64(payload:string)
+    public decodeFromBase64(payload:string)
     {
         let bytes = fromString(payload, 'base64url');
         let jsonstring = toString(bytes);

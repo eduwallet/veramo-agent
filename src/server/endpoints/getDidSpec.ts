@@ -3,7 +3,7 @@ import { Issuer } from 'issuer/Issuer.js';
 
 export function getDidSpec(issuer:Issuer) {
     issuer.router!.get('/.well-known/did.json', async (req: Request, res) => {
-        const didDoc = issuer.getDidDoc();
+        const didDoc = await issuer.getDidDoc();
         return res.json(didDoc);
     });
 }

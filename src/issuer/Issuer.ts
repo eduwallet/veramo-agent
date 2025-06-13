@@ -17,7 +17,7 @@ import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
 import { getAgent } from 'agent.js';
 import { getCredentialConfigurationStore } from "credentials/Store.js";
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential as CredentialEntity} from "#root/packages/datastore/index";
+import { Credential as CredentialEntity, Key as KeyEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
 import { getContextConfigurationStore } from 'contexts/Store';
 import { Credential } from "#root/credentials/Credential";
 import { algMapping, keyMapping } from 'crypto/index';
@@ -27,17 +27,17 @@ import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
 import { createUniqueId } from '#root/utils/createUniqueId';
-import { Factory } from '@muisit/cryptokey';
 import { DIDDoc } from '#root/crypto/DIDDoc';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
+import { CryptoKey, Factory } from '@muisit/cryptokey';
 
 export class Issuer
 {
     public name:string;
     public metadata:MetadataConfiguration;
     public options:IssuerConfiguration;
-    public did?:IIdentifier;
-    public key:IKey|null;
+    public did:IdentifierEntity|null = null;
+    public key:CryptoKey|null;
     public keyRef:string;
     public router:Router|undefined;
     public sessionData:SessionStateManager;
@@ -61,22 +61,29 @@ export class Issuer
 
     public algorithm():string
     {
-        return algMapping[this.key!.type];
+        return this.key?.algorithms()[0] || 'EdDSA';
     }
 
     public async setDid()
     {
-        this.did = await getIdentifier(this.options.did);
-        if (!this.did) {
-            this.did = await getIdentifierByAlias(this.options.did);
-        }
-
+        const dbConnection = await getDbConnection();
+        const ids = dbConnection.getRepository(IdentifierEntity);
+        this.did = await ids.createQueryBuilder()
+            .innerJoinAndSelect("identifier.key", "key")
+            .where('did=:did', {did: this.options.did})
+            .orWhere('alias=:alias', {alias: this.options.did})
+            .getOne();
+        
         if (!this.did) {
             throw new Error('Missing issuer did configuration');
         }
+        const dbKey = this.did.keys[0];
+        this.keyRef = dbKey.kid;
 
-        this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
-        this.keyRef = this.key!.kid;
+        const pkeys = dbConnection.getRepository(PrivateKeyEntity);
+        const pkey = await pkeys.findOneBy({alias:dbKey.kid});
+
+        this.key = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
     }
 
     public async retrieveASServerKeys()
@@ -95,7 +102,7 @@ export class Issuer
 
     public async signData(data: Uint8Array)
     {
-        return getAgent().keyManagerSign({ keyRef: this.keyRef, algorithm: this.algorithm(), data: data.toString() });
+        return await this.key?.sign(this.algorithm(), data, 'base64url');
     }
 
     public async signToken(jwt: JWT) {
@@ -104,15 +111,14 @@ export class Issuer
         }
         jwt.payload.iss = this.did!.did;
         jwt.header.alg = this.algorithm();
-        await jwt.sign(async (data:Uint8Array) => this.signData(data));
+        await jwt.sign(this.key!);
         return jwt.token;
     }
 
     public async verifyToken(token:string)
     {
         const jwt = JWT.fromToken(token);
-        const key = await Factory.createFromManagedKey(this.key!);
-        const verified = await jwt.verify(key);
+        const verified = await jwt.verify(this.key!);
         if (!verified) {
             return null;
         }
@@ -208,34 +214,8 @@ export class Issuer
         return CredentialFactory.check(credential);
     }
 
-    public getDidDoc ():DIDDocument {
-        const allKeys = this.did!.keys.map((key:IKey) => ({
-            id: this.did!.did + '#' + key.kid,
-            type: keyMapping[key.type],
-            controller: this.did!.did,
-            publicKeyJwk: toJwk(key.publicKeyHex, key.type, { use: JwkKeyUse.Signature, key: key}) as JsonWebKey,
-        }));
-    
-        const services = this.did!.keys.map((key:IKey) => ({
-            id: this.did!.did + '#' + key.kid,
-            type: "OID4VCI",
-            serviceEndpoint: this.metadata.credential_issuer
-        }));
-    
-        const signingKeyIds = allKeys
-            .filter((key:any) => key.type !== 'X25519KeyAgreementKey2019')
-            .map((key:any) => key.kid)
-        
-        const didDoc:DIDDocument = {
-            '@context': 'https://w3id.org/did/v1',
-            id: this.did!.did,
-            verificationMethod: allKeys,
-            authentication: signingKeyIds,
-            assertionMethod: signingKeyIds,
-            service: [...services, ...(this.did?.services || [])],
-        }
-        
-        return didDoc;
+    public async getDidDoc ():Promise<DIDDocument> {
+        return await Factory.toDIDDocument(this.key!);
     }
 
     public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
@@ -373,7 +353,7 @@ export class Issuer
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
     {
       const dbConnection = await getDbConnection();
-      var qb = dbConnection.createQueryBuilder().select('c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(Credential, 'c').where('c.id > 0');
+      var qb = dbConnection.createQueryBuilder().select('c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(CredentialEntity, 'c').where('c.id > 0');
       if (primaryId && primaryId.length) {
           qb = qb.andWhere('c.credpid=:credpid', {credpid: primaryId});
       }
@@ -397,8 +377,8 @@ export class Issuer
     {
         debug("revoking specific credential " + uuid);
         const dbConnection = await getDbConnection();
-        const userRepository = dbConnection.getRepository(Credential);
-        const credential = await userRepository.findOneBy({uuid});
+        const repo = dbConnection.getRepository(CredentialEntity);
+        const credential = await repo.findOneBy({uuid});
         if (!credential) {
             debug("credential not found in database");
             throw new Error("No such credential");
@@ -435,7 +415,7 @@ export class Issuer
         return oldState;
     }
 
-    private async revokeCredentialFromList(credential:Credential, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
+    private async revokeCredentialFromList(credential:CredentialEntity, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
     {
         debug("revoking credential of type " + credential.credentialId);
         const slist = this.options.statusLists![credential.credentialId];
@@ -474,26 +454,8 @@ export class Issuer
         return this.metadata.authorization_servers && this.metadata.authorization_servers.length;
     }
 
-    public async resolveDidToKey(did:string, method:string = "verificationMethod")
-    {
-        let keyRef = '';
-        // a hash cannot be the first character of a did
-        if (did.indexOf('#') > 0) {
-            keyRef = did.substring(did.indexOf('#') + 1);
-            did = did.substring(0, did.indexOf('#'));
-        }
-        const didDoc = await getAgent().resolveDid({ didUrl: did});
-        if (didDoc.didDocument) {
-            const document = new DIDDoc(didDoc.didDocument);
-            const fullkey = did + (keyRef === '' ? keyRef : ('#' + keyRef));
-            return document.findKey(fullkey, method);
-        }
-        return null;
-    }
-
     public async exportJWK()
     {
-        const ckey = await Factory.createFromManagedKey(this.key!);
-        return ckey.toJWK();
+        return this.key!.toJWK();
     }
 }
