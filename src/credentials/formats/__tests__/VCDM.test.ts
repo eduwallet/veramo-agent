@@ -131,3 +131,33 @@ test('VCDM status lists', () => {
     expect(result.credentialStatus![0]).toBe('a');
     expect(result.credentialStatus![1]).toBe('b');
 });
+
+test('VCDM evidence', () => {
+    const issuer = new Issuer({}, {});
+      
+    const credential = new Credential();
+    credential.issuer = issuer;
+    credential.type = 'CredentialTest';
+    credential.data = {name:'Test'};
+    issuer.did = {did: 'did:test:me'};
+    issuer.keyRef = '1234';
+
+    // single status list is converted to array of length 1, which is allowed in the spec
+    // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
+    credential.metaData.evidence = {type:'Evidence2020', id: 'https://youtu.be/movie'};
+    let vcdm = new VCDM(credential);
+    let result = vcdm.build();
+    expect(result).toBeDefined();
+    expect(result.evidence).toBeDefined();
+    expect(result.evidence!.length).toBe(1);
+    expect(result.evidence![0].type).toBe('Evidence2020');
+    expect(result.evidence![0].id).toBe('https://youtu.be/movie');
+
+    credential.metaData.evidence = [{type:'Evidence2020', id: 'https://youtu.be/movie'},{type:'Evidence2025', id:'did:you:tube'}];
+    result = vcdm.build();
+    expect(result).toBeDefined();
+    expect(result.evidence).toBeDefined();
+    expect(result.evidence!.length).toBe(2);
+    expect(result.evidence![0].type).toBe('Evidence2020');
+    expect(result.evidence![1].type).toBe('Evidence2025');
+});
