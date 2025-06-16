@@ -76,7 +76,7 @@ export class Credential
 
         return {
             id: listData.id,
-            type: 'StatusList2021Entry', // should be: 'BitstringStatusListEntry'
+            type: listData.purpose == 'revocation' ? 'RevocationList2021Status' : 'SuspensionList2021Status';
             statusPurpose: listData.purpose,
             statusListIndex: listData.index,
             statusListCredential: listData.url
