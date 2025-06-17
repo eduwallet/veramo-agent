@@ -76,7 +76,7 @@ export class Credential
 
         return {
             id: listData.id,
-            type: listData.purpose == 'revocation' ? 'RevocationList2021Status' : 'SuspensionList2021Status';
+            type: listData.purpose == 'revocation' ? 'RevocationList2021Status' : 'SuspensionList2021Status',
             statusPurpose: listData.purpose,
             statusListIndex: listData.index,
             statusListCredential: listData.url
@@ -128,4 +128,3 @@ export class Credential
         }
     }
 }
-
