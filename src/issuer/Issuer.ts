@@ -68,8 +68,8 @@ export class Issuer
     {
         const dbConnection = await getDbConnection();
         const ids = dbConnection.getRepository(IdentifierEntity);
-        this.did = await ids.createQueryBuilder()
-            .innerJoinAndSelect("identifier.key", "key")
+        this.did = await ids.createQueryBuilder('identifier')
+            .innerJoinAndSelect("identifier.keys", "key")
             .where('did=:did', {did: this.options.did})
             .orWhere('alias=:alias', {alias: this.options.did})
             .getOne();

@@ -10,6 +10,7 @@ import { initialiseCredentialConfigurationStore } from './credentials/Store';
 import { openObserverLog } from './utils/openObserverLog';
 import { initialiseVctConfigurationStore } from './vct/Store';
 import { getContextConfigurationStore } from './contexts/Store';
+import { getDIDConfigurationStore } from './dids/Store'; 
 
 async function main() {
     debug('Loading contexts');
@@ -23,8 +24,9 @@ async function main() {
     const agent = createAgent<TAgentTypes>({ plugins: await setupPlugins() }) as TAgent<TAgentTypes>;
     setAgent(agent);
 
-    debug('Loading and/or creating DIDs');
-    await getOrCreateDIDs().catch((e:any) => console.error(e))
+    debug('Loading and/or creating keys and identifiers');
+    const didStore = getDIDConfigurationStore();
+    await didStore.init();
 
     debug('Loading credential configurations');
     await initialiseCredentialConfigurationStore();
