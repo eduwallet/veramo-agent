@@ -338,6 +338,9 @@ export class Issuer
         if (decoratedCredential.format == 'vc+sd-jwt') {
             decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential as CredentialConfigurationJwtVC);
         }
+        else if (decoratedCredential.format == 'vc+jwt') {
+            decoratedCredential.format = 'jwt_vc_json';
+        }
 
         return decoratedCredential as CredentialConfiguration;
     }

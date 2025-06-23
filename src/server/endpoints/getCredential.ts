@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug("issuer:endpoint");
+
 import { Request, Response } from 'express'
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { Issuer } from '#root/issuer/Issuer';

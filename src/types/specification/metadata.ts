@@ -43,7 +43,7 @@ export interface CredentialConfigurations {
 export type CredentialConfiguration = CredentialConfigurationCommon & 
     (CredentialConfigurationJwtVC | CredentialConfigurationLdpVC | CredentialConfigurationIsoMdl | CredentialConfigurationSdJwt);
 
-export type CredentialFormat = 'jwt_vc_json' | 'jwt_vc_json-ld' | 'vc+sd-jwt' | 'dc+sd-jwt' | 'ldp_vc';
+export type CredentialFormat = 'jwt_vc_json' | 'jwt_vc_json-ld' | 'vc+sd-jwt' | 'dc+sd-jwt' | 'ldp_vc' | 'vc+jwt';
 
 export interface CredentialConfigurationCommon {
     format: CredentialFormat;
