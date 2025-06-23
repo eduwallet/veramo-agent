@@ -1,9 +1,9 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType} from './VCDMTypes';
-import { VCDM } from "./VCDM";
-import { Credential } from '../Credential';
+import { VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
+import { VCDM } from "#root/credentials/formats/VCDM";
+import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import * as cbor from 'cbor2';
 import { toString } from 'uint8arrays';
@@ -27,7 +27,7 @@ export class COSE
         this.credential.output = await this.packCredential(baseCredential);
     }
 
-    private async packCredential(baseCredential:VCDMType)
+    private async packCredential(baseCredential:any)
     {
         // https://www.w3.org/TR/vc-jose-cose/
         // https://www.w3.org/TR/vc-jose-cose/#securing-vcs-with-cose
@@ -84,7 +84,7 @@ export class COSE
             protectedHeaderBytes,
             unprotectedHeader,
             cborPayload,
-            Buffer.from(signature)
+            Buffer.from(signature!)
         ];
         const finalCoseObject = cbor.encode(coseSign1);
         return toString(finalCoseObject, 'base64url');

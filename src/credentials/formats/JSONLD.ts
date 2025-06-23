@@ -1,8 +1,8 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType} from './VCDMTypes';
-import { Credential } from '../Credential';
+import { VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
+import { Credential } from '#root/credentials/Credential';
 import jsigs from 'jsonld-signatures';
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import * as jsonld from 'jsonld';
@@ -20,7 +20,7 @@ export class JSONLD
             output,
             {
                 suite: new JwsLinkedDataSignature({
-                    key: credential.issuer!.key, 
+                    key: credential.issuer!.key!, 
                     date: date,
                     alg: credential.issuer!.algorithm(),
                 }),
@@ -43,6 +43,6 @@ export class JSONLD
                 document: obj
             };
         }
-        return jsonld.documentLoaders.node(url);
+        return (jsonld as unknown as any).documentLoaders?.node(url);
     }
 }

@@ -1,16 +1,13 @@
 import Debug from 'debug';
 const debug = Debug('issuer:agent');
-import { setAgent } from './agent';
-import { createAgent, TAgent } from '@veramo/core'
-import { initialiseServer } from './server/index';
-import { setupPlugins, TAgentTypes } from './plugins';
-import { getOrCreateDIDs } from "./utils/did";
-import { initialiseIssuerStore } from './issuer/Store';
-import { initialiseCredentialConfigurationStore } from './credentials/Store';
-import { openObserverLog } from './utils/openObserverLog';
-import { initialiseVctConfigurationStore } from './vct/Store';
-import { getContextConfigurationStore } from './contexts/Store';
-import { getDIDConfigurationStore } from './dids/Store'; 
+
+import { initialiseServer } from '#root/server/index';
+import { initialiseIssuerStore } from '#root/issuer/Store';
+import { initialiseCredentialConfigurationStore } from '#root/credentials/Store';
+import { openObserverLog } from '#root/utils/openObserverLog';
+import { initialiseVctConfigurationStore } from '#root/vct/Store';
+import { getContextConfigurationStore } from '#root/contexts/Store';
+import { getDIDConfigurationStore } from '#root/dids/Store'; 
 
 async function main() {
     debug('Loading contexts');
@@ -19,10 +16,6 @@ async function main() {
 
     debug('Loading vcts');
     await initialiseVctConfigurationStore().catch((e:any) => console.error(e))
-
-    debug('Starting main agent');
-    const agent = createAgent<TAgentTypes>({ plugins: await setupPlugins() }) as TAgent<TAgentTypes>;
-    setAgent(agent);
 
     debug('Loading and/or creating keys and identifiers');
     const didStore = getDIDConfigurationStore();

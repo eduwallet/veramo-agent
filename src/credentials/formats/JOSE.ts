@@ -1,11 +1,11 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType} from './VCDMTypes';
-import { VCDM } from "./VCDM";
-import { W3C } from "./W3C"
-import { JSONLD } from './JSONLD';
-import { Credential } from '../Credential';
+import { VCDM as VCDMType, W3CJWT as W3CType} from '#root/credentials/formats/VCDMTypes';
+import { VCDM } from "#root/credentials/formats/VCDM";
+import { W3C } from "#root/credentials/formats/W3C"
+import { JSONLD } from '#root/credentials/formats/JSONLD';
+import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { JWT } from '#root/jwt/JWT';
 
@@ -15,7 +15,7 @@ export class JOSE
     private type:string = 'vc+jwt';
     private date:string;
 
-    public constructor(credential:Credential, type:string = 'vc+jwt', date?:strimg)
+    public constructor(credential:Credential, type:string = 'vc+jwt', date?:string)
     {
         this.credential = credential;
         this.type = type;
@@ -43,7 +43,7 @@ export class JOSE
         this.credential.output = await this.packCredential(baseCredential);
     }
 
-    private async packCredential(baseCredential:VCDMType)
+    private async packCredential(baseCredential:VCDMType|W3CType)
     {
         // https://www.w3.org/TR/vc-jose-cose/
         // https://www.w3.org/TR/vc-jose-cose/#securing-with-jose
@@ -78,14 +78,14 @@ export class JOSE
         // verifiable credential properties when a claim and property pair refer to the same
         // conceptual entity, especially with pairs such as iss and issuer, jti and id, and
         // sub and credentialSubject.id.
-        if (baseCredential.id) {
-            jwt.payload.jti = baseCredential.id;
+        if ((baseCredential as VCDMType).id) {
+            jwt.payload.jti = (baseCredential as VCDMType).id;
         }
-        if (baseCredential.credentialSubject?.id) {
-            jwt.payload.sub = baseCredential.credentialSubject.id;
+        if ((baseCredential as VCDMType).credentialSubject?.id) {
+            jwt.payload.sub = (baseCredential as VCDMType).credentialSubject.id;
         }
-        if (baseCredential.vc?.credentialSubject?.id) {
-            jwt.payload.sub = baseCredential.vc.credentialSubject.id;
+        if ((baseCredential as W3CType).vc?.credentialSubject?.id) {
+            jwt.payload.sub = (baseCredential as W3CType).vc.credentialSubject.id;
         }
 
         return await this.credential.issuer!.signToken(jwt);

@@ -8,7 +8,7 @@ import {
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm'
-import { Key } from './Key.js'
+import { Key } from '#root/packages/datastore/index'
 
 @Entity('identifier')
 @Index(['alias', 'provider'], { unique: true })

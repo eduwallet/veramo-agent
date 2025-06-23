@@ -1,12 +1,12 @@
 import { Request, Response } from 'express'
-import { sendErrorResponse } from '../sendErrorResponse'
-import { Issuer } from 'issuer/Issuer.js'
+import { sendErrorResponse } from '#root/server/sendErrorResponse'
+import { Issuer } from '#root/issuer/Issuer'
 import passport from 'passport';
-import { openObserverLog } from 'utils/openObserverLog.js';
-import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from 'types/api/credentialOffer.js';
-import { validateCreateCredentialOffer } from 'issuer/api/validateCreateCredentialOffer.js';
-import { createCredentialOffer } from 'issuer/api/createCredentialOffer.js';
-import { ErrorCodes } from 'types/api.js';
+import { openObserverLog } from '#root/utils/openObserverLog';
+import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from '#root/types/api/credentialOffer';
+import { validateCreateCredentialOffer } from '#root/issuer/api/validateCreateCredentialOffer';
+import { createCredentialOffer } from '#root/issuer/api/createCredentialOffer';
+import { ErrorCodes } from '#root/types/api';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     issuer.router!.post(createOfferPath,

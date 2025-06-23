@@ -1,6 +1,6 @@
 import Debug from 'debug';
 const debug = Debug('issuer:logger');
-import { LOG_SERVICE, LOG_USER } from "environment.js";
+import { LOG_SERVICE, LOG_USER } from "#root/environment";
 
 export async function openObserverLog(state:string, endpoint: string, data:any)
 {

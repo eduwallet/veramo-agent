@@ -1,8 +1,8 @@
 import Debug from 'debug';
 const debug = Debug('issuer:vcdm');
 
-import { LanguageObject, VCDM as VCDMType} from './VCDMTypes';
-import { Credential } from '../Credential';
+import { LanguageObject, VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
+import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 
 export class VCDM

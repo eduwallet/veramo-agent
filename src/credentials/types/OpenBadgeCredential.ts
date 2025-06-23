@@ -1,6 +1,5 @@
-import { CredentialType } from "./CredentialType";
-import { CredentialDisplay } from "types/specification/metadata";
-import { Credential } from '../Credential';
+import { CredentialType } from "#root/credentials/types/CredentialType";
+import { Credential } from '#root/credentials/Credential';
 import { createUniqueId } from '#root/utils/createUniqueId';
 
 export class OpenBadgeCredential extends CredentialType {

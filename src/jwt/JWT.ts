@@ -45,7 +45,7 @@ export class JWT {
             this.header = this.decodeFromBase64(this.headerPart);
         }
         if (this.payloadPart.length > 0 && this.payload === null) {
-            this.payload = this.decodeFromBase64(this.payloadPart);
+            this.payload = this.decodeFromBase64(this.payloadPart as string);
         }
     }
 

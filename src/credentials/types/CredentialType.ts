@@ -9,7 +9,7 @@ export interface ClaimList {
 export abstract class CredentialType
 {
     public abstract check(credential:Credential):boolean;
-    public abstract resolve(credential:Credential, proofData:CredentialProofData):Promise<boolean>;
+    public abstract resolve(credential:Credential):Promise<boolean>;
     
     protected claimPresent(claim:string, type:string, claims:ClaimList)
     {

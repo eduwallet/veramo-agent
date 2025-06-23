@@ -1,11 +1,11 @@
 import Debug from 'debug';
 const debug = Debug('issuer:endpoints');
 import { Request, Response } from 'express'
-import { sendErrorResponse } from '../sendErrorResponse'
-import { Issuer } from 'issuer/Issuer.js';
-import { openObserverLog } from 'utils/openObserverLog.js';
-import { validateGetCredentialOffer } from 'issuer/api/validateGetCredentialOffer.js';
-import { CredentialOfferStatus, ErrorCodes } from 'types/api.js';
+import { sendErrorResponse } from '#root/server/sendErrorResponse'
+import { Issuer } from '#root/issuer/Issuer';
+import { openObserverLog } from '#root/utils/openObserverLog';
+import { validateGetCredentialOffer } from '#root/issuer/api/validateGetCredentialOffer';
+import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 
 export function getCredentialOffer(issuer:Issuer, getPath:string) {
     issuer.router!.get(getPath, async (request: Request, response: Response) => {

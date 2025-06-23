@@ -1,13 +1,13 @@
 import Debug from 'debug';
 const debug = Debug('issuer:endpoints');
 import { Request, Response} from 'express'
-import { sendErrorResponse } from '../sendErrorResponse'
-import { createAccessTokenResponse } from 'issuer/api/createAccessTokenResponse.js';
-import { Issuer } from 'issuer/Issuer.js'
-import { openObserverLog } from 'utils/openObserverLog.js';
-import { TokenRequest, TokenResponse } from 'types/specification/access_token.js'
-import { validateAccessTokenRequest } from 'issuer/api/validateAccessTokenRequest.js'
-import { ErrorCodes } from 'types/api.js'
+import { sendErrorResponse } from '#root/server/sendErrorResponse'
+import { createAccessTokenResponse } from '#root/issuer/api/createAccessTokenResponse';
+import { Issuer } from '#root/issuer/Issuer'
+import { openObserverLog } from '#root/utils/openObserverLog';
+import { TokenRequest, TokenResponse } from '#root/types/specification/access_token'
+import { validateAccessTokenRequest } from '#root/issuer/api/validateAccessTokenRequest'
+import { ErrorCodes } from '#root/types/api'
 
 export function accessToken(issuer: Issuer, tokenPath:string) {
     const externalAS = issuer.metadata.authorization_servers

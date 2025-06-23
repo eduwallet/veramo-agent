@@ -1,7 +1,6 @@
-import { toStringByJoin } from "utils/toStringByJoin";
-import { CredentialDisplay } from "types/specification/metadata";
-import { CredentialType } from './CredentialType';
-import { Credential } from '../Credential';
+import { toStringByJoin } from "#root/utils/toStringByJoin";
+import { CredentialType } from '#root/credentials/types/CredentialType';
+import { Credential } from '#root/credentials/Credential';
 import { createUniqueId } from "#root/utils/createUniqueId";
 
 export class AcademicEnrollmentCredential extends CredentialType

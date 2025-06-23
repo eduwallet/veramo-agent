@@ -3,31 +3,22 @@ const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";
-import { JsonWebKey } from 'did-resolver';
-import { jwtDecode } from 'jwt-decode'
-import { StatusList } from "types/specification/statuslists.js";
-import { StatusListRevocationState } from 'types/api.js';
-import { IssuerConfiguration } from 'types/internal.js';
+import { StatusList } from "#root/types/specification/statuslists";
+import { StatusListRevocationState } from '#root/types/api';
+import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
-import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
-import { CredentialPayload, DIDDocument, IIdentifier, IKey } from '@veramo/core';
-import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
-import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
-import { getAgent } from 'agent.js';
-import { getCredentialConfigurationStore } from "credentials/Store.js";
+import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/types/api/metadata';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from '#root/types/specification/metadata';
+import { getCredentialConfigurationStore } from "#root/credentials/Store";
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential as CredentialEntity, Key as KeyEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
-import { getContextConfigurationStore } from 'contexts/Store';
+import { Credential as CredentialEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
+import { getContextConfigurationStore } from '#root/contexts/Store';
 import { Credential } from "#root/credentials/Credential";
-import { algMapping, keyMapping } from 'crypto/index';
-import { getVctForCredentialType } from 'vct/Store';
-import { getIdentifier, getIdentifierByAlias } from 'utils/did';
-import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
+import { getVctForCredentialType } from '#root/vct/Store';
+import { SessionState, SessionStateManager } from '#root/utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
-import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
+import { retrieveASServerKey } from '#root/issuer/lib/retrieveASServerKey';
 import { createUniqueId } from '#root/utils/createUniqueId';
-import { DIDDoc } from '#root/crypto/DIDDoc';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
 
@@ -162,13 +153,13 @@ export class Issuer
 
             if (isJwt && typeof(data) == 'string') {
                 // decode the JWT to get the payload
-                data = jwtDecode(data);
+                data = JWT.fromToken(data);
             }
             session.requestResponseData[phase] = data;
         }
     }
 
-    public async storeCredential(session:SessionState, credential:CredentialPayload)
+    public async storeCredential(session:SessionState, credential:any)
     {
         if (session && credential && typeof(credential) !== 'string') {
             const dbConnection = await getDbConnection();
@@ -214,7 +205,7 @@ export class Issuer
         return CredentialFactory.check(credential);
     }
 
-    public async getDidDoc ():Promise<DIDDocument> {
+    public async getDidDoc () {
         return await Factory.toDIDDocument(this.key!);
     }
 
@@ -255,8 +246,9 @@ export class Issuer
             if (this.metadata['@context'] && this.metadata['@context'].length) {
                 const contextStore = getContextConfigurationStore();
                 return this.metadata['@context'].map((item:string) => {
-                    if (contextStore[item]) {
-                        return contextStore[item].fullPath!;
+                    const ctx = contextStore.get(item);
+                    if (ctx) {
+                        return ctx.fullPath!;
                     }
                     return null;
                 }).filter((i:string | null) => i !== null) as string[];

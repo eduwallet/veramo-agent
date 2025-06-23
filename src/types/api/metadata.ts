@@ -1,5 +1,4 @@
-import { Metadata } from "types/specification/metadata.js";
-import { CredentialConfigurationJwtVC } from "types/specification/metadata.js";
+import { Metadata, CredentialConfigurationJwtVC } from "#root/types/specification/metadata";
 
 export interface MetadataConfiguration extends Omit<Metadata, 'credential_configurations_supported'> {
     "@context"?: string[];

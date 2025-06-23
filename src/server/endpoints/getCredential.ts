@@ -1,12 +1,11 @@
 import { Request, Response } from 'express'
-import { sendErrorResponse } from '../sendErrorResponse'
-import { Issuer } from 'issuer/Issuer.js';
-import { getBaseUrl } from 'utils/getBaseUrl.js';
-import { openObserverLog } from 'utils/openObserverLog.js';
-import { ErrorCodes } from 'types/api.js';
-import { validateCredentialRequest } from 'issuer/api/validateCredentialRequest.js';
-import { issueCredential } from 'issuer/api/issueCredential.js';
-import { CredentialProofData } from 'types/internal.js';
+import { sendErrorResponse } from '#root/server/sendErrorResponse'
+import { Issuer } from '#root/issuer/Issuer';
+import { openObserverLog } from '#root/utils/openObserverLog';
+import { ErrorCodes } from '#root/types/api';
+import { validateCredentialRequest } from '#root/issuer/api/validateCredentialRequest';
+import { issueCredential } from '#root/issuer/api/issueCredential';
+import { CredentialProofData } from '#root/types/internal';
 
 export function getCredential(issuer:Issuer, path:string)
 {

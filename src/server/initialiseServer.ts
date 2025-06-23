@@ -12,6 +12,8 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import { getContext } from "./endpoints/getContext.js";
 import { getVct } from "./endpoints/getVct.js";
+import { getDIDConfigurationStore } from '#root/dids/Store';
+import { getDidWebSpec } from './endpoints/getDidSpec.js';
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'
@@ -52,6 +54,17 @@ export const initialiseServer = async () => {
     const vct = vctStore[key];
     getVct(vctRouter, vct);
   };
+
+  const didStore = getDIDConfigurationStore();
+  const didRouter = express.Router();
+  app.use('/', didRouter);
+  for (const did of didStore.keys()) {
+    const didValue = didStore.get(did);
+    if (didValue?.path && didValue?.path.length) {
+      getDidWebSpec(didRouter, didValue);
+    }
+
+  }
 
   debug("starting express server");
   app.listen(PORT, LISTEN_ADDRESS);

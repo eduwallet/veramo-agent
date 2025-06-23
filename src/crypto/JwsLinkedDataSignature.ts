@@ -108,7 +108,7 @@ export class JwsLinkedDataSignature extends LinkedDataSignature {
 
     // confirm header matches all expectations
     if(!(jwt.header.alg === this.alg)) {
-      throw new Error(`Invalid JWS header parameters for ${this.type}.`);
+      throw new Error('Invalid JWS header parameters');
     }
 
     const did = verificationMethod.id ? verificationMethod.id : verificationMethod;
@@ -116,7 +116,7 @@ export class JwsLinkedDataSignature extends LinkedDataSignature {
     return jwt.verify(ckey);
   }
 
-  async getVerificationMethod({proof, documentLoader}) {
+  async getVerificationMethod({proof, documentLoader}: {proof:any, documentLoader:any}) {
     if(this.ckey) {
       // This happens most often during sign() operations. For verify(),
       // the expectation is that the verification method will be fetched
@@ -144,8 +144,6 @@ export class JwsLinkedDataSignature extends LinkedDataSignature {
     const {document} = await documentLoader(verificationMethod);
 
     verificationMethod = typeof document === 'string' ? JSON.parse(document) : document;
-
-    await this.assertVerificationMethod({verificationMethod});
     return verificationMethod;
   }
 

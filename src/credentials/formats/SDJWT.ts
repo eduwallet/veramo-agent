@@ -1,14 +1,14 @@
 import Debug from 'debug';
 const debug = Debug('issuer:sdjwt');
 
-import { Credential } from '../Credential.js';
+import { Credential } from '#root/credentials/Credential';
 import { SDJwtVcInstance, SdJwtVcPayload } from '@sd-jwt/sd-jwt-vc'
 import { DisclosureFrame, Signer } from '@sd-jwt/types'
 import { digest, generateSalt } from '@sd-jwt/crypto-nodejs';
 import { getVctForCredentialType } from "#root/vct/Store";
 import { VctClaimPathElement } from "#root/types/specification/vct";
+import { fromString } from 'uint8arrays';
 import moment from 'moment';
-import { getAgent } from '#root/agent';
 
 export class SDJWT
 {
@@ -27,7 +27,7 @@ export class SDJWT
 
         let baseCredential:SdJwtVcPayload = {
             iss: this.credential.issuer!.did!.did,
-            vct: vct.vct,
+            vct: vct!.vct!,
             iat: moment().unix()
         };
         if (this.credential.automaticallyBindHolder && this.credential.holder) {
@@ -49,7 +49,7 @@ export class SDJWT
         // TODO: encode the baseCredential.status referring to the status list implementation
         // the spec does not define this explicitely
         const signer: Signer = async (data: string): Promise<string> => {
-            return getAgent().keyManagerSign({ keyRef: this.credential.issuer!.keyRef, data })
+            return await this.credential.issuer!.key!.sign(this.credential.issuer!.algorithm(), fromString(data, 'utf-8'), 'base64url')
         }
 
         const sdjwt = new SDJwtVcInstance({
@@ -65,7 +65,7 @@ export class SDJWT
           header: {
             typ: this.type,
             cty: 'vc',
-            kid: '#' + this.credential.issuer!.key!.kid
+            kid: '#' + this.credential.issuer!.keyRef
           },
         });
     

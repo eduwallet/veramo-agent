@@ -1,6 +1,6 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT';
+import { verifyAccessTokenJWT } from '#root/issuer/lib/verifyAccessTokenJWT';
 import { Request } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
@@ -8,7 +8,7 @@ import { ApiState } from '#root/types/internal';
 import { CredentialRequest } from '#root/types/specification/credential_request';
 import { SessionState } from '#root/utils/SessionStateManager';
 import { JWT } from '#root/jwt/JWT';
-import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt';
+import { getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
@@ -267,7 +267,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
 
     // return the did of the proof, this is the holder key
     error.data = {did, nonce, key: ckey};
-    debug("Proof is valid", did, nonce, ckey.type);
+    debug("Proof is valid", did, nonce, ckey.keyType);
     return error;
 }
 

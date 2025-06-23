@@ -1,12 +1,10 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { CredentialPayload, W3CVerifiableCredential } from "@veramo/core";
-import { getAgent } from "agent";
 import { Credential } from "#root/credentials/Credential";
-import { Issuer } from "issuer/Issuer";
-import { CredentialOfferStatus } from "types/api";
-import { CredentialProofData } from "types/internal";
-import { CredentialResponse } from "types/specification/credential_response";
+import { Issuer } from "#root/issuer/Issuer";
+import { CredentialOfferStatus } from "#root/types/api";
+import { CredentialProofData } from "#root/types/internal";
+import { CredentialResponse } from "#root/types/specification/credential_response";
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 
@@ -41,7 +39,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         throw Error('Could not create a credential');
     }
     session.credential = credential.credential;
-    session.principalCredentialId = credential.principalId;
+    session.principalCredentialId = credential.principalId || '';
     session.credentialType = credential.type;
 
     debug("storing credential in the database");

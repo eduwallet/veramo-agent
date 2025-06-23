@@ -4,9 +4,9 @@ const debug = Debug('issuer:context');
  * Instantiate context configurations
  */
 
-import { CONTEXT_CONFIGURATION_PATH } from "../environment";
-import { loadJsonFiles } from "utils/generic";
-import { getBaseUrl } from "utils/getBaseUrl";
+import { CONTEXT_CONFIGURATION_PATH } from "#root/environment";
+import { loadJsonFiles } from "#root/utils/generic";
+import { getBaseUrl } from "#root/utils/getBaseUrl";
 import fs from 'fs';
 
 export interface ContextConfiguration {

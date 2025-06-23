@@ -1,9 +1,9 @@
 import moment from "moment";
-import { CredentialStatusReference } from "@veramo/core";
 import { StringKeyedObject } from "#root/types/index";
 import { CredentialConfiguration } from "#root/types/specification/metadata";
 import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
+import { StatusList } from "#root/types/specification/statuslists";
 
 export interface LanguageLabel
 {
@@ -59,7 +59,7 @@ export class Credential
         return true;
     }
 
-    private async reserveOnStatusList(statusListData:any): Promise<CredentialStatusReference>
+    private async reserveOnStatusList(statusListData:any): Promise<StatusList>
     {
         const listData = await fetch(statusListData.url, {
             method: 'POST',
@@ -85,8 +85,8 @@ export class Credential
 
     private async handleStatusLists()
     {
-        const statusses:CredentialStatusReference[] = [];
-        if (this.issuer!.options.statusLists[this.type!]) {
+        const statusses:StatusList[] = [];
+        if (this.issuer!.options?.statusLists && this.issuer!.options?.statusLists[this.type!]) {
             const slist = this.issuer!.options.statusLists[this.type!];
             statusses.push(await this.reserveOnStatusList(slist));
         }
@@ -94,7 +94,7 @@ export class Credential
         if (statusses.length > 0) {
             if (statusses.length > 1) {
                 // cast so we can assign the array as the spec indicates
-                this.metaData.credentialStatus = (statusses as unknown) as CredentialStatusReference;
+                this.metaData.credentialStatus = (statusses as unknown) as StatusList;
             }
             else {
                 this.metaData.credentialStatus = statusses[0];

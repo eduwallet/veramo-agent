@@ -1,5 +1,5 @@
-import { StringKeyedObject } from "types/index.js";
-import { AuthorizationCodeGrant, TxCode } from "../specification/credential_offer.js";
+import { StringKeyedObject } from "#root/types/index";
+import { AuthorizationCodeGrant, TxCode } from "#root/types/specification/credential_offer";
 
 /* Creating the initial credential offer */
 export interface APIPreAuthGrant {

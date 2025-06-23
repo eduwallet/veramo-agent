@@ -1,9 +1,9 @@
 import Debug from 'debug';
 const debug = Debug('issuer:vcdm');
 
-import { Credential } from '../Credential';
+import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
-import { W3CJWT, W3C as W3CType } from './VCDMTypes.js';
+import { W3CJWT, W3C as W3CType } from '#root/credentials/formats/VCDMTypes';
 
 // https://www.w3.org/TR/vc-data-model/
 

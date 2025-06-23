@@ -1,10 +1,9 @@
-import { SessionState } from 'utils/SessionStateManager.js';
-import { ErrorCodes } from './api.js';
-import { StringKeyedObject } from './index.js';
-import { StatusListsOption } from './specification/statuslists.js';
-import { CredentialOffer } from './specification/credential_offer.js';
-import { CredentialConfiguration, CredentialFormat } from './specification/metadata.js';
-import { CredentialPayload } from '@veramo/core';
+import { SessionState } from '#root/utils/SessionStateManager';
+import { ErrorCodes } from '#root/types/api';
+import { StringKeyedObject } from '#root/types/index';
+import { StatusListsOption } from '#root/types/specification/statuslists';
+import { CredentialOffer } from '#root/types/specification/credential_offer';
+import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
 
 // Session state as maintained by the Issuer in the whole process of creating an offer up
 // to receiving notifications
@@ -64,7 +63,7 @@ export interface CredentialProofData {
 }
 
 export interface CredentialResult {
-    credential: CredentialPayload;
+    credential: any;
     format?: CredentialFormat;
     signCallback?: any // If the data supplier wants to actually sign directly
 }

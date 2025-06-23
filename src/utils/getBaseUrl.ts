@@ -1,5 +1,5 @@
-import { trimEnd } from './stringFunctions.js'
-import { BASEURL } from '../environment';
+import { trimEnd } from '#root/utils/stringFunctions'
+import { BASEURL } from '#root/environment';
 
 export function getBaseUrl(url?: URL | string | undefined) {
     let baseUrl = url

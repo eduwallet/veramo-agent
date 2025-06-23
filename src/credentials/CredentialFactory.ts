@@ -1,12 +1,12 @@
-import { Credential } from "./Credential";
-import { CredentialType } from "./types/CredentialType";
-import { AcademicBaseCredential } from "./types/AcademicBaseCredential";
-import { AcademicEnrollmentCredential } from "./types/AcademicEnrollmentCredential";
-import { PID } from "./types/PID";
-import { OpenBadgeCredential } from "./types/OpenBadgeCredential";
-import { GenericCredential } from "./types/GenericCredential";
-import { SDJWT } from "./formats/SDJWT";
-import { JOSE } from "./formats/JOSE";
+import { Credential } from "#root/credentials/Credential";
+import { CredentialType } from "#root/credentials/types/CredentialType";
+import { AcademicBaseCredential } from "#root/credentials/types/AcademicBaseCredential";
+import { AcademicEnrollmentCredential } from "#root/credentials/types/AcademicEnrollmentCredential";
+import { PID } from "#root/credentials/types/PID";
+import { OpenBadgeCredential } from "#root/credentials/types/OpenBadgeCredential";
+import { GenericCredential } from "#root/credentials/types/GenericCredential";
+import { SDJWT } from "#root/credentials/formats/SDJWT";
+import { JOSE } from "#root/credentials/formats/JOSE";
 
 export class CredentialFactory
 {
@@ -50,16 +50,18 @@ export class CredentialFactory
 
     public static async sign(credential:Credential)
     {
-        switch (credential.configuration.format) {
+        switch ((credential.configuration?.format || '') as string) {
             case 'dc+sd-jwt':
             case 'vc+sd-jwt':
-                const sdjwt = new SDJWT(credential, credential.configuration.format);
+                const sdjwt = new SDJWT(credential, credential.configuration!.format);
                 await sdjwt.sign();
+                break;
             case 'jwt_vc_json':
             case 'jwt_vc_json-ld':
             case 'vc+jwt':
-                const jose = new JOSE(credential, credential.configuration.format);
+                const jose = new JOSE(credential, credential.configuration!.format);
                 await jose.sign();
+                break;
         }
         return true;
     }

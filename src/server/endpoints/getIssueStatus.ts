@@ -1,9 +1,9 @@
-import { sendErrorResponse } from '../sendErrorResponse'
+import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { Request, Response } from 'express'
-import { Issuer } from 'issuer/Issuer.js';
+import { Issuer } from '#root/issuer/Issuer';
 import passport from 'passport';
-import { ErrorCodes } from 'types/api.js';
-import { IssueStatusResponse } from 'types/api/index.js';
+import { ErrorCodes } from '#root/types/api';
+import { IssueStatusResponse } from '#root/types/api/index';
 
 export function getIssueStatus(issuer:Issuer, checkPath:string) {
     issuer.router!.post(

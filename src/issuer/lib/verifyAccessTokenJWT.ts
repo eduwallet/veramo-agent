@@ -22,8 +22,7 @@ export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
     }
     else {
         const jwt = JWT.fromToken(token);
-        const key = await Factory.createFromManagedKey(issuer.key!);
-        if (await jwt.verify(key)) {
+        if (await jwt.verify(issuer.key!)) {
             return jwt;
         }
     }

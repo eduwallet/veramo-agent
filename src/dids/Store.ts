@@ -4,28 +4,34 @@ const debug = Debug('issuer:did');
  * Instantiate context configurations
  */
 
-import { DID_OPTIONS_PATH } from "../environment";
-import { loadJsonFiles } from "../utils/generic";
+import { DID_OPTIONS_PATH } from "#root/environment";
+import { loadJsonFiles } from "#root/utils/generic";
 import { Identifier, Key, PrivateKey } from "#root/packages/datastore/index";
 import { CryptoKey, Factory } from '@muisit/cryptokey';
-import fs from 'fs';
-import { getDbConnection } from 'database/databaseService.js';
+import { getDbConnection } from '#root/database/databaseService';
+
+export interface DIDStoreValue {
+    identifier: Identifier;
+    key:CryptoKey;
+    path?:string;
+}
 
 export interface DIDConfiguration {
     did?: string
     alias?: string;
+    path?:string;
     type: string;
     provider: string;
     identifier: Identifier;
     key:CryptoKey;
 }
 
-interface DIDConfigurations {
-  [x:string]: DIDConfiguration;
+interface DIDStoreValues {
+  [x:string]: DIDStoreValue;
 }
 
 class DIDConfigurationStore {
-    private configuration:DIDConfigurations = {};
+    private configuration:DIDStoreValues = {};
 
     public async init()
     {
@@ -46,70 +52,81 @@ class DIDConfigurationStore {
     {
         const dbConnection = await getDbConnection();
         const ids = dbConnection.getRepository(Identifier);
-        configuration.identifier = await ids.createQueryBuilder('identifier')
+        const result = await ids.createQueryBuilder('identifier')
             .innerJoinAndSelect("identifier.keys", "key")
             .where('identifier.did=:did', {did: configuration.did})
             .orWhere('identifier.alias=:alias', {alias: configuration.alias})
             .getOne();
         
-        if (!configuration.identifier) {
-            configuration = await this.initialiseKey(configuration);
+        let value:DIDStoreValue|null = null;
+        if (!result) {
+            value = await this.initialiseKey(configuration);
         }
         else {
-            const dbKey = configuration.identifier.keys[0];
+            const dbKey = result.keys[0];
             const pkeys = dbConnection.getRepository(PrivateKey);
             const pkey = await pkeys.findOneBy({alias:dbKey.kid});
-            configuration.key = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
+            const ckey = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
+            value = {
+                identifier: result,
+                key: ckey,
+                ...(configuration.path ? { path: configuration.path} : null)
+            };
         }
 
         this.configuration[key] = configuration;
     }
 
-    private async initialiseKey(configuration:DIDConfiguration): Promise<DIDConfiguration>
-    {
-        configuration.key = await Factory.createFromType(configuration.type);
-        await configuration.key.createPrivateKey();
-        configuration.identifier = new Identifier();
+    private async initialiseKey(configuration:DIDConfiguration): Promise<DIDStoreValue>
+    {        
+        const ckey = await Factory.createFromType(configuration.type || 'Secp256r1');
+        await ckey.createPrivateKey();
+
+        const identifier = new Identifier();
         switch (configuration.provider) {
             case 'did:web':
                 if (!configuration.did || configuration.did.length == 0) {
                     throw new Error("No did specified for did:web key");
                 }
-                configuration.identifier.did = configuration.did;
+                identifier.did = configuration.did;
                 break;
             case 'did:key':
-                configuration.identifier.did = await Factory.toDIDKey(configuration.key);
+                identifier.did = await Factory.toDIDKey(configuration.key);
                 break;
             default: // DIIPv4 uses did:jwk by default
             case 'did:jwk':
-                configuration.identifier.did = await Factory.toDIDJWK(configuration.key);
+                identifier.did = await Factory.toDIDJWK(configuration.key);
                 break;
         }
-        configuration.identifier.alias = configuration.alias ?? configuration.identifier.did;
-        configuration.identifier.provider = configuration.provider ?? 'did:jwk';
-        configuration.identifier.controllerKeyId = configuration.identifier.did;
+        identifier.alias = configuration.alias ?? configuration.identifier.did;
+        identifier.provider = configuration.provider ?? 'did:jwk';
+        identifier.controllerKeyId = ckey.exportPublicKey();
 
         const dbConnection = await getDbConnection();
         const irepo = dbConnection.getRepository(Identifier);
-        await irepo.save(configuration.identifier);
+        await irepo.save(identifier);
 
         const dbKey = new Key();
         dbKey.kid = configuration.key.exportPublicKey();
         dbKey.kms = 'local';
         dbKey.type = configuration.type;
         dbKey.publicKeyHex = dbKey.kid;
-        dbKey.identifier = configuration.identifier.did;
+        dbKey.identifier = identifier;
         const krepo = dbConnection.getRepository(Key);
         await krepo.save(dbKey);
 
         const pKey = new PrivateKey();
         pKey.alias = dbKey.kid;
         pKey.type = dbKey.type;
-        pKey.privateKeyHex = configuration.key.exportPrivateKey();
+        pKey.privateKeyHex = ckey.exportPrivateKey();
         const prepo = dbConnection.getRepository(PrivateKey);
         await prepo.save(pKey);
 
-        return configuration;
+        return {
+            identifier,
+            key:ckey,
+            ...(configuration.path ? { path: configuration.path} : null)
+        };
     }
 
     public keys() {
