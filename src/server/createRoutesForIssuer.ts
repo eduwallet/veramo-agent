@@ -38,7 +38,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer)
   
-    if (issuer.did?.did?.startsWith('did:web:')) {
+    if (issuer.did?.provider == 'did:web') {
         // This endpoint serves the /.well-known/did.json document
         getDidSpec(issuer);
     }

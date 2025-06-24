@@ -52,7 +52,7 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     session.credentialDataSets = {};
     session.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
-        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0]),
+        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0], false),
         data: request.credentialDataSupplierInput
     };
 

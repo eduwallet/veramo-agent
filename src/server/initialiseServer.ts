@@ -26,6 +26,34 @@ export const initialiseServer = async () => {
 
   app.use(cors({origin: '*', credentials: true, optionsSuccessStatus: 204}));
 
+  const contextStore = getContextConfigurationStore();
+  const rootRouter = express.Router();
+  app.use('/', rootRouter);
+  for (const key of contextStore.keys()) {
+    const context = contextStore.get(key);
+    // only serve it if we have content. If there is no content, it is cached on disk
+    if (context?.document !== null) {
+      console.error('adding context path for ', context);
+      getContext(rootRouter, context!);
+    }
+  };
+
+  const vctStore = getVctConfigurationStore();
+  for (const key of Object.keys(vctStore)) {
+    const vct = vctStore[key];
+    getVct(rootRouter, vct);
+  };
+
+  const didStore = getDIDConfigurationStore();
+  for (const did of didStore.keys()) {
+    const didValue = didStore.get(did);
+    if (didValue?.path && didValue?.path.length) {
+      getDidWebSpec(rootRouter, didValue);
+    }
+  }
+
+  // add the more specific issuer routes at the end, so we do not accidentally overrule
+  // did-web-spec routes
   const store = getIssuerStore();
   debug('creating routes for each issuer instance', Object.keys(store));
   for (const key of Object.keys(store)) {
@@ -33,37 +61,6 @@ export const initialiseServer = async () => {
     // initialise the passport strategy
     bearerAdminForIssuer(issuer);
     await createRoutesForIssuer(issuer, app);
-  }
-
-  const contextStore = getContextConfigurationStore();
-  const contextRouter = express.Router();
-  app.use('/', contextRouter);
-  for (const key of contextStore.keys()) {
-    const context = contextStore.get(key);
-    // only serve it if we have content. If there is no content, it is cached on disk
-    if (context?.document !== null) {
-      console.error('adding context path for ', context);
-      getContext(contextRouter, context!);
-    }
-  };
-
-  const vctStore = getVctConfigurationStore();
-  const vctRouter = express.Router();
-  app.use('/', vctRouter);
-  for (const key of Object.keys(vctStore)) {
-    const vct = vctStore[key];
-    getVct(vctRouter, vct);
-  };
-
-  const didStore = getDIDConfigurationStore();
-  const didRouter = express.Router();
-  app.use('/', didRouter);
-  for (const did of didStore.keys()) {
-    const didValue = didStore.get(did);
-    if (didValue?.path && didValue?.path.length) {
-      getDidWebSpec(didRouter, didValue);
-    }
-
   }
 
   debug("starting express server");

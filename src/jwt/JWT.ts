@@ -62,7 +62,6 @@ export class JWT {
         const algUsed = alg || this.header.alg || 'ES256';
         if (typeof(key) != 'function') {
             this.header.alg = algUsed;
-            this.header.kid = key.exportPublicKey();
         }
         if (this.header) {
             this.headerPart = this.encodeToBase64(this.header);

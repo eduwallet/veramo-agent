@@ -25,7 +25,14 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     const credential = new Credential();
     credential.issuer = issuer;
     credential.id = proofData.credentialDataSet.credentialId;
-    credential.setConfiguration(proofData.credentialDataSet.credentialConfiguration);
+    credential.setConfiguration(issuer.getCredentialConfiguration(credential.id)!);
+
+    // the format parameter can have an internal and an external value... not ideal
+    // if we have an internal value, set it as the credential format instead of the
+    // format defined by the external one in the configuration above
+    if (proofData.credentialDataSet.credentialConfiguration.format) {
+        credential.format = proofData.credentialDataSet.credentialConfiguration.format;
+    }
     // format is a part of the configuration. CredentialId defines a single format
     // We can only use format if we use credentialType to indicate a type and 
     // format to indicate format, whose combination would lead to a credentialId

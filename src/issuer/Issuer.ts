@@ -41,7 +41,7 @@ export class Issuer
         this.options = _options;
         this.metadata = _metadata;
         this.key = null;
-        this.keyRef = '';
+        this.keyRef = _options.key ?? '';
         this.name = _options.name;
         this.sessionData = new SessionStateManager();
         this.authorizationState = new Map<string,string>();
@@ -69,7 +69,9 @@ export class Issuer
             throw new Error('Missing issuer did configuration');
         }
         const dbKey = this.did.keys[0];
-        this.keyRef = dbKey.kid;
+        if (this.keyRef == '') {
+            this.keyRef = dbKey.kid;
+        }
 
         const pkeys = dbConnection.getRepository(PrivateKeyEntity);
         const pkey = await pkeys.findOneBy({alias:dbKey.kid});
@@ -206,7 +208,13 @@ export class Issuer
     }
 
     public async getDidDoc () {
-        return await Factory.toDIDDocument(this.key!);
+        return await Factory.toDIDDocument(this.key!, this.did?.did, [
+            {
+                "id": this.did!.did + '#oid4vci',
+                "type": "OID4VCI",
+                "serviceEndpoint": this.options.baseUrl
+            }
+        ], "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
     }
 
     public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
@@ -230,10 +238,13 @@ export class Issuer
         return false;
     }
 
-    public getCredentialConfiguration(id:string): CredentialConfiguration|null {
-        const credential = this.hasCredentialConfiguration(id);
+    public getCredentialConfiguration(id:string, decorate:boolean = true): CredentialConfiguration|null {
+        let credential:any = this.hasCredentialConfiguration(id);
         if (credential !== false) {
-            return this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration);
+            if (decorate) {
+                credential = this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration);
+            }
+            return credential;
         }
         return null;
     }
@@ -338,6 +349,7 @@ export class Issuer
         if (decoratedCredential.format == 'vc+sd-jwt') {
             decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential as CredentialConfigurationJwtVC);
         }
+        // vc+jwt is not a valid OpenID4VCI format
         else if (decoratedCredential.format == 'vc+jwt') {
             decoratedCredential.format = 'jwt_vc_json';
         }

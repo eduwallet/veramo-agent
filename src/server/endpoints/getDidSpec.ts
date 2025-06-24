@@ -1,7 +1,7 @@
 import { DIDStoreValue } from '#root/dids/Store';
 import { Factory } from '@muisit/cryptokey';
 import { Request, Router } from 'express'
-import { Issuer } from 'issuer/Issuer.js';
+import { Issuer } from '#root/issuer/Issuer';
 
 export function getDidSpec(issuer:Issuer) {
     issuer.router!.get('/.well-known/did.json', async (req: Request, res) => {
@@ -12,7 +12,8 @@ export function getDidSpec(issuer:Issuer) {
 
 export function getDidWebSpec(router:Router, value:DIDStoreValue) {
     router!.get(value.path!, async (req: Request, res) => {
-        const didDoc = await Factory.toDIDDocument(value.key);
+         // Sphereon requires the deprecated JsonWebKey2020 verification-method instead of the default JsonWebKey
+        const didDoc = await Factory.toDIDDocument(value.key, value.identifier.did, value.service, 'JsonWebKey2020');
         return res.json(didDoc);
     });
 }

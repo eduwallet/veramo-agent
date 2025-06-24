@@ -50,16 +50,16 @@ export class CredentialFactory
 
     public static async sign(credential:Credential)
     {
-        switch ((credential.configuration?.format || '') as string) {
+        switch ((credential.format || '') as string) {
             case 'dc+sd-jwt':
             case 'vc+sd-jwt':
-                const sdjwt = new SDJWT(credential, credential.configuration!.format);
+                const sdjwt = new SDJWT(credential, credential.format);
                 await sdjwt.sign();
                 break;
             case 'jwt_vc_json':
             case 'jwt_vc_json-ld':
             case 'vc+jwt':
-                const jose = new JOSE(credential, credential.configuration!.format);
+                const jose = new JOSE(credential, credential.format);
                 await jose.sign();
                 break;
         }

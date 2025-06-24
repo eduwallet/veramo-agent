@@ -34,6 +34,7 @@ export interface IssuerConfiguration {
     tokenEndpoint?:string;
     statusLists?:StatusListsOption;
     did:string;
+    key?:string;
     usesNonces?:boolean;
 }
 

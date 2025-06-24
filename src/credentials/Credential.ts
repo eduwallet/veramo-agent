@@ -23,6 +23,7 @@ export class Credential
     public id?:string; // the identifier in the credential data set for this session
     public principalId?:string; // a globally unique identifier for this type and issuer
     public type:string = 'GenericCredential';
+    public format:string = 'jwt_vc_json';
     public holder?:string;
     public configuration?:CredentialConfiguration;
     public credential:any; // basic readable data
@@ -35,6 +36,7 @@ export class Credential
     {
         this.configuration = config;
         this.type = getCredentialTypeFromConfig(config);
+        this.format = config.format;
     }
 
     public async resolve()

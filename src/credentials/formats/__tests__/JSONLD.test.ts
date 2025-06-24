@@ -45,7 +45,7 @@ test('JSONLD conversion', async () => {
     expect(output.proof).toBeDefined();
     expect(output.proof?.type).toBe('JsonWebSignature2020');
     expect(output.proof?.proofPurpose).toBe('assertionMethod');
-    expect(output.proof?.jws).toBe('eyJhbGciOiJFUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXSwia2lkIjoiMDNjNmUyNzkyYzliZTA2Mzk2YTA3ODE1MWJjODllNmY1NTM0MTJjYWIwMDBjN2VjNzFjNWI5OTI5MzgzNTZkOTgwIn0..YoBBc6L6KLrZ55urR00j82q-IUjvWkROfZ8aEsWzeX1sxUQFZw8AZvTyJ4qm-qjLLdS9W00rdoN4MZFueOtrvw');
+    expect(output.proof?.jws).toBe('eyJhbGciOiJFUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0..u4S8QfUM2vEBTvu-oHNTo4EA4CJoIzxrondzJrXzI4DVwapO0Hy3B-rtGlRqWJhUrdADX4Xi7zus_QYHzKjdIQ');
 });
 
 test('JSONLD conversion with unspecced attributes', async () => {
@@ -119,5 +119,5 @@ test('JSONLD conversion with credential type context', async () => {
     expect(output.proof).toBeDefined();
     expect(output.proof?.type).toBe('JsonWebSignature2020');
     expect(output.proof?.proofPurpose).toBe('assertionMethod');
-    expect(output.proof?.jws).toBe('eyJhbGciOiJFUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXSwia2lkIjoiMDNjNmUyNzkyYzliZTA2Mzk2YTA3ODE1MWJjODllNmY1NTM0MTJjYWIwMDBjN2VjNzFjNWI5OTI5MzgzNTZkOTgwIn0..kTHliR2khnm9p3fVvNWJmYZtAeeCWWtDAzNIa-KgmqXybtYc7_T8opqMvdLqSbcxmaN6BVD_UWft0KwozOg54g');
+    expect(output.proof?.jws).toBe('eyJhbGciOiJFUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0..FCeRDRWugsCOrJ5KKn3zOtHdGadMwdKXB4OAKnjtX5D0quUgSqZdX_vBHqSDP3alzigdxi7qOoVBODSTIz1b0Q');
 });

@@ -56,7 +56,8 @@ export class JOSE
         jwt.header = {
             alg: this.credential.issuer!.algorithm(),
             kid: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
-            typ: this.type,
+            // VCDM 1.1: if typ is present, it must be JWT
+            typ: this.type == 'vc+jwt' ? this.type : 'JWT',
             cty: 'vc'
         };
 
@@ -69,6 +70,8 @@ export class JOSE
         // When the iat (Issued At) and/or exp (Expiration Time) JWT claims are present, they 
         // represent the issuance and expiration time of the signature, respectively.
         jwt.payload.iat = moment(this.date).unix();
+        // if nbf is present, it MUST represent the issuance date (VCDM 1.1)
+        jwt.payload.nbf = jwt.payload.iat; // Sphereon requires this claim
         if (this.credential.metaData.expirationDate) {
             // signature at least expires at the expiration date of the credential itself
             jwt.payload.exp = moment(this.credential.metaData.expirationDate).unix();

@@ -66,6 +66,7 @@ export class VCDM
         if (this.credential.dictionary[value]) {
             let retval:LanguageObject[] = [];
             for (const label of this.credential.dictionary[value]) {
+                return label.value;
                 retval.push({
                     "@value": label.value,
                     "@language": label.locale

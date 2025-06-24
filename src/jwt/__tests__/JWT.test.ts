@@ -16,13 +16,13 @@ test('create JWT', async () => {
     await jwt.sign(key);
 
     expect(jwt.headerPart).toBeDefined();
-    expect(jwt.headerPart).toBe('eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6IjVjMzE5YjhjMmQ0ODAzMjAyNjczZWQxYWIyNGJkMzQyNWI5MTRkNDI0ODE5NjdhYzRjZDkzY2NmYzdkZWNiMzkifQ');
+    expect(jwt.headerPart).toBe('eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9');
     expect(jwt.payloadPart).toBeDefined();
     expect(jwt.payloadPart).toBe('eyJjbGFpbSI6InNvbWV0aGluZyJ9');
     expect(jwt.signaturePart).toBeDefined();
-    expect(jwt.signaturePart).toBe('jgHna2E5bzTLOGAux4znzPFy926jhgkoGilambOalqBSBrgpa9STbbCG7ef2IfydLuNzH6kSCI3bNjzOLs8aBg');
+    expect(jwt.signaturePart).toBe('LXlbxK-IrpDrS9eKECt50QUK7d4QUWvq__NeW1DRBVIzCjyoIR1guPeaa-0NAo529ZNy8sXnD8nrEHsX3sg8DA');
     expect(jwt.token).toBeDefined();
-    expect(jwt.token).toBe('eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6IjVjMzE5YjhjMmQ0ODAzMjAyNjczZWQxYWIyNGJkMzQyNWI5MTRkNDI0ODE5NjdhYzRjZDkzY2NmYzdkZWNiMzkifQ.eyJjbGFpbSI6InNvbWV0aGluZyJ9.jgHna2E5bzTLOGAux4znzPFy926jhgkoGilambOalqBSBrgpa9STbbCG7ef2IfydLuNzH6kSCI3bNjzOLs8aBg');
+    expect(jwt.token).toBe('eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJjbGFpbSI6InNvbWV0aGluZyJ9.LXlbxK-IrpDrS9eKECt50QUK7d4QUWvq__NeW1DRBVIzCjyoIR1guPeaa-0NAo529ZNy8sXnD8nrEHsX3sg8DA');
 });
 
 

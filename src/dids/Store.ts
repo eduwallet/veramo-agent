@@ -14,12 +14,14 @@ export interface DIDStoreValue {
     identifier: Identifier;
     key:CryptoKey;
     path?:string;
+    service?:any;
 }
 
 export interface DIDConfiguration {
     did?: string
     alias?: string;
     path?:string;
+    service?:any;
     type: string;
     provider: string;
     identifier: Identifier;
@@ -70,11 +72,12 @@ class DIDConfigurationStore {
             value = {
                 identifier: result,
                 key: ckey,
-                ...(configuration.path ? { path: configuration.path} : null)
+                ...(configuration.path ? { path: configuration.path} : null),
+                ...(configuration.service ? {service: configuration.service }: null)
             };
         }
 
-        this.configuration[key] = configuration;
+        this.configuration[key] = value;
     }
 
     private async initialiseKey(configuration:DIDConfiguration): Promise<DIDStoreValue>
@@ -125,7 +128,8 @@ class DIDConfigurationStore {
         return {
             identifier,
             key:ckey,
-            ...(configuration.path ? { path: configuration.path} : null)
+            ...(configuration.path ? { path: configuration.path} : null),
+            ...(configuration.service ? {service: configuration.service }: null)
         };
     }
 
