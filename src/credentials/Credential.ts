@@ -72,25 +72,30 @@ export class Credential
                 }
         }).then((r) => r.json()).catch((e) => { console.log(e); return null;});
 
-        if (!listData || !listData.url) {
+        if (!listData || !listData.index) {
             throw new Error("Unable to contact status server");
         }
 
-        return {
-            id: listData.id,
-            type: listData.purpose == 'revocation' ? 'RevocationList2021Status' : 'SuspensionList2021Status',
-            statusPurpose: listData.purpose,
-            statusListIndex: listData.index,
-            statusListCredential: listData.url
-        };
+        // the status list server automatically returns the right status element depending
+        // on the configured list type.
+        // However, because the IETF type status list requires a different credential claim,
+        // we store the complete status list return value for later
+        return listData;
     }
 
     private async handleStatusLists()
     {
         const statusses:StatusList[] = [];
-        if (this.issuer!.options?.statusLists && this.issuer!.options?.statusLists[this.type!]) {
-            const slist = this.issuer!.options.statusLists[this.type!];
-            statusses.push(await this.reserveOnStatusList(slist));
+        if (this.issuer!.options?.statusLists && this.issuer!.options?.statusLists[this.id!]) {
+            const slist = this.issuer!.options.statusLists[this.id!];
+            if (Array.isArray(slist)) {
+                for (let sl of slist) {
+                    statusses.push(await this.reserveOnStatusList(sl));
+                }
+            }
+            else {
+                statusses.push(await this.reserveOnStatusList(slist));
+            }
         }
 
         if (statusses.length > 0) {

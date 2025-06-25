@@ -82,11 +82,18 @@ export class VCDM
         if (this.credential.metaData.credentialStatus) {
             if (this.credential.metaData.credentialStatus.type) {
                 // only one entry
-                baseCredential.credentialStatus = [Object.assign({}, this.credential.metaData.credentialStatus)];
+                // The status list agent returns a correct credentialStatus element in the credentialStatus attribute
+                if (this.credential.metaData.credentialStatus.type != 'statuslist+jwt') {
+                    // IETF says the the status claim is a JWT claim, not a VC claim, so we skip it
+                    baseCredential.credentialStatus = [Object.assign({}, this.credential.metaData.credentialStatus.credentialStatus)];
+                }
             }
             else if (this.credential.metaData.credentialStatus.length) {
                 // array of entries
-                baseCredential.credentialStatus = this.credential.metaData.credentialStatus.slice();
+                // Return only the status list elements of the non-IETF statusses. We add the JWT claim later on
+                baseCredential.credentialStatus = this.credential.metaData.credentialStatus
+                    .filter((el:any) => el.type != 'statuslist+jwt')
+                    .map((el:any) => el.credentialStatus);
             }
         }
     }
