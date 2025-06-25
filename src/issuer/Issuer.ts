@@ -161,33 +161,36 @@ export class Issuer
         }
     }
 
-    public async storeCredential(session:SessionState, credential:any)
+    public async storeCredential(session:SessionState, credential:Credential)
     {
-        if (session && credential && typeof(credential) !== 'string') {
-            const dbConnection = await getDbConnection();
-            const repo = dbConnection.getRepository(CredentialEntity);
-            const dbCred = new CredentialEntity();
-            dbCred.uuid = createUniqueId();
-            dbCred.state = session.state;
-            dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
-            dbCred.claims = credential.credentialSubject as StringKeyedObject;
-            if (credential.expirationDate) {
-                dbCred.expirationDate = moment((credential.expirationDate as string) || undefined).toDate();
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(CredentialEntity);
+        const dbCred = new CredentialEntity();
+        dbCred.uuid = createUniqueId();
+        dbCred.state = session.state;
+        dbCred.issuanceDate = moment((credential.metaData.issuanceDate as string) || undefined).toDate();
+        dbCred.claims = credential.data as StringKeyedObject;
+        if (credential.metaData.expirationDate) {
+            dbCred.expirationDate = moment((credential.metaData.expirationDate as string) || undefined).toDate();
+        }
+        else {
+            dbCred.expirationDate = undefined;
+        }
+        dbCred.holder = session.holder || '';
+        dbCred.credpid = session.principalCredentialId || '';
+        dbCred.issuer = this.name;
+        dbCred.metadata = this.getCredentialConfiguration(session.credentialId) as StringKeyedObject;
+        dbCred.credentialId = session.credentialId || '';
+        if (credential.metaData.credentialStatus) {
+            if (!Array.isArray(credential.metaData.credentialStatus)) {
+                dbCred.statuslists = [credential.metaData.credentialStatus];
             }
             else {
-                dbCred.expirationDate = undefined;
+                dbCred.statuslists = credential.metaData.credentialStatus;
             }
-            dbCred.holder = session.holder || '';
-            dbCred.credpid = session.principalCredentialId || '';
-            dbCred.issuer = this.name;
-            dbCred.metadata = this.getCredentialConfiguration(session.credentialId) as StringKeyedObject;
-            dbCred.credentialId = session.credentialId || '';
-            if (credential.credentialStatus && typeof(credential.credentialStatus) == 'object') {
-                dbCred.statuslists = credential.credentialStatus;
-            }
-            await repo.save(dbCred);
-            session.uuid = dbCred.uuid;
         }
+        await repo.save(dbCred);
+        session.uuid = dbCred.uuid;
     }
 
     public async clearExpired()
@@ -360,7 +363,7 @@ export class Issuer
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
     {
       const dbConnection = await getDbConnection();
-      var qb = dbConnection.createQueryBuilder().select('c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(CredentialEntity, 'c').where('c.id > 0');
+      var qb = dbConnection.createQueryBuilder().select('c.uuid, c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(CredentialEntity, 'c').where('c.id > 0');
       if (primaryId && primaryId.length) {
           qb = qb.andWhere('c.credpid=:credpid', {credpid: primaryId});
       }
@@ -394,12 +397,14 @@ export class Issuer
             debug("credential has no statuslists associated");
             throw new Error("No statuslist available");
         }
-        // convert the if-only-one-than-not-an-array spec to an always-array-even-if-only-one implementation
+
         var retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
+        // we should have store this as an array, but you never know with these specs...
         const statuslists = Array.isArray(credential.statuslists) ? credential.statuslists : [credential.statuslists];
+
         debug("looping over " + statuslists.length + " statuslists");
         for (const statlist of statuslists) {
-            if (!listName || listName == statlist.id) {
+            if (!listName || statlist.credentialStatus?.id?.startsWith(listName)) {
                 retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
             }
         }
@@ -425,28 +430,42 @@ export class Issuer
     private async revokeCredentialFromList(credential:CredentialEntity, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
     {
         debug("revoking credential of type " + credential.credentialId);
-        const slist = this.options.statusLists![credential.credentialId];
-        if (slist) {
-            debug("invoking " + slist.revoke + " with " + statlist.statusListIndex + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
-            const returnValue:any = await fetch(slist.revoke, {
-                method: 'POST',
-                body: JSON.stringify({
-                    list: statlist.statusListCredential,
-                    index: statlist.statusListIndex,
-                    state: doRevoke ? 'revoke' : 'unrevoke'
-                }),
-                headers: {
-                    'Content-type': 'application/json',
-                    'Authorization': 'Bearer ' + slist.token,
+        let slists = this.options.statusLists![credential.credentialId];
+        if (slists) {
+            // make sure it is an array
+            if (!Array.isArray(slists)) slists=[slists];
+            for (const slist of slists) {
+                // if we actually have a revoke interface, revoke it
+                // TODO: perhaps create other interfaces/services for suspend/message/etc
+                if (slist.url == statlist.uri && slist.revoke) {
+                    debug("invoking " + slist.revoke + " with " + statlist + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
+                    try {
+                        const returnValue:any = await fetch(slist.revoke, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                list: statlist.type == 'statuslist+jwt' ? statlist.credentialStatus.uri : statlist.credentialStatus.statusListCredential,
+                                index: statlist.index,
+                                status: doRevoke ? 'revoke' : 'unrevoke'
+                            }),
+                            headers: {
+                                'Content-type': 'application/json',
+                                'Authorization': 'Bearer ' + slist.token,
+                            }
+                        }).then((r) => r.json());
+                        debug("return value is " + JSON.stringify(returnValue));
+
+                        // an error in the call will cause an exception which is caught upstairs
+                        switch (returnValue.status) {
+                            case 'REVOKED': return StatusListRevocationState.REVOKED;
+                            case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
+                            case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
+                            default: return StatusListRevocationState.UNKNOWN;
+                        }
+                    }
+                    catch (e) {
+                        debug("caught exception ", e, " on revocation");
+                    }
                 }
-            }).then((r) => r.json());
-            debug("return value is " + JSON.stringify(returnValue));
-            // an error in the call will cause an exception which is caught upstairs
-            switch (returnValue.state) {
-                case 'REVOKED': return StatusListRevocationState.REVOKED;
-                case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
-                case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
-                default: return StatusListRevocationState.UNKNOWN;
             }
         }
         else {

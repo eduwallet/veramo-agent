@@ -50,7 +50,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     session.credentialType = credential.type;
 
     debug("storing credential in the database");
-    await issuer.storeCredential(session, credential.credential);
+    await issuer.storeCredential(session, credential);
 
     await CredentialFactory.sign(credential);
 

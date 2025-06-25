@@ -80,6 +80,10 @@ export class Credential
         // on the configured list type.
         // However, because the IETF type status list requires a different credential claim,
         // we store the complete status list return value for later
+        //
+        // Store the status list api call to make sure we can distinguish them later on
+        listData.uri = statusListData.url;
+
         return listData;
     }
 

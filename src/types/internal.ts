@@ -1,7 +1,7 @@
 import { SessionState } from '#root/utils/SessionStateManager';
 import { ErrorCodes } from '#root/types/api';
 import { StringKeyedObject } from '#root/types/index';
-import { StatusListsOption } from '#root/types/specification/statuslists';
+import { StatusListsOption } from '#root/types/internal/statuslists';
 import { CredentialOffer } from '#root/types/specification/credential_offer';
 import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
 
