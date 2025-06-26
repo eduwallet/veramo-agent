@@ -21,16 +21,16 @@ export function getCredential(issuer:Issuer, path:string)
                     return sendErrorResponse(response, 400, { error: error.error, description: error.description });
                 }
                 const proofData:CredentialProofData = error.data;
-                await openObserverLog(proofData.session.id, "credential-request", request.body);
-                await openObserverLog(proofData.session.id, "credential-request_proof", request.body.proof.jwt);
-                await issuer.storeRequestResponseData(proofData.session.id, "get_credential-request", request.body);
-                await issuer.storeRequestResponseData(proofData.session.id, "get_credential-request_proof", request.body.proof.jwt, true);
+                await openObserverLog(proofData.session.uuid, "credential-request", request.body);
+                await openObserverLog(proofData.session.uuid, "credential-request_proof", request.body.proof.jwt);
+                await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-request", request.body);
+                await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-request_proof", request.body.proof.jwt, true);
 
                 const credentialResponse = await issueCredential(issuer, proofData);
 
-                await openObserverLog(proofData.session.id, "credential-response", credentialResponse);
-                await issuer.storeRequestResponseData(proofData.session.id, "get_credential-response", credentialResponse);
-                await issuer.storeRequestResponseData(proofData.session.id, "get_credential-response_jwt", credentialResponse.credential, true);
+                await openObserverLog(proofData.session.uuid, "credential-response", credentialResponse);
+                await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-response", credentialResponse);
+                await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-response_jwt", credentialResponse.credential, true);
                 return response.json(credentialResponse);
             }
             catch (e) {

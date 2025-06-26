@@ -12,14 +12,14 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
 {
     debug("issuing credential");
     const { session } = proofData;
-    session.lastUpdatedAt = +new Date()
+    session.data.lastUpdatedAt = +new Date()
 
     const nonce = createUniqueId();
     if (issuer.usesNonces) {
         // remove the old nonce and create a new one
         debug("creating a new nonce");
         issuer.nonceStates.delete(proofData.nonce);
-        issuer.nonceStates.set(nonce, session.id);
+        issuer.nonceStates.set(nonce, session.uuid);
     }
 
     const credential = new Credential();
@@ -38,16 +38,16 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     // format to indicate format, whose combination would lead to a credentialId
     // credential.format = proofData.format;
     credential.data = proofData.credentialDataSet.data;
-    credential.metaData = session.metaData;
+    credential.metaData = session.data.metaData;
     credential.holder = proofData.did;
 
     if (!await CredentialFactory.resolve(credential)) {
         debug("error creating actual credential");
         throw Error('Could not create a credential');
     }
-    session.credential = credential.credential;
-    session.principalCredentialId = credential.principalId || '';
-    session.credentialType = credential.type;
+    session.data.credential = credential.credential;
+    session.data.principalCredentialId = credential.principalId || '';
+    session.data.credentialType = credential.type;
 
     debug("storing credential in the database");
     await issuer.storeCredential(session, credential);
@@ -55,8 +55,8 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     await CredentialFactory.sign(credential);
 
     debug("updating session status");
-    session.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
-    issuer.storeSession(session);
+    session.data.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
+    await issuer.storeSession(session);
 
     const retval = { 
         credential: credential.output,

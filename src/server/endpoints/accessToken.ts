@@ -19,18 +19,18 @@ export function accessToken(issuer: Issuer, tokenPath:string) {
     issuer.router!.post(tokenPath,
         async (request:Request<TokenRequest>, response: Response<TokenResponse>) => {
             try {
-                const error = validateAccessTokenRequest(issuer, request.body);
+                const error = await validateAccessTokenRequest(issuer, request.body);
                 if (error.error != ErrorCodes.NO_ERROR) {
                     return sendErrorResponse(response, 400, { error: error.error, description: error.description });
                 }
                 const accessTokenResponse = await createAccessTokenResponse(issuer, error.data.session);
-                const sessionId = error.data.session.id;
+                const sessionId = error.data.session.uuid;
 
-                await openObserverLog(sessionId || '', "accesstoken-request", request.body);
-                issuer.storeRequestResponseData(sessionId!, "access_token-request", request.body);
+                await openObserverLog(sessionId!, "accesstoken-request", request.body);
+                await issuer.storeRequestResponseData(sessionId!, "access_token-request", request.body);
                 response.set({'Cache-Control': 'no-store', Pragma: 'no-cache'});
-                await openObserverLog(sessionId || '', "accesstoken-response", accessTokenResponse);
-                issuer.storeRequestResponseData(sessionId!, "access_token-response", accessTokenResponse);
+                await openObserverLog(sessionId!, "accesstoken-response", accessTokenResponse);
+                await issuer.storeRequestResponseData(sessionId!, "access_token-response", accessTokenResponse);
                 return response.status(200).json(accessTokenResponse)
             }
             catch (e) {

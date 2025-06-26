@@ -3,7 +3,7 @@ import { StringKeyedObject } from "#root/types/index";
 import { CredentialConfiguration } from "#root/types/specification/metadata";
 import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
-import { StatusList } from "#root/types/specification/statuslists";
+import { StatusList } from "#root/types/internal/statuslists";
 
 export interface LanguageLabel
 {

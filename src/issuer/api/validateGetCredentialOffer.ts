@@ -2,15 +2,15 @@ import Debug from 'debug';
 const debug = Debug('issuer:api');
 import { Request } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
-import { CredentialOfferStatus, ErrorCodes } from 'types/api.js';
+import { ErrorCodes } from 'types/api.js';
 import { ApiState } from 'types/internal.js';
 
-export function validateGetCredentialOffer(issuer:Issuer, request:Request)
+export async function validateGetCredentialOffer(issuer:Issuer, request:Request)
 {
     debug("validating get-credential-offer", request.params);
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     const { id } = request.params;
-    const session = issuer.getSessionById(id);
+    const session = await issuer.getSessionById(id);
     if (!session) {
         debug("invalid because session not found", id);
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -25,8 +25,8 @@ export function validateGetCredentialOffer(issuer:Issuer, request:Request)
     //    return error;
     //}
 
-    if (!session.credentialOffer || !session.credentialOffer.grants) {
-        debug("error because no credential offer found", session.credentialOffer);
+    if (!session.data.credentialOffer || !session.data.credentialOffer.grants) {
+        debug("error because no credential offer found", session.data.credentialOffer);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No credential offer found";
         return error;

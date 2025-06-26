@@ -8,7 +8,7 @@ import { CredentialOfferData } from 'types/specification/credential_offer.js';
 import { CreateCredentialData } from 'types/internal.js';
 import { CredentialOfferStatus } from 'types/api.js';
 
-export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):CreateCredentialData {
+export async function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):Promise<CreateCredentialData> {
     debug("creating credential offer", request);
     let { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(request.grants);
 
@@ -40,17 +40,15 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     // before we create a new session, clear out the old ones
     issuer.clearExpired();
 
-    const session = issuer.getSessionById();
-    session.createdAt = Date.now();
-    session.lastUpdatedAt = Date.now();
-    session.status = CredentialOfferStatus.OFFER_CREATED;
-    session.credentialOffer = credentialOffer;
-    session.metaData = request.credentialMetadata || {};
-    session.credentialId = credentialConfigIds[0];
+    const session = await issuer.getSessionById();
+    session.data.status = CredentialOfferStatus.OFFER_CREATED;
+    session.data.credentialOffer = credentialOffer;
+    session.data.metaData = request.credentialMetadata || {};
+    session.data.credentialId = credentialConfigIds[0];
 
     // store the requested dataset as a credential-data-set named after the credential id
-    session.credentialDataSets = {};
-    session.credentialDataSets[credentialConfigIds[0]] = {
+    session.data.credentialDataSets = {};
+    session.data.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
         credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0], false),
         data: request.credentialDataSupplierInput
@@ -58,24 +56,22 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
 
     if (userPin) {
         debug("using pincode ", userPin);
-        session.pinCode = userPin;
+        session.data.pinCode = userPin;
     }
 
     if (preAuthorizedCode) {
         debug("using pre-authorized_code", preAuthorizedCode);
         session.state = preAuthorizedCode;
-        issuer.authorizationState.set(preAuthorizedCode, session.id);
     }
     if (issuerState) {
         debug("using issuerState", issuerState);
         session.state = issuerState;
-        issuer.authorizationState.set(issuerState, session.id);
     }
 
-    issuer.storeSession(session);
+    await issuer.storeSession(session);
 
     const retval = {
-        id: session.id,
+        id: session.uuid,
         ...(userPin && {pinCode:userPin })
     };
     debug("returning ", retval);

@@ -66,6 +66,7 @@ export class VCDM
         if (this.credential.dictionary[value]) {
             let retval:LanguageObject[] = [];
             for (const label of this.credential.dictionary[value]) {
+                // TODO: this was temporarily changed due to Sphereon and Unime not supporting it
                 return label.value;
                 retval.push({
                     "@value": label.value,

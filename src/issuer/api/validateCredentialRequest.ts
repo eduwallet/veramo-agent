@@ -6,10 +6,11 @@ import { Issuer } from '#root/issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 import { ApiState } from '#root/types/internal';
 import { CredentialRequest } from '#root/types/specification/credential_request';
-import { SessionState } from '#root/utils/SessionStateManager';
 import { JWT } from '#root/jwt/JWT';
 import { getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
+import { Session } from '#root/packages/datastore/entities/Session';
+import moment from 'moment';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -24,7 +25,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
 
-    let session:SessionState|null = null;
+    let session:Session|null = null;
 
     // try to decode the access token as if it were a JWT
     try {
@@ -50,17 +51,9 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         }
     
         const stateid = data?.payload?.issuer_state;
-        const sessionId = issuer.authorizationState.get(stateid);
+        session = await issuer.getSessionByState(stateid);
 
-        if (!sessionId) {
-            debug("invalid because we could not find the state", stateid);
-            error.error = ErrorCodes.INVALID_REQUEST;
-            error.description = "No state found";
-            return error;
-        }
-        session = issuer.getSessionById(sessionId);
-
-        if (!issuer.usesAuthorisedCodeFlow() && session && session.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
+        if (!issuer.usesAuthorisedCodeFlow() && session && session.data?.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
             debug("invalid because we use pre-authorised code flow and did not yet create an access token");
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "No access token created";
@@ -78,24 +71,24 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         error.description = "No state found";
         return error;
     }
-    session.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
-    issuer.storeSession(session);
+    session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
+    await issuer.storeSession(session);
 
     let credentialDataSet:any = null;
     if (request.body.credential_identifier) {
-        credentialDataSet = session.credentialDataSets[request.body.credential_identifier];
+        credentialDataSet = session.data?.credentialDataSets[request.body.credential_identifier];
     }
 
     if (!credentialDataSet) {
         // see if we have a set based on the session credential id
-        credentialDataSet = session.credentialDataSets[session.credentialId];
+        credentialDataSet = session.data?.credentialDataSets[session.data?.credentialId];
     }
 
     if (!credentialDataSet) {
         // if we did not get a credentialDataSet back, we rely on the id as documented in the session
-        const credentialConfiguration = issuer.getCredentialConfiguration(session.credentialId, false);
+        const credentialConfiguration = issuer.getCredentialConfiguration(session.data?.credentialId, false);
         if (credentialConfiguration === null) {
-            debug("invalid because credential configuration could not be found", session.credentialId);
+            debug("invalid because credential configuration could not be found", session.data?.credentialId);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Credential type not found";
             return error;
@@ -108,7 +101,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
             return error;
         }
         credentialDataSet = {
-            credentialId: session.credentialId,
+            credentialId: session.data?.credentialId,
             credentialConfiguration,
             data: {} // we hope the credential implementation can determine the required values itself
         };
@@ -119,8 +112,8 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         debug("invalid proof");
         return error;
     }
-    session.holder = error.data.did;
-    issuer.storeSession(session);
+    session.data.holder = error.data.did;
+    await issuer.storeSession(session);
 
     // return a CredentialProofData object
     error.data = { session, credentialDataSet, nonce: error.data.nonce, key: error.data.key, did: error.data.did};
@@ -128,7 +121,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     return error;
 }
 
-async function validateCredentialRequestProof(issuer:Issuer, session:SessionState, credentialRequest:CredentialRequest): Promise<ApiState>
+async function validateCredentialRequestProof(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState>
 {
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     // we only support JWT proofs at this moment
@@ -209,12 +202,8 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     const { iss, aud, iat, nonce } = payload;
     // in the body:
     // iss: optional, must not be present for pre-auth, contains client_id
-    if (session.issuerState && !iss) {
-        debug("Proof is invalid because iss claim is not found", iss);
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "No iss claim found";
-        return error;
-    }
+    // not testing for this. We could test that it is not present in pre-auth, but who cares
+    // we could test that it IS present in auth flow, but it is optional...
 
     // aud: required, credential issuer identifier
     if (!aud || aud !== issuer.metadata.credential_issuer) {
@@ -226,8 +215,8 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
 
     // iat: required, time the proof was created
     // cannot be after the expiration time
-    if (!iat || iat > Math.round(session.expires / 1000)) {
-        debug("Proof is invalid because it expired based in iat", iat, Math.round(session.expires / 1000));
+    if (!iat || moment(iat * 1000).toDate() > session.expirationDate!) {
+        debug("Proof is invalid because it expired based in iat", iat, (session.expirationDate!.getTime() / 1000));
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid iat claim";
         return error;
@@ -250,7 +239,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
             return error;
         }
 
-        if (cNonceState !== session.id) {
+        if (cNonceState !== session.uuid) {
             debug("Proof is invalid because the nonce does not match", cNonceState, session.id);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Invalid nonce";

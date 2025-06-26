@@ -1,13 +1,13 @@
-import { SessionState } from '#root/utils/SessionStateManager';
 import { ErrorCodes } from '#root/types/api';
 import { StringKeyedObject } from '#root/types/index';
 import { StatusListsOption } from '#root/types/internal/statuslists';
 import { CredentialOffer } from '#root/types/specification/credential_offer';
 import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
+import { Session } from '#root/packages/datastore/entities/Session';
 
 // Session state as maintained by the Issuer in the whole process of creating an offer up
 // to receiving notifications
-export interface IssuerSessionData extends SessionState {
+export interface IssuerSessionData {
     createdAt: number;
     lastUpdatedAt: number;
     status: string;
@@ -56,7 +56,7 @@ export interface CredentialDataSet {
 }
 
 export interface CredentialProofData {
-    session:IssuerSessionData;
+    session:Session;
     credentialDataSet:CredentialDataSet;
     nonce:string;
     key: any;

@@ -10,24 +10,24 @@ import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 export function getCredentialOffer(issuer:Issuer, getPath:string) {
     issuer.router!.get(getPath, async (request: Request, response: Response) => {
         try {
-            const error = validateGetCredentialOffer(issuer, request);
+            const error = await validateGetCredentialOffer(issuer, request);
             if (error.error != ErrorCodes.NO_ERROR) {
                 return sendErrorResponse(response, 400, { error: error.error, description: error.description });
             }
 
             // validation succeeded, so we MUST have a session
             const session = error.data.session!;
-            await openObserverLog(session.id, "credentialoffer-request", request.params);
-            issuer.storeRequestResponseData(session.id, "credential_offer-request", request.params);
+            await openObserverLog(session.uuid, "credentialoffer-request", request.params);
+            await issuer.storeRequestResponseData(session.uuid, "credential_offer-request", request.params);
 
             session.status = CredentialOfferStatus.OFFER_URI_RETRIEVED;
             session.lastUpdatedAt = +new Date()
-            issuer.storeSession(session);
+            await issuer.storeSession(session);
 
-            await openObserverLog(session.id, "credentialoffer-response", session.credentialOffer.credential_offer);
-            issuer.storeRequestResponseData(session.id, "credential_offer-response", session.credentialOffer.credential_offer);
-            debug("returning ", session.credentialOffer);
-            return response.json(session.credentialOffer);
+            await openObserverLog(session.uuid, "credentialoffer-response", session.data.credentialOffer?.credential_offer);
+            await issuer.storeRequestResponseData(session.uuid, "credential_offer-response", session.data.credentialOffer?.credential_offer);
+            debug("returning ", session.data.credentialOffer);
+            return response.json(session.data.credentialOffer);
         }
         catch (e) {
             return sendErrorResponse(response, 500, {

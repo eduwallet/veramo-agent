@@ -3,7 +3,7 @@ const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";
-import { StatusList } from "#root/types/specification/statuslists";
+import { StatusList, StatusListIETF, StatusListW3C } from "#root/types/internal/statuslists";
 import { StatusListRevocationState } from '#root/types/api';
 import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
@@ -15,12 +15,13 @@ import { Credential as CredentialEntity, Identifier as IdentifierEntity, Private
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import { Credential } from "#root/credentials/Credential";
 import { getVctForCredentialType } from '#root/vct/Store';
-import { SessionState, SessionStateManager } from '#root/utils/SessionStateManager';
+import { SessionStateManager } from '#root/utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from '#root/issuer/lib/retrieveASServerKey';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
+import { Session } from '#root/packages/datastore/entities/Session';
 
 export class Issuer
 {
@@ -32,7 +33,6 @@ export class Issuer
     public keyRef:string;
     public router:Router|undefined;
     public sessionData:SessionStateManager;
-    public authorizationState:Map<string, string>;
     public nonceStates:Map<string, string>;
     public serverKeys:StringKeyedObject;
     public usesNonces:boolean;
@@ -43,8 +43,7 @@ export class Issuer
         this.key = null;
         this.keyRef = _options.key ?? '';
         this.name = _options.name;
-        this.sessionData = new SessionStateManager();
-        this.authorizationState = new Map<string,string>();
+        this.sessionData = new SessionStateManager(this.name);
         this.nonceStates = new Map<string, string>();
         this.serverKeys = {};
         this.usesNonces = _options.usesNonces ?? true;
@@ -127,41 +126,38 @@ export class Issuer
         };   
     }
 
-    public getSessionById(id: string = ''): SessionState {
-        return this.sessionData.get(id, (el:SessionState) => { el.state = id; return el; });
+    public async getSessionById(id: string = ''): Promise<Session> {
+        return await this.sessionData.get(id, (el:Session) => { el.uuid = id; return el; });
     }
-    public storeSession(state:SessionState)
-    {
-        this.sessionData.set(state);
+    public async getSessionByState(id: string = ''): Promise<Session|null> {
+        return await this.sessionData.getByState(id);
     }
-    public removeSession(state:SessionState)
+    public async storeSession(state:Session)
     {
-        if (this.authorizationState.has(state.issuerState)) {
-            this.authorizationState.delete(state.issuerState);
-        }
-        if (this.authorizationState.has(state.preAuthorizedCode)) {
-            this.authorizationState.delete(state.preAuthorizedCode);
-        }
-        this.sessionData.clear(state.id);
+        await this.sessionData.set(state);
+    }
+    public async removeSession(state:Session)
+    {
+        await this.sessionData.clear(state.uuid);
     }
 
     public async storeRequestResponseData(id:string, phase:string, data:any, isJwt = false)
     {
-        const session = this.getSessionById(id);
+        const session = await this.getSessionById(id);
         if (session) {
-            if (!session.requestResponseData) {
-                session.requestResponseData = {};
+            if (!session.data.requestResponseData) {
+                session.data.requestResponseData = {};
             }
 
             if (isJwt && typeof(data) == 'string') {
                 // decode the JWT to get the payload
                 data = JWT.fromToken(data);
             }
-            session.requestResponseData[phase] = data;
+            session.data.requestResponseData[phase] = data;
         }
     }
 
-    public async storeCredential(session:SessionState, credential:Credential)
+    public async storeCredential(session:Session, credential:Credential)
     {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(CredentialEntity);
@@ -176,11 +172,11 @@ export class Issuer
         else {
             dbCred.expirationDate = undefined;
         }
-        dbCred.holder = session.holder || '';
-        dbCred.credpid = session.principalCredentialId || '';
+        dbCred.holder = session.data.holder || '';
+        dbCred.credpid = session.data.principalCredentialId || '';
         dbCred.issuer = this.name;
-        dbCred.metadata = this.getCredentialConfiguration(session.credentialId) as StringKeyedObject;
-        dbCred.credentialId = session.credentialId || '';
+        dbCred.metadata = this.getCredentialConfiguration(session.data.credentialId) as StringKeyedObject;
+        dbCred.credentialId = session.data.credentialId || '';
         if (credential.metaData.credentialStatus) {
             if (!Array.isArray(credential.metaData.credentialStatus)) {
                 dbCred.statuslists = [credential.metaData.credentialStatus];
@@ -190,15 +186,12 @@ export class Issuer
             }
         }
         await repo.save(dbCred);
-        session.uuid = dbCred.uuid;
+        session.data.uuid = dbCred.uuid;
     }
 
     public async clearExpired()
     {
-        // do some random state cleanup to keep memory use down
-        this.sessionData.clearAll();
-        //await this.vcIssuer.cNonces.clearExpired();
-        //await this.vcIssuer.uris?.clearExpired();
+        await this.sessionData.clearAll();
     }
 
     public checkCredentialData(type:string, claims: any)
@@ -440,10 +433,11 @@ export class Issuer
                 if (slist.url == statlist.uri && slist.revoke) {
                     debug("invoking " + slist.revoke + " with " + statlist + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
                     try {
+                        const listuri = statlist.type == 'statuslist+jwt' ? (statlist.credentialStatus as StatusListIETF).uri : (statlist.credentialStatus as StatusListW3C).statusListCredential
                         const returnValue:any = await fetch(slist.revoke, {
                             method: 'POST',
                             body: JSON.stringify({
-                                list: statlist.type == 'statuslist+jwt' ? statlist.credentialStatus.uri : statlist.credentialStatus.statusListCredential,
+                                list: listuri,
                                 index: statlist.index,
                                 status: doRevoke ? 'revoke' : 'unrevoke'
                             }),

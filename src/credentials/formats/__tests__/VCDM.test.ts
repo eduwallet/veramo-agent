@@ -34,7 +34,9 @@ test('VCDM conversion', () => {
     expect(credential.output).toBeUndefined();
     expect(result).toBeDefined();
 
-    const expected = {"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","CredentialTest"],"credentialSubject":{"name":"Test","id":"did:test:holder"},"issuer":{"id":"did:test:me","name":[{"@value":"Name","@language":"en_US"},{"@value":"Naam","@language":"nl_NL"}],"description":[{"@value":"Descr","@language":"en_US"}]},"name":[{"@value":"TestCredential","@language":"en_US"},{"@value":"TestDingetje","@language":"nl_NL"}],"description":[{"@value":"Beschrijving","@language":"nl_NL"}],"validFrom":"2025-01-01T01:01:01+01:00"};
+    //const expected = {"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","CredentialTest"],"credentialSubject":{"name":"Test","id":"did:test:holder"},"issuer":{"id":"did:test:me","name":[{"@value":"Name","@language":"en_US"},{"@value":"Naam","@language":"nl_NL"}],"description":[{"@value":"Descr","@language":"en_US"}]},"name":[{"@value":"TestCredential","@language":"en_US"},{"@value":"TestDingetje","@language":"nl_NL"}],"description":[{"@value":"Beschrijving","@language":"nl_NL"}],"validFrom":"2025-01-01T01:01:01+01:00"};
+    // due to Sphereon and Unime not supporting language objects, we use basic strings
+    const expected = {"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","CredentialTest"],"credentialSubject":{"name":"Test","id":"did:test:holder"},"issuer":{"id":"did:test:me","name":"Name","description":"Descr"},"name":"TestCredential","description":"Beschrijving","validFrom":"2025-01-01T01:01:01+01:00"};
     expect(result).toStrictEqual(expected);
     expect(dataToSign).toBe(null); // signing not called
 });
@@ -115,21 +117,29 @@ test('VCDM status lists', () => {
 
     // single status list is converted to array of length 1, which is allowed in the spec
     // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
-    credential.metaData.credentialStatus = {type:'status'};
+    credential.metaData.credentialStatus = {type:'BitstringStatusList', credentialStatus:{type: 'a'}};
     let vcdm = new VCDM(credential);
     let result = vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
     expect(result.credentialStatus!.length).toBe(1);
-    expect(result.credentialStatus![0].type).toBe('status');
+    expect(result.credentialStatus![0].type).toBe('a');
 
-    credential.metaData.credentialStatus = ['a', 'b'];
+    credential.metaData.credentialStatus = [{type:'BitstringStatusList',credentialStatus:{type:'a'}},{type:'RevocationList2021',credentialStatus:{type:'b'}}];
     result = vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
     expect(result.credentialStatus!.length).toBe(2);
-    expect(result.credentialStatus![0]).toBe('a');
-    expect(result.credentialStatus![1]).toBe('b');
+    expect(result.credentialStatus![0].type).toBe('a');
+    expect(result.credentialStatus![1].type).toBe('b');
+
+    // statuslist+jwt is filtered out
+    credential.metaData.credentialStatus = [{type:'BitstringStatusList',credentialStatus:{type:'a'}},{type:'statuslist+jwt',credentialStatus:{type:'b'}}];
+    result = vcdm.build();
+    expect(result).toBeDefined();
+    expect(result.credentialStatus).toBeDefined();
+    expect(result.credentialStatus!.length).toBe(1);
+    expect(result.credentialStatus![0].type).toBe('a');
 });
 
 test('VCDM evidence', () => {

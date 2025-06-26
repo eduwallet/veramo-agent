@@ -18,7 +18,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             if (error.error != ErrorCodes.NO_ERROR) {
                 return sendErrorResponse(response, 400, { error: error.error, description: error.description });
             }
-            const credentialOfferData = createCredentialOffer(issuer, request.body);
+            const credentialOfferData = await createCredentialOffer(issuer, request.body);
             await openObserverLog(credentialOfferData.id, "createoffer-request", request.body);
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-request', request.body);
 
