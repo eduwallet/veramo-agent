@@ -33,11 +33,13 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session) 
     // required according to RFC6749 if it was not specified by the client
     response.scope = session.data.credentialId!;
 
+    // in ID2, nonces are retrieved from a nonce endpoint
+    // DIIPv4 compliance: remove this section
     if (issuer.usesNonces) {
         const nonce = await issuer.nonceStates.get('', {session: session.uuid });
         debug("nonce created: ", nonce);
         response.c_nonce = nonce.uuid;
-        response.c_nonce_expires_in = (moment(nonce.expirationDate).toDate().getTime() - Date.now()) / 1000;
+        response.c_nonce_expires_in = Math.floor((moment(nonce.expirationDate).toDate().getTime() - Date.now()) / 1000);
     }
     debug("access token response", response);
     return response

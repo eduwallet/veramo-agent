@@ -48,7 +48,7 @@ export class SessionStateManager {
     {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(Session);
-        repo.save(state);
+        await repo.save(state);
     }
 
     public newState():Session {

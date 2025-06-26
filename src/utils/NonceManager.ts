@@ -33,6 +33,7 @@ export class NonceManager {
             nonce.uuid = defaultData?.uuid ?? createUniqueId();
             nonce.session = defaultData?.session ?? '';
             nonce.expirationDate = defaultData?.expirationDate ?? moment().add(4, 'hours').toDate();
+            await repo.save(nonce);
         }
         return nonce;
     }

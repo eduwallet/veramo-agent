@@ -2,8 +2,9 @@
 
 export interface CredentialResponse {
     credential?:any;
+    credentials?:any; // one or more credentials as defined in ID2
     transaction_id?:string;
-    c_nonce?:string;
-    c_nonce_expires_in?:number;
+    c_nonce?:string; // no longer used in ID2
+    c_nonce_expires_in?:number; // no longer used in ID2
     notification_id?:string;
 }

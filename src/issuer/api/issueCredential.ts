@@ -15,6 +15,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     const { session } = proofData;
     session.data.lastUpdatedAt = +new Date()
 
+    // DIIPv4 compliance: remove generating the following nonce
     let nonce:Nonce|null = null;
     if (issuer.usesNonces) {
         // remove the old nonce and create a new one
@@ -61,6 +62,8 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
 
     const retval = { 
         credential: credential.output,
+        // in ID2, nonces are retrieved from a nonce endpoint
+        // DIIPv4 compliance: remove the next line
         ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
     };
     debug("returning credential", retval);

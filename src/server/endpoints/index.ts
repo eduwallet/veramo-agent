@@ -9,3 +9,4 @@ export { getOpenidConfiguration } from './getOpenidConfiguration.js';
 export { getOAuthConfiguration } from './getOAuthConfiguration.js';
 export { listCredentials } from './listCredentials.js';
 export { revokeCredential} from './revokeCredential.js';
+export { getNonce } from './getNonce.js';

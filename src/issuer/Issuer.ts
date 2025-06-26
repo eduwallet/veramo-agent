@@ -155,6 +155,7 @@ export class Issuer
                 data = JWT.fromToken(data);
             }
             session.data.requestResponseData[phase] = data;
+            await this.storeSession(session);
         }
     }
 
@@ -276,6 +277,9 @@ export class Issuer
         metadata.credential_identifiers_supported = true;
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
+        if (this.usesNonces) {
+            metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
+        }
 
         return metadata;
     }

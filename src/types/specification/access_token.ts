@@ -35,8 +35,8 @@ export interface AccessTokenResponse {
     scope?: string;
     token_type?: string;
     expires_in?: number; // in seconds
-    c_nonce?: string;
-    c_nonce_expires_in?: number; // in seconds
+    c_nonce?: string; // no longer supported in ID2
+    c_nonce_expires_in?: number; // in seconds, no longer supported in ID2
     authorization_pending?: boolean;
     interval?: number; // in seconds
     authorization_details?:AuthorizationDetail[];

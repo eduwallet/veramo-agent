@@ -38,7 +38,7 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
     }
 
     // before we create a new session, clear out the old ones
-    issuer.clearExpired();
+    await issuer.clearExpired();
 
     const session = await issuer.getSessionById();
     session.data.status = CredentialOfferStatus.OFFER_CREATED;

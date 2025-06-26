@@ -15,6 +15,7 @@ import {
     getOAuthConfiguration,
     listCredentials,
     revokeCredential,
+    getNonce,
 } from './endpoints/index.js'
 import { getBasePath } from 'utils/getBasePath.js';
 
@@ -34,6 +35,11 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
     debug("adding token path");
     accessToken(issuer, tokenPath);
+
+    if (issuer.usesNonces) {
+        // nonce endpoint (ID2)
+        getNonce(issuer);
+    }
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer)

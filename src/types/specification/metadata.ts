@@ -7,6 +7,7 @@ export interface Metadata {
     credential_issuer: string;                 // https URI without fragments or query
     authorization_servers?: string[];          // list of OAuth 2.0 authorization servers
     credential_endpoint: string;               // URL of the issuer credential endpoint
+    nonce_endpoint?: string;                   // optional URL of the nonce endpoint
     batch_credential_endpoint?:string;         // URL of the issuer batch credential endpoint
     deferred_credential_endpoint?:string;      // URL of the issuer deferred credential endpoint 
     notification_endpoint?:string;             // URL of the issuer notification endpoint
