@@ -6,6 +6,7 @@ import { CredentialOfferStatus } from 'types/api.js';
 import { JWT } from '#root/jwt/JWT';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { Session } from '#root/packages/datastore/entities/Session';
+import moment from 'moment';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
 
@@ -33,11 +34,10 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session) 
     response.scope = session.data.credentialId!;
 
     if (issuer.usesNonces) {
-        const cNonce = createUniqueId();
-        issuer.nonceStates.set(cNonce, session.uuid);
-        debug("nonce created: ", cNonce);
-        response.c_nonce = cNonce;
-        response.c_nonce_expires_in = TOKEN_EXPIRY / 1000;
+        const nonce = await issuer.nonceStates.get('', {session: session.uuid });
+        debug("nonce created: ", nonce);
+        response.c_nonce = nonce.uuid;
+        response.c_nonce_expires_in = (moment(nonce.expirationDate).toDate().getTime() - Date.now()) / 1000;
     }
     debug("access token response", response);
     return response

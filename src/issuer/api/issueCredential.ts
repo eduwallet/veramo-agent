@@ -7,6 +7,7 @@ import { CredentialProofData } from "#root/types/internal";
 import { CredentialResponse } from "#root/types/specification/credential_response";
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
+import { Nonce } from '#root/packages/datastore/index';
 
 export async function issueCredential(issuer:Issuer, proofData:CredentialProofData): Promise<CredentialResponse>
 {
@@ -14,12 +15,12 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     const { session } = proofData;
     session.data.lastUpdatedAt = +new Date()
 
-    const nonce = createUniqueId();
+    let nonce:Nonce|null = null;
     if (issuer.usesNonces) {
         // remove the old nonce and create a new one
         debug("creating a new nonce");
-        issuer.nonceStates.delete(proofData.nonce);
-        issuer.nonceStates.set(nonce, session.uuid);
+        await issuer.nonceStates.clear(proofData.nonce);
+        nonce = await issuer.nonceStates.get('', {session: session.uuid});
     }
 
     const credential = new Credential();
@@ -60,7 +61,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
 
     const retval = { 
         credential: credential.output,
-        ...(issuer.usesNonces ? {c_nonce: nonce} : {})
+        ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
     };
     debug("returning credential", retval);
     return retval;

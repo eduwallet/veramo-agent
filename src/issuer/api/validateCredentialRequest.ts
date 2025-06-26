@@ -231,7 +231,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, cr
             return error;
         }
 
-        const cNonceState = issuer.nonceStates.get(nonce);
+        const cNonceState = await issuer.nonceStates.get(nonce);
         if (!cNonceState) {
             debug("Proof is invalid because the nonce was not found", nonce);
             error.error = ErrorCodes.INVALID_REQUEST;
@@ -239,7 +239,8 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, cr
             return error;
         }
 
-        if (cNonceState !== session.uuid) {
+        // with the nonce endpoint, we do not always match a nonce with a session or state
+        if (cNonceState.session != '' && cNonceState.session !== session.uuid) {
             debug("Proof is invalid because the nonce does not match", cNonceState, session.id);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Invalid nonce";

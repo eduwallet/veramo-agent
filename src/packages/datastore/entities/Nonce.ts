@@ -18,6 +18,10 @@ export class Nonce extends BaseEntity {
 
     @Column('varchar')
     //@ts-ignore
+    session: string
+
+    @Column('varchar')
+    //@ts-ignore
     issuer: string
 
     @Column({ type: 'timestamp', nullable: true })

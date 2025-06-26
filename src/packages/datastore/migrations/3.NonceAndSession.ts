@@ -13,6 +13,7 @@ export class NonceAndSession1750939106000 implements MigrationInterface {
           columns: [
             { name: 'id', type: "int", isPrimary: true, isGenerated: true, generationStrategy: "increment" },
             { name: 'uuid', type: 'varchar', isNullable: true},
+            { name: 'session', type: 'varchar', isNullable: true},
             { name: 'issuer', type: 'varchar', isNullable: true},
             { name: 'expirationDate', type: dateTimeType, isNullable: true },
             { name: 'saveDate', type: dateTimeType }

@@ -22,6 +22,7 @@ import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
 import { Session } from '#root/packages/datastore/entities/Session';
+import { NonceManager } from '#root/utils/NonceManager';
 
 export class Issuer
 {
@@ -33,7 +34,7 @@ export class Issuer
     public keyRef:string;
     public router:Router|undefined;
     public sessionData:SessionStateManager;
-    public nonceStates:Map<string, string>;
+    public nonceStates:NonceManager;
     public serverKeys:StringKeyedObject;
     public usesNonces:boolean;
 
@@ -44,7 +45,7 @@ export class Issuer
         this.keyRef = _options.key ?? '';
         this.name = _options.name;
         this.sessionData = new SessionStateManager(this.name);
-        this.nonceStates = new Map<string, string>();
+        this.nonceStates = new NonceManager(this.name);
         this.serverKeys = {};
         this.usesNonces = _options.usesNonces ?? true;
     }
