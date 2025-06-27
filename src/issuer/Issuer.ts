@@ -70,7 +70,7 @@ export class Issuer
         }
         const dbKey = this.did.keys[0];
         if (this.keyRef == '') {
-            this.keyRef = dbKey.kid;
+            this.keyRef = Factory.getKeyReference(this.did);
         }
 
         const pkeys = dbConnection.getRepository(PrivateKeyEntity);

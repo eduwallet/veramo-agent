@@ -33,5 +33,5 @@ async function main() {
     debug("Sending initial log message");
     openObserverLog("none", "init", {message:"Started issuer agent"});
 }
-console.log(process.env.DEBUG);
+
 main().catch(console.log);

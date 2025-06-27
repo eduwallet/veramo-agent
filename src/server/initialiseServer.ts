@@ -33,7 +33,7 @@ export const initialiseServer = async () => {
     const context = contextStore.get(key);
     // only serve it if we have content. If there is no content, it is cached on disk
     if (context?.document !== null) {
-      console.error('adding context path for ', context);
+      debug('adding context path for ', context);
       getContext(rootRouter, context!);
     }
   };

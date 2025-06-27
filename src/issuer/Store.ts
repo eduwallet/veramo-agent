@@ -1,6 +1,8 @@
+import Debug from 'debug';
+const debug = Debug('issuer:issuer');
 /*
  * Instantiate Issuers, connect them to configured keys and metadata and store this
- * data in the in-memory Veramo data store
+ * data in the in-memory data store
  */
 
 import { METADATA_PATH, ISSUER_PATH } from "environment.js";
@@ -17,13 +19,13 @@ var _issuerStore:IssuerStore = {};
 export const getIssuerStore = ():IssuerStore => _issuerStore;
 
 export async function initialiseIssuerStore() {
-    console.log('initialising issuer store, reading json files');
+    debug('initialising issuer store, reading json files');
     const issuerOptionsObjects = loadJsonFiles<IssuerConfiguration>({path: ISSUER_PATH});
     const metadatas = loadJsonFiles<MetadataConfiguration>({path: METADATA_PATH});
 
-    console.log('looping of ', issuerOptionsObjects.asArray.length,' objects');
+    debug('looping of ', issuerOptionsObjects.asArray.length,' objects');
     for(const correlationId of Object.keys(issuerOptionsObjects.asObject)) {
-        console.log('creating new issuer');
+        debug('creating new issuer');
         const metadata = metadatas.asObject[correlationId];
         if (!metadata) {
             throw new Error("Unable to find matching metadata for " + correlationId);
@@ -31,8 +33,8 @@ export async function initialiseIssuerStore() {
         const issuer = new Issuer(issuerOptionsObjects.asObject[correlationId], metadata);
         await issuer.setDid(); // do some asynchronous post-initialisation
         await issuer.retrieveASServerKeys(); // retrieve the AS server keys
-        console.log('setting issuer on store');
+        debug('setting issuer on store');
         _issuerStore[correlationId] = issuer;
     };
-    console.log('end of issuer store initialisation');
+    debug('end of issuer store initialisation');
 }

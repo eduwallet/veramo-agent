@@ -1,9 +1,12 @@
 # Veramo Agent
-Implementation of a generic veramo agent
+Implementation of a generic OID4VCI issuing agent.
 
-This configuration is derived in a large part from the Veramo agent configuration of the Sphereon OID4VC-demo
+This application has evolved out of an earlier version of the Sphereon OID4VC-demo
 
 For more details about the Sphereon code, please see: https://github.com/Sphereon-Opensource/OID4VC-demo
+
+Although it is called the 'veramo-agent', it no longer implements the veramo libraries, nor any Sphereon modules.
+
 
 ## Preface
 
@@ -103,6 +106,8 @@ The credential configuration as defined by the OpenID4VCI spec as part of the `c
 
 Please note that the application assumes the credential metadata is in `vc_jwt` format, so the credential attributes are listed in the `credential_definition.credentialSubject` attribute. The content of this attribute is converted automatically if the credential has format `vc+sd-jwt`, which uses a `claims` attribute instead.
 
+Please note that the application supports both VCDM 1.1 and VCDM 2.0 type credentials. To enable a VCDM 2.0 credential, configure it with format 'vc+jwt' instead of 'json_vc_jwt'. This is automatically rewritten in the metadata output, because the OID4VCI spec does not understand 'vc+jwt'.
+
 ### Dids
 
 The key material configuration is stored in the `conf/dids/` directory. Each entry looks as follows:
@@ -111,20 +116,18 @@ The key material configuration is stored in the `conf/dids/` directory. Each ent
 {
     "did": <(optional) full did name, only usable for did:web keys where the key name is known in advance>,
     "alias": <(optional) string alias that can be used with issuers>,
-    "createArgs": {
-        "provider": <key provider, like did:web or did:key>,
-        "options": {
-            "kid": "auth-key",
-            "keyType": <key type, like Ed25519>,
-            "keys": [{"type": <key type>, "isController": true }]
-        }
-    }
+    "provider": "type of identifier, like did:web, did:key or did:jwk",
+    "type": "type of the key, like ed25519, Secp256r1, RSA",
+    "path": "optional path at which to serve this key as a did document",
+    "services": ["optional list of service objects for the did document"]
 }
 ```
 
 If the key is not found at start-up, it is created.
 
-Please note that the alias needs to contain the key provider as well, because the alias search of veramo requires a provider. To work around this, the implemented alias search will try to extract the key provider from the start of the alias. If not found, the default provider as configured in the `plugins.ts` script will be used. A correct example alias would be: `did:key:mbob` for a non-default-provider `did:key` identifier.
+The keys used for issuers are served at the `/<issuer>/.well-known/did.json` endpoint as well, if configured as a `did:web`. The `path` attribute here can be used to also serve a specific key as a `did:web` on the root of the application for example.
+
+`did:web` keys served as part of an issuer get the `OID4VCI` service with an endpoint pointing to the issuer base url.
 
 ### Metadata
 
@@ -147,6 +150,8 @@ Optionally, instead of extending a credential based on the credential identifier
 
 The `extends` attribute is removed from the output if it was present.
 
+The `format` attribute is rewritten if it is `vc+jwt` to `json_vc_jwt`. This format indicates the credential should be output as VCDM 2.0.
+
 ### Issuers
 
 The issuer configurations are specified in the `conf/issuer/` directory. Each entry there will instantiate an issuer service. The configuration is as follows (*Please note: this configuration has changed significantly*):
@@ -162,11 +167,14 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
     "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
     "statusLists": <optional status list specifications>,
     "did": <did alias or did name as configured in the did section above>,
+    "key": "optional key reference index, like '0', depending on the identifier key format",
     "usesNonces": <boolean value that indicates if a nonce value should be generated in the access token>
 }
 ```
 
 The definition is available in the `src/types/internal.ts` file, `IssuerConfiguration` interface.
+
+The `key` attribute is automatically set based on the type of the key, usually to '0'. If you have a very specific key configuration, you can override it with the `key` attribute, but it should not be necessary. The `did:jwk` keys always have a key reference of '0'. The `did:web` implementation has a key reference of '0' as well. The `did:key` specification indicates the key reference is the multibase encoded public key, but that is not known in advance if the key needs to be generated fresh.
 
 The statuslist configuration lists the available status lists for this issuer:
 
