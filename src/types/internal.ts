@@ -55,12 +55,16 @@ export interface CredentialDataSet {
     data: StringKeyedObject;
 }
 
-export interface CredentialProofData {
-    session:Session;
-    credentialDataSet:CredentialDataSet;
+export interface SingleProofData {
     nonce:string;
     key: any;
     did: string;
+}
+
+export interface CredentialProofData {
+    session:Session;
+    credentialDataSet:CredentialDataSet;
+    proofResults:SingleProofData[];
 }
 
 export interface CredentialResult {

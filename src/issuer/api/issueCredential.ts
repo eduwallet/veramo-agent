@@ -15,55 +15,61 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     const { session } = proofData;
     session.data.lastUpdatedAt = +new Date()
 
-    // DIIPv4 compliance: remove generating the following nonce
     let nonce:Nonce|null = null;
     if (issuer.usesNonces) {
         // remove the old nonce and create a new one
+        for (const proof of proofData.proofResults) {
+            await issuer.nonceStates.clear(proof.data.nonce);
+        }
+        // TODO: DIIPv4 compliance: remove generating the following nonce
         debug("creating a new nonce");
-        await issuer.nonceStates.clear(proofData.nonce);
         nonce = await issuer.nonceStates.get('', {session: session.uuid});
     }
 
-    const credential = new Credential();
-    credential.issuer = issuer;
-    credential.id = proofData.credentialDataSet.credentialId;
-    credential.setConfiguration(issuer.getCredentialConfiguration(credential.id)!);
+    const credentials:Credential[] = [];
+    for(const proof of proofData.proofResults) {
+        const credential = new Credential();
+        credential.issuer = issuer;
+        credential.id = proofData.credentialDataSet.credentialId;
+        credential.setConfiguration(issuer.getCredentialConfiguration(credential.id)!);
 
-    // the format parameter can have an internal and an external value... not ideal
-    // if we have an internal value, set it as the credential format instead of the
-    // format defined by the external one in the configuration above
-    if (proofData.credentialDataSet.credentialConfiguration.format) {
-        credential.format = proofData.credentialDataSet.credentialConfiguration.format;
+        // the format parameter can have an internal and an external value... not ideal
+        // if we have an internal value, set it as the credential format instead of the
+        // format defined by the external one in the configuration above
+        if (proofData.credentialDataSet.credentialConfiguration.format) {
+            credential.format = proofData.credentialDataSet.credentialConfiguration.format;
+        }
+        // format is a part of the configuration. CredentialId defines a single format
+        // We can only use format if we use credentialType to indicate a type and 
+        // format to indicate format, whose combination would lead to a credentialId
+        credential.data = proofData.credentialDataSet.data;
+        credential.metaData = session.data.metaData;
+        credential.holder = proof.data.did;
+
+        if (!await CredentialFactory.resolve(credential)) {
+            debug("error creating actual credential");
+            throw Error('Could not create a credential');
+        }
+        session.data.credential = credential.credential;
+        session.data.principalCredentialId = credential.principalId || '';
+        session.data.credentialType = credential.type;
+
+        debug("storing credential in the database");
+        await issuer.storeCredential(session, credential);
+        await CredentialFactory.sign(credential);
+        credentials.push(credential);
     }
-    // format is a part of the configuration. CredentialId defines a single format
-    // We can only use format if we use credentialType to indicate a type and 
-    // format to indicate format, whose combination would lead to a credentialId
-    // credential.format = proofData.format;
-    credential.data = proofData.credentialDataSet.data;
-    credential.metaData = session.data.metaData;
-    credential.holder = proofData.did;
-
-    if (!await CredentialFactory.resolve(credential)) {
-        debug("error creating actual credential");
-        throw Error('Could not create a credential');
-    }
-    session.data.credential = credential.credential;
-    session.data.principalCredentialId = credential.principalId || '';
-    session.data.credentialType = credential.type;
-
-    debug("storing credential in the database");
-    await issuer.storeCredential(session, credential);
-
-    await CredentialFactory.sign(credential);
 
     debug("updating session status");
     session.data.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
     await issuer.storeSession(session);
 
-    const retval = { 
-        credential: credential.output,
+    const retval = {
+        // TODO: ID2/v15 supports the use of the 'credentials' plural output, so we can remove this
+        credential: credentials[0].output,
+        credentials: credentials.map((c) => c.output),
         // in ID2, nonces are retrieved from a nonce endpoint
-        // DIIPv4 compliance: remove the next line
+        // TODO: DIIPv4 compliance: remove the next line
         ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
     };
     debug("returning credential", retval);

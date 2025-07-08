@@ -12,6 +12,7 @@ export type CredentialRequest = CredentialRequestBase &
 export interface CredentialRequestBase {
     format?:string;  // REQUIRED when credential_identifiers was NOT returned from the token response
     proof?: ProofOfPossession;
+    proofs?: ProofOfPossession[];
     credential_identifier?: string;
     credential_response_encryption?:CredentialResponseEncryption;
 }

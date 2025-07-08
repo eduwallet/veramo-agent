@@ -5,7 +5,7 @@ import { Request } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 import { ApiState } from '#root/types/internal';
-import { CredentialRequest } from '#root/types/specification/credential_request';
+import { CredentialRequest, ProofOfPossession } from '#root/types/specification/credential_request';
 import { JWT } from '#root/jwt/JWT';
 import { getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
@@ -107,32 +107,65 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         };
     }
 
-    error = await validateCredentialRequestProof(issuer, session, request.body);
-    if (error.error != ErrorCodes.NO_ERROR) {
+    const proofResults = await validateCredentialRequestProofs(issuer, session, request.body);
+    // if we get a single ApiState back, it is the error on the proof that fails
+    if (!Array.isArray(proofResults) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
         debug("invalid proof");
         return error;
     }
-    session.data.holder = error.data.did;
+    session.data.proofs = proofResults;
     await issuer.storeSession(session);
 
     // return a CredentialProofData object
-    error.data = { session, credentialDataSet, nonce: error.data.nonce, key: error.data.key, did: error.data.did};
+    error.data = { session, credentialDataSet, proofResults};
     debug("credential request is valid");
     return error;
 }
 
-async function validateCredentialRequestProof(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState>
+async function validateCredentialRequestProofs(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState|ApiState[]>
+{
+    // we only support JWT proofs at this moment
+    let proofs:ProofOfPossession[] = credentialRequest.proofs || [];
+
+    // TODO: Version 16 does no longer specify the singular proof version.
+    if ((!proofs || !proofs.length) && credentialRequest.proof) {
+        proofs = [credentialRequest.proof];
+    }
+    let proofResults:ApiState[] = [];
+
+    if (!proofs || proofs.length < 1) {
+        return {
+            error: ErrorCodes.INVALID_REQUEST,
+            description: "Proof of possession missing"
+        };
+    }
+
+    for(const proof of proofs) {
+        let proofError = await validateCredentialRequestProof(issuer, session, proof);
+
+        if (proofError.error != ErrorCodes.NO_ERROR) {
+            return proofError;
+        }
+        proofResults.push(proofError);
+    }
+
+    // return the did of the proof, this is the holder key
+    debug("Proof is valid", proofResults);
+    return proofResults;
+}
+
+async function validateCredentialRequestProof(issuer:Issuer, session:Session, proof:any):Promise<ApiState>
 {
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
-    // we only support JWT proofs at this moment
-    if (!credentialRequest.proof || !credentialRequest.proof.jwt) {
-        debug("Proof is invalid because it is missing", credentialRequest.proof);
+    
+    if (!proof || !proof.jwt) {
+        debug("Proof is invalid because it is missing", proof);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Proof of possession missing";
         return error;
     }
 
-    const jwt = JWT.fromToken(credentialRequest.proof.jwt!);
+    const jwt = JWT.fromToken(proof.jwt!);
     if (!jwt.header.kid && !jwt.header.jwk) {
         debug("Proof is invalid because the issuer key is not set");
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -148,7 +181,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, cr
         return error;
     }
     const verificationResult = await jwt.verify(ckey);
-    
+
     if (!verificationResult) {
         debug("Proof is invalid because the token could not be verified", verificationResult);
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -221,7 +254,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, cr
         error.description = "Invalid iat claim";
         return error;
     }
-    
+
     if (issuer.usesNonces && !issuer.usesAuthorisedCodeFlow()) {
         // nonce: optional, must be present if a c_nonce was supplied
         if (!nonce) {
@@ -257,7 +290,6 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, cr
 
     // return the did of the proof, this is the holder key
     error.data = {did, nonce, key: ckey};
-    debug("Proof is valid", did, nonce, ckey.keyType);
     return error;
 }
 
