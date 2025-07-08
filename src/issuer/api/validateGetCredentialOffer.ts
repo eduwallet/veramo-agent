@@ -18,8 +18,8 @@ export async function validateGetCredentialOffer(issuer:Issuer, request:Request)
         return error;
     }
     
-    //if ([CredentialOfferStatus.ERROR, CredentialOfferStatus.CREDENTIAL_ISSUED].includes(session.status)) {
-    //    debug("invalid because session status is incorrect", session.status);
+    //if ([CredentialOfferStatus.ERROR, CredentialOfferStatus.CREDENTIAL_ISSUED].includes(session.data.status)) {
+    //    debug("invalid because session status is incorrect", session.data.status);
     //    error.error = ErrorCodes.INVALID_REQUEST;
     //    error.description = "Credential offer status has expired";
     //    return error;

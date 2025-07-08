@@ -20,7 +20,7 @@ export function getCredentialOffer(issuer:Issuer, getPath:string) {
             await openObserverLog(session.uuid, "credentialoffer-request", request.params);
             await issuer.storeRequestResponseData(session.uuid, "credential_offer-request", request.params);
 
-            session.status = CredentialOfferStatus.OFFER_URI_RETRIEVED;
+            session.data.status = CredentialOfferStatus.OFFER_URI_RETRIEVED;
             session.lastUpdatedAt = +new Date()
             await issuer.storeSession(session);
 
