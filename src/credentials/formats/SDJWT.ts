@@ -39,7 +39,7 @@ export class SDJWT
         if (this.credential.data) {
             Object.keys(this.credential.data).forEach((k) => {
                 baseCredential[k] = this.credential.data![k];
-            })
+            });
         }
 
         if (this.credential.metaData.expirationDate) {

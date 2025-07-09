@@ -101,7 +101,7 @@ class DIDConfigurationStore {
                 identifier.did = await Factory.toDIDJWK(configuration.key);
                 break;
         }
-        identifier.alias = configuration.alias ?? configuration.identifier.did;
+        identifier.alias = configuration.alias ?? configuration.did;
         identifier.provider = configuration.provider ?? 'did:jwk';
         identifier.controllerKeyId = ckey.exportPublicKey();
 
@@ -110,7 +110,7 @@ class DIDConfigurationStore {
         await irepo.save(identifier);
 
         const dbKey = new Key();
-        dbKey.kid = configuration.key.exportPublicKey();
+        dbKey.kid = ckey.exportPublicKey();
         dbKey.kms = 'local';
         dbKey.type = configuration.type;
         dbKey.publicKeyHex = dbKey.kid;
