@@ -94,11 +94,11 @@ class DIDConfigurationStore {
                 identifier.did = configuration.did;
                 break;
             case 'did:key':
-                identifier.did = await Factory.toDIDKey(configuration.key);
+                identifier.did = await Factory.toDIDKey(ckey);
                 break;
             default: // DIIPv4 uses did:jwk by default
             case 'did:jwk':
-                identifier.did = await Factory.toDIDJWK(configuration.key);
+                identifier.did = await Factory.toDIDJWK(ckey);
                 break;
         }
         identifier.alias = configuration.alias ?? configuration.did;
