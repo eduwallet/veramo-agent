@@ -1,7 +1,7 @@
-# Use the official Node.js 18 Bookworm image. to use TSX
-FROM node:18-bookworm
-
+FROM node:20-alpine
 WORKDIR /app
+
+RUN yarn add -D typescript tslib
 
 COPY package.json yarn.lock ./
 
