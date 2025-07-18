@@ -7,6 +7,8 @@ import { OpenBadgeCredential } from "#root/credentials/types/OpenBadgeCredential
 import { GenericCredential } from "#root/credentials/types/GenericCredential";
 import { SDJWT } from "#root/credentials/formats/SDJWT";
 import { JOSE } from "#root/credentials/formats/JOSE";
+import { JSONLD } from "./formats/JSONLD.js";
+import { VCDM } from "./formats/VCDM.js";
 
 export class CredentialFactory
 {
@@ -62,6 +64,10 @@ export class CredentialFactory
                 const jose = new JOSE(credential, credential.format);
                 await jose.sign();
                 break;
+            case 'ldp_vc':
+                const vcdm = new VCDM(credential);
+                const ld = await JSONLD.sign(credential, vcdm.build());
+                credential.output = ld;
         }
         return true;
     }
