@@ -62,7 +62,9 @@ export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:Tok
         return error;
     }
     else if (txCode && session.data.pinCode) {
-        if (txCode !== session.data.pinCode) {
+        // if we happen to pass a number for a pin that starts with a '0', this may fail
+        // ergo -> do not pass numbers, pass strings
+        if (txCode.toString() != session.data.pinCode.toString()) {
             debug("invalid because pin codes do not match", txCode, session.data.pinCode);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Pin code does not match";
