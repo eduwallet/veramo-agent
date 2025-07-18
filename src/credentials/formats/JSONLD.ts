@@ -5,7 +5,7 @@ import { VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
 import { Credential } from '#root/credentials/Credential';
 import jsigs from 'jsonld-signatures';
 import { getContextConfigurationStore } from '#root/contexts/Store';
-import * as jsonld from 'jsonld';
+import jsonld from 'jsonld';
 import moment from 'moment';
 import { JwsLinkedDataSignature } from '#root/crypto/JwsLinkedDataSignature';
 
