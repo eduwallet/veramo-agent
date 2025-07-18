@@ -115,8 +115,8 @@ export class Credential
 
     private handleExpirationDate(date:string)
     {
-        if (date && date.length) {
-            this.metaData.expirationDate = moment().add(parseInt(date), 's').toISOString();
+        if (date && date.toString().length) {
+            this.metaData.expirationDate = moment().add(parseInt(date.toString()), 's').toISOString();
         }
     }
 
