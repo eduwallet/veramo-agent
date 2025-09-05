@@ -8,8 +8,7 @@
   "scripts": {
     "build": "tsc",
     "build:clean": "tsc --build --clean && tsc --build",
-    "start:prod": "node --experimental-specifier-resolution=node --loader ts-node/esm dist/main.js",
-    "start:dev": "tsx --watch src/main.ts",
+    "start": "tsx --watch src/main.ts",
     "cli": "tsx src/cli.ts",
     "test": "vitest run",
     "lint": "eslint src --ext .ts"
