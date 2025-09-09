@@ -35,7 +35,7 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session) 
 
     // in ID2, nonces are retrieved from a nonce endpoint
     // DIIPv4 compliance: remove this section
-    if (issuer.usesNonces) {
+    if (issuer.usesNonces && false) {
         const nonce = await issuer.nonceStates.get('', {session: session.uuid });
         debug("nonce created: ", nonce);
         response.c_nonce = nonce.uuid;

@@ -66,11 +66,11 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
 
     const retval = {
         // TODO: ID2/v15 supports the use of the 'credentials' plural output, so we can remove this
-        credential: credentials[0].output,
+        //credential: credentials[0].output,
         credentials: credentials.map((c) => c.output),
         // in ID2, nonces are retrieved from a nonce endpoint
         // TODO: DIIPv4 compliance: remove the next line
-        ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
+        //...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
     };
     debug("returning credential", retval);
     return retval;
