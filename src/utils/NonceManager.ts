@@ -14,7 +14,8 @@ export class NonceManager {
 
     public async clear(id: string) {
         if (!id) {
-            throw Error('No state id supplied');
+            console.error('No state id supplied');
+            return;
         }
         
         const dbConnection = await getDbConnection();

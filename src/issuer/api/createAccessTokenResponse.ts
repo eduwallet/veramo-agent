@@ -4,7 +4,6 @@ import { AccessTokenResponse } from 'types/specification/access_token.js';
 import { Issuer } from 'issuer/Issuer.js';
 import { CredentialOfferStatus } from 'types/api.js';
 import { JWT } from '#root/jwt/JWT';
-import { createUniqueId } from '#root/utils/createUniqueId';
 import { Session } from '#root/packages/datastore/entities/Session';
 import moment from 'moment';
 
@@ -26,12 +25,17 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session) 
         // refresh_token is optional
     };
 
-    // if using pre-authorised code flow, we do not have authorization_details
-    // in our authorization request, hence the spec does not allow us to
-    // use it in our token response.
-    // The only option left is to use the scope attribute, which is actually
-    // required according to RFC6749 if it was not specified by the client
-    response.scope = session.data.credentialId!;
+    // ID-1: 6.2: authorization_details is required if it was sent earlier on, optional
+    // if not.
+    // For now: we set this to the one credentialId of this interaction
+    // TODO: update this when we want to support multiple credential issuance
+    // We need to find all the datasets linked to the same credentialId and list these here,
+    // so the wallet can potentially loop through these identifiers and request multiple
+    // credentials in a row
+    response.authorization_details = [{
+        "type": "openid_credential",
+        "credential_identifiers": [session.data.credentialId]
+    }];
 
     // in ID2, nonces are retrieved from a nonce endpoint
     // DIIPv4 compliance: remove this section

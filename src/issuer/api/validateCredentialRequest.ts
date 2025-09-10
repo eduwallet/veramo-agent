@@ -75,16 +75,29 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     await issuer.storeSession(session);
 
     let credentialDataSet:any = null;
+    // spec ID-1: 8.2: credential_identifier: REQUIRED when an Authorization Details of type
+    // openid_credential was returned from the Token Response. 
     if (request.body.credential_identifier) {
         credentialDataSet = session.data?.credentialDataSets[request.body.credential_identifier];
     }
+    // spec ID-1: 8.2: credential_configuration_id: REQUIRED if a credential_identifiers
+    // parameter was not returned from the Token Response as part of the authorization_details parameter.
+    // As we return authorization_details, this should never happen for proper wallets
+    else if(request.body.credential_configuration_id) {
+        debug("determining credential data set based on configuration id, which is not supported");
+        credentialDataSet = session.data?.credentialDataSets[request.body.credential_configuration_id];
+    }
 
+    // the following overrides if the credential request refers to incorrect datasets
+    // However, this only works if we have a single credential to hand out
     if (!credentialDataSet) {
+        // TODO: update this when we want to support multiple credential issuance
         // see if we have a set based on the session credential id
         credentialDataSet = session.data?.credentialDataSets[session.data?.credentialId];
     }
 
     if (!credentialDataSet) {
+    // TODO: update this when we want to support multiple credential issuance
         // if we did not get a credentialDataSet back, we rely on the id as documented in the session
         const credentialConfiguration = issuer.getCredentialConfiguration(session.data?.credentialId, false);
         if (credentialConfiguration === null) {
@@ -100,6 +113,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
             error.description = "Requested credential format not supported";
             return error;
         }
+        debug("Creating request credential data set based on session data instead of request data");
         credentialDataSet = {
             credentialId: session.data?.credentialId,
             credentialConfiguration,
@@ -109,27 +123,27 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
     const proofResults = await validateCredentialRequestProofs(issuer, session, request.body);
     // if we get a single ApiState back, it is the error on the proof that fails
-    if (!Array.isArray(proofResults) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
+    if (!Array.isArray(proofResults.data) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
         debug("invalid proof");
         return error;
     }
-    session.data.proofs = proofResults;
+    session.data.proofs = proofResults.data;
     await issuer.storeSession(session);
 
     // return a CredentialProofData object
-    error.data = { session, credentialDataSet, proofResults};
+    error.data = { session, credentialDataSet, proofResults: proofResults.data};
     debug("credential request is valid");
     return error;
 }
 
-async function validateCredentialRequestProofs(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState|ApiState[]>
+async function validateCredentialRequestProofs(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState>
 {
     // we only support JWT proofs at this moment
-    let proofs:ProofOfPossession[] = credentialRequest.proofs || [];
+    let proofs:string[] = credentialRequest.proofs?.jwt || [];
 
     // TODO: Version 16 does no longer specify the singular proof version.
-    if ((!proofs || !proofs.length) && credentialRequest.proof) {
-        proofs = [credentialRequest.proof];
+    if ((!proofs || !proofs.length) && credentialRequest.proof && credentialRequest.proof.proof_type == 'jwt' && credentialRequest.proof.jwt) {
+        proofs = [credentialRequest.proof?.jwt];
     }
     let proofResults:ApiState[] = [];
 
@@ -146,26 +160,26 @@ async function validateCredentialRequestProofs(issuer:Issuer, session:Session, c
         if (proofError.error != ErrorCodes.NO_ERROR) {
             return proofError;
         }
-        proofResults.push(proofError);
+        proofResults.push(proofError.data);
     }
 
     // return the did of the proof, this is the holder key
     debug("Proof is valid", proofResults);
-    return proofResults;
+    return { error: ErrorCodes.NO_ERROR, description: '', data: proofResults};
 }
 
-async function validateCredentialRequestProof(issuer:Issuer, session:Session, proof:any):Promise<ApiState>
+async function validateCredentialRequestProof(issuer:Issuer, session:Session, proof:string):Promise<ApiState>
 {
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     
-    if (!proof || !proof.jwt) {
+    if (!proof || !proof.length) {
         debug("Proof is invalid because it is missing", proof);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Proof of possession missing";
         return error;
     }
 
-    const jwt = JWT.fromToken(proof.jwt!);
+    const jwt = JWT.fromToken(proof);
     if (!jwt.header.kid && !jwt.header.jwk) {
         debug("Proof is invalid because the issuer key is not set");
         error.error = ErrorCodes.INVALID_REQUEST;

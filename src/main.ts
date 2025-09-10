@@ -4,7 +4,6 @@ const debug = Debug('issuer:agent');
 import { initialiseServer } from '#root/server/index';
 import { initialiseIssuerStore } from '#root/issuer/Store';
 import { initialiseCredentialConfigurationStore } from '#root/credentials/Store';
-import { openObserverLog } from '#root/utils/openObserverLog';
 import { initialiseVctConfigurationStore } from '#root/vct/Store';
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import { getDIDConfigurationStore } from '#root/dids/Store'; 
@@ -31,7 +30,6 @@ async function main() {
     await initialiseServer();
 
     debug("Sending initial log message");
-    openObserverLog("none", "init", {message:"Started issuer agent"});
 }
 
 main().catch(console.log);

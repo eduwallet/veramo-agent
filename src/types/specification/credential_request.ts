@@ -12,7 +12,7 @@ export type CredentialRequest = CredentialRequestBase &
 export interface CredentialRequestBase {
     format?:string;  // REQUIRED when credential_identifiers was NOT returned from the token response
     proof?: ProofOfPossession;
-    proofs?: ProofOfPossession[];
+    proofs?: ProofOfPossessionTypes;
     credential_identifier?: string;
     credential_response_encryption?:CredentialResponseEncryption;
 }
@@ -66,4 +66,9 @@ export interface ProofOfPossession {
     jwt?:string;            // REQUIRED for proof_type jwt
     cwt?:string;            // REQUIRED for proof type cwt
     ldp_vp:any;             // REQUIRED for proof type ldp_vp. Composition of this object is not further implemented
+}
+
+export interface ProofOfPossessionTypes {
+    jwt?:string[];
+    // the other types are currently not supported
 }

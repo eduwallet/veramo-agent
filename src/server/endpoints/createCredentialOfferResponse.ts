@@ -2,7 +2,6 @@ import { Request, Response } from 'express'
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { Issuer } from '#root/issuer/Issuer'
 import passport from 'passport';
-import { openObserverLog } from '#root/utils/openObserverLog';
 import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from '#root/types/api/credentialOffer';
 import { validateCreateCredentialOffer } from '#root/issuer/api/validateCreateCredentialOffer';
 import { createCredentialOffer } from '#root/issuer/api/createCredentialOffer';
@@ -19,7 +18,6 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
                 return sendErrorResponse(response, 400, { error: error.error, description: error.description });
             }
             const credentialOfferData = await createCredentialOffer(issuer, request.body);
-            await openObserverLog(credentialOfferData.id, "createoffer-request", request.body);
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-request', request.body);
 
             const resultResponse: CreateCredentialOfferResponse = {
@@ -27,7 +25,6 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
                 txCode: credentialOfferData.pinCode,
                 id: credentialOfferData.id
             }
-            await openObserverLog(credentialOfferData.id, "createoffer-response", resultResponse);
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-response', resultResponse);
             return response.json(resultResponse);
         } 

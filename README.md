@@ -39,24 +39,6 @@ docker run -t -i \
 
 Make sure to replace the `POSTGRES_PASSWORD` and the `<veramo-agent-path>` with proper values and in general match the vales with the `.env` or `.env.local` configuration.
 
-### OpenObserver
-
-The application can log to an OpenObserver log application. Please provide the service URL and user bearer token in the environment file.
-
-You can run a local dockerised OpenObserver container using the following command:
-
-```bash
-docker run -t -i \
-    --env-file .env
-    --env ZO_DATA_DIR=/data
-    --env ZO_ROOT_USER=<root user login/email>
-    --env ZO_ROOT_USER_PASSWORD=topsecret
-    --env ZO_INGEST_FLATTEN_LEVEL=1
-    -v ./data:/data
-    -p 5080:5080
-    public.ecr.aws/zinclabs/openobserve:latest
-```
-
 ### Docker instance
 
 The project comes with a `Dockerfile` with a basic configuration to run the `veramo-agent` directly inside a container.
@@ -253,6 +235,7 @@ The current setup supports the basic endpoints:
 - `<base URL>/<instance>/.well-known/oauth-authorization-server`
 - `<base URL>/<instance>/.well-known/did.json`
 - `<base URL>/<instance>/credentials`
+- `<base URL>/<instance>/nonce`
 - `<base URL>/<instance>/get-credential-offer/:id`
 
 The first URL serves the JSON metadata that configures the issuer. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute for `vc+sd-jwt` type credentials, allowing the metadata to only list the `vc_jwt` type configuration.
@@ -265,6 +248,8 @@ The `did.json` endpoint provides a convenient way of publishing the `did:web` co
 is restarted or keys refreshed, the key configuration will be correct.
 
 The `credentials` URL serves the credential, provided the user can supply the required data (grant, authorization code, pin, credential reference, etc.). This follows the basic OpenID4VC specification.
+
+The `nonce` POST endpoint serves a fresh nonce value, not linked to any session. This follows the basic OpenID4VC specification version 1.16 and higher.
 
 The `get-credential-offer` endpoint serves the actual credential issuance offer, which is referenced by URI in the QR code.
 
@@ -311,6 +296,7 @@ The `credentialMetadata` attribute can contain settings about the credential. Cu
 
 - `expiration`: a number representing the seconds after issuance date for the credential to expire. For backwards compatibility, the credential data fields `_exp` and `_ttl` are also supported and serve the same purpose
 - `enableStatusLists`: a boolean field that enables or disables generating status list information. If not specified, but status lists are configured for an issuer, status list information is generated. Set this field explicitely to `false` to prevent generating status list information
+- `evidence`: an object or array containing evidence data as specified in the VCDM spec.
 
 The call returns a JSON object containing the following elements:
 

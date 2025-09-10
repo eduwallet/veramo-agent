@@ -4,7 +4,6 @@ import { Request, Response} from 'express'
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { createAccessTokenResponse } from '#root/issuer/api/createAccessTokenResponse';
 import { Issuer } from '#root/issuer/Issuer'
-import { openObserverLog } from '#root/utils/openObserverLog';
 import { TokenRequest, TokenResponse } from '#root/types/specification/access_token'
 import { validateAccessTokenRequest } from '#root/issuer/api/validateAccessTokenRequest'
 import { ErrorCodes } from '#root/types/api'
@@ -26,10 +25,8 @@ export function accessToken(issuer: Issuer, tokenPath:string) {
                 const accessTokenResponse = await createAccessTokenResponse(issuer, error.data.session);
                 const sessionId = error.data.session.uuid;
 
-                await openObserverLog(sessionId!, "accesstoken-request", request.body);
                 await issuer.storeRequestResponseData(sessionId!, "access_token-request", request.body);
                 response.set({'Cache-Control': 'no-store', Pragma: 'no-cache'});
-                await openObserverLog(sessionId!, "accesstoken-response", accessTokenResponse);
                 await issuer.storeRequestResponseData(sessionId!, "access_token-response", accessTokenResponse);
                 return response.status(200).json(accessTokenResponse)
             }

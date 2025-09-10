@@ -15,8 +15,16 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
     const credentialConfigIds = request.credentials as string[]
 
     const credentialOffer:CredentialOfferData = {
+        // spec ID-1:4.1.1 -> Object indicating to the Wallet the Grant Types the Credential Issuer's
+        // Authorization Server is prepared to process for this Credential Offer.
         grants,
+        // spec ID-1:3.3.4 ->  the Credential Issuer identifies offered Credential Configurations using the
+        // credential_configuration_ids parameter
+        // spec ID-1:4.1.1 -> A non-empty array of unique strings that each identify one of the keys in the
+        // name/value pairs stored in the credential_configurations_supported Credential Issuer metadata.
         credential_configuration_ids: credentialConfigIds,
+        // spec ID-1:4.1.1 -> The URL of the Credential Issuer, as defined in Section 11.2.1, from which
+        // the Wallet is requested to obtain one or more Credentials. 
         credential_issuer: issuer.metadata.credential_issuer,
     };
 
@@ -44,10 +52,14 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
     session.data.status = CredentialOfferStatus.OFFER_CREATED;
     session.data.credentialOffer = credentialOffer;
     session.data.metaData = request.credentialMetadata || {};
+    // TODO: update this when we want to support multiple credential issuance
+    // We need to create a list of ids allowed for this session by the offer
     session.data.credentialId = credentialConfigIds[0];
 
     // store the requested dataset as a credential-data-set named after the credential id
     session.data.credentialDataSets = {};
+    // TODO: update this when we want to support multiple credential issuance
+    // We need to loop over all the ids supplied and set the relevant configuration and data
     session.data.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
         credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0], false),

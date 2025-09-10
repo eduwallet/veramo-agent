@@ -5,13 +5,12 @@ import { Issuer } from "#root/issuer/Issuer";
 import { CredentialOfferStatus } from "#root/types/api";
 import { CredentialProofData } from "#root/types/internal";
 import { CredentialResponse } from "#root/types/specification/credential_response";
-import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { Nonce } from '#root/packages/datastore/index';
 
 export async function issueCredential(issuer:Issuer, proofData:CredentialProofData): Promise<CredentialResponse>
 {
-    debug("issuing credential");
+    debug("issuing credential", proofData.proofResults);
     const { session } = proofData;
     session.data.lastUpdatedAt = +new Date()
 
@@ -19,7 +18,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     if (issuer.usesNonces) {
         // remove the old nonce and create a new one
         for (const proof of proofData.proofResults) {
-            await issuer.nonceStates.clear(proof.data.nonce);
+            await issuer.nonceStates.clear(proof.nonce);
         }
         // TODO: DIIPv4 compliance: remove generating the following nonce
         debug("creating a new nonce");
@@ -44,7 +43,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         // format to indicate format, whose combination would lead to a credentialId
         credential.data = proofData.credentialDataSet.data;
         credential.metaData = session.data.metaData;
-        credential.holder = proof.data.did;
+        credential.holder = proof.did;
 
         if (!await CredentialFactory.resolve(credential)) {
             debug("error creating actual credential");
@@ -67,7 +66,10 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
     const retval = {
         // TODO: ID2/v15 supports the use of the 'credentials' plural output, so we can remove this
         credential: credentials[0].output,
-        credentials: credentials.map((c) => c.output),
+        // spec ID-1: 8.3 credential response: Contains an array of one or more issued Credentials.
+        // This specification defines the following parameters to be used inside this object:
+        // credential: REQUIRED. Contains one issued Credential. 
+        credentials: credentials.map((c) => { return {"credential": c.output}}),
         // in ID2, nonces are retrieved from a nonce endpoint
         // TODO: DIIPv4 compliance: remove the next line
         ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
