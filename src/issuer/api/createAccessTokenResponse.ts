@@ -32,9 +32,13 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session) 
     // We need to find all the datasets linked to the same credentialId and list these here,
     // so the wallet can potentially loop through these identifiers and request multiple
     // credentials in a row
+    // We set the credential_configuration_id to the same value for lack of better ids
+    // Please note: credential_configuration_id must be present in metadata.credential_configurations_supported
+    // whereas credential_identifiers are a transaction-unique set of dataset-identifiers
     response.authorization_details = [{
         "type": "openid_credential",
-        "credential_identifiers": [session.data.credentialId]
+        "credential_identifiers": [session.data.credentialId],
+        "credential_configuration_id": session.data.credentialId
     }];
 
     // in ID2, nonces are retrieved from a nonce endpoint
