@@ -1,11 +1,10 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { Issuer } from "issuer/Issuer";
-import { ErrorCodes } from 'types/api';
-import { CreateCredentialOfferRequest } from "types/api/credentialOffer";
-import { ApiState } from "types/internal";
-import { PRE_AUTHORIZED_CODE_GRANT } from 'types/specification/credential_offer';
-
+import { Issuer } from "#root/issuer/Issuer";
+import { ErrorCodes } from '#root/types/api';
+import { CreateCredentialOfferRequest } from "#root/types/api/credentialOffer";
+import { ApiState } from "#root/types/internal";
+import { PRE_AUTHORIZED_CODE_GRANT } from '#root/types/specification/credential_offer';
 
 export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):ApiState
 {
@@ -48,7 +47,7 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
     // setups (for example: two AcademicBaseCredential's with different branding, or two
     // GenericCredential's with different VC format)        
     if (request.grants[PRE_AUTHORIZED_CODE_GRANT]) {
-        if (!issuer.checkCredentialData(credentialConfigIds, request.credentialDataSupplierInput || {})) {
+        if (!issuer.checkCredentialData(credentialConfigIds[0], request.credentialDataSupplierInput || {})) {
             debug("invalid because the requested credential data is incorrect", request.credentialDataSupplierInput);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Missing required claims";

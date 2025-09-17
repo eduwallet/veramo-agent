@@ -1,13 +1,13 @@
-# Use the official Node.js 21 Bookworm image. The LTS somehow causes a crash?
-FROM node:21-bookworm
-
-# Set working directory inside the container
+FROM node:20-alpine
 WORKDIR /app
 
-# Install TypeScript globally
-RUN npm install -g typescript
+RUN yarn add -D typescript tslib
 
-# We already have yarn installed in the base image v 1.22.22
+COPY package.json yarn.lock ./
 
-# Run the app in development mode
-CMD ["yarn", "run", "start:dev"]
+RUN yarn install
+
+COPY . .
+
+# Run the app when the container launches
+CMD ["yarn", "start:dev"]

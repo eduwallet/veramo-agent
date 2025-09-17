@@ -2,8 +2,6 @@ import {config as dotenvConfig} from "dotenv-flow";
 dotenvConfig()
 
 import {resolve} from "path";
-import {loadJsonFiles} from "utils/generic";
-import {IDIDOpts} from "./types";
 
 export const DB_CONNECTION_NAME = process.env.DB_CONNECTION_NAME ?? 'default'
 export const DB_NAME = process.env.DB_NAME ?? 'postgres'
@@ -17,6 +15,8 @@ export const DB_ENCRYPTION_KEY = process.env.DB_ENCRYPTION_KEY ?? '29739248cad1b
 export const LOG_SERVICE = process.env.LOG_SERVICE;
 export const LOG_USER = process.env.LOG_USER;
 
+export const BASEURL = process.env.BASEURL;
+
 //export const DID_PREFIX = 'did'
 export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) : resolve('../../conf')
 export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`
@@ -25,4 +25,3 @@ export const METADATA_PATH = `${CONF_PATH}/metadata`;
 export const CREDENTIAL_CONFIGURATION_PATH = `${CONF_PATH}/credentials`;
 export const CONTEXT_CONFIGURATION_PATH = `${CONF_PATH}/contexts`;
 export const VCT_CONFIGURATION_PATH = `${CONF_PATH}/vct`;
-export const didOptConfigs = loadJsonFiles<IDIDOpts>({path: DID_OPTIONS_PATH})

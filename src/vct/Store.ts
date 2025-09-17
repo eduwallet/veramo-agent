@@ -4,10 +4,10 @@ const debug = Debug('issuer:vct');
  * Instantiate vct configurations
  */
 
-import { VCT_CONFIGURATION_PATH } from "../environment";
-import { loadJsonFiles } from "utils/generic";
-import { getBaseUrl } from "utils/getBaseUrl";
-import { Vct } from "types/specification/vct";
+import { VCT_CONFIGURATION_PATH } from "#root/environment";
+import { loadJsonFiles } from "#root/utils/generic";
+import { getBaseUrl } from "#root/utils/getBaseUrl";
+import { Vct } from "#root/types/specification/vct";
 
 
 export interface VctConfiguration

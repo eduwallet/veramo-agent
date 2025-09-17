@@ -1,10 +1,19 @@
-import { StringKeyedObject } from "types";
-import { AuthorizationCodeGrant, TxCode } from "../specification";
+import { StringKeyedObject } from "#root/types/index";
+import { AuthorizationCodeGrant } from "#root/types/specification/credential_offer";
+
+
+export interface TxCodeRequest {
+    input_mode?: 'numeric' | 'text';
+    length?: number;
+    description?: string;
+    code?: string;
+}
+
 
 /* Creating the initial credential offer */
 export interface APIPreAuthGrant {
     'pre-authorized_code'?: string;
-    tx_code?: TxCode|boolean;
+    tx_code?: TxCodeRequest|boolean;
     interval?: number;
     authorization_server?: string;
 }

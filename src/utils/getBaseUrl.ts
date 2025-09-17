@@ -1,10 +1,10 @@
-import { env } from '@sphereon/ssi-express-support'
-import { trimEnd } from './stringFunctions'
+import { trimEnd } from '#root/utils/stringFunctions'
+import { BASEURL } from '#root/environment';
 
 export function getBaseUrl(url?: URL | string | undefined) {
     let baseUrl = url
     if (!baseUrl) {
-      const envUrl = env('BASEURL', process?.env?.ENV_PREFIX)
+      const envUrl = BASEURL;
       if (envUrl && envUrl.length > 0) {
         baseUrl = new URL(envUrl)
       }

@@ -1,4 +1,4 @@
-import { ContextConfiguration } from 'contexts/Store'
+import { ContextConfiguration } from 'contexts/Store.js'
 import { Request, Response, Router } from 'express'
 
 export function getContext(router:Router, context:ContextConfiguration) {

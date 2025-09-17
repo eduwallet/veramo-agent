@@ -1,8 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:server');
-import express from 'express'
-import { ExpressSupport } from "@sphereon/ssi-express-support";
-import { Issuer } from "issuer/Issuer";
+import express, { Express } from 'express'
+import { Issuer } from "issuer/Issuer.js";
 
 import {
     accessToken,
@@ -16,10 +15,11 @@ import {
     getOAuthConfiguration,
     listCredentials,
     revokeCredential,
-} from './endpoints'
-import { getBasePath } from 'utils/getBasePath';
+    getNonce,
+} from './endpoints/index.js'
+import { getBasePath } from 'utils/getBasePath.js';
 
-export async function createRoutesForIssuer(issuer:Issuer, expressSupport:ExpressSupport) {
+export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     var tokenPath = '/token';
     debug('creating routes for ', issuer.name);
     /*
@@ -30,16 +30,21 @@ export async function createRoutesForIssuer(issuer:Issuer, expressSupport:Expres
      */
     debug("initializing rest api using ", issuer.options);
     issuer.router = express.Router();
-    expressSupport.express.use(getBasePath(issuer.options.baseUrl), issuer.router);
+    app.use(getBasePath(issuer.options.baseUrl), issuer.router);
 
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
     debug("adding token path");
     accessToken(issuer, tokenPath);
+
+    if (issuer.usesNonces) {
+        // nonce endpoint (ID2)
+        getNonce(issuer);
+    }
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer)
   
-    if (issuer.did?.did?.startsWith('did:web:')) {
+    if (issuer.did?.provider == 'did:web') {
         // This endpoint serves the /.well-known/did.json document
         getDidSpec(issuer);
     }

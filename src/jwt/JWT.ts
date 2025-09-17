@@ -4,11 +4,11 @@ import { CryptoKey } from '@muisit/cryptokey';
 export class JWT {
     public token:string;
     public headerPart:string;
-    public payloadPart:string;
+    public payloadPart:string|Uint8Array; // support non-string data for JWS signatures
     public signaturePart:string;
 
-    public header:any;
-    public payload:any;
+    public header:any = null;
+    public payload:any = null;
 
 
     constructor() {
@@ -27,9 +27,7 @@ export class JWT {
             retval.headerPart = parts[1];
             retval.payloadPart = parts[2];
             retval.signaturePart = parts[3];
-
-            retval.header = retval.decodeFromBase64(retval.headerPart);
-            retval.payload = retval.decodeFromBase64(retval.payloadPart);
+            retval.decode();
         }
 
         if (!retval.header || !retval.payload || !retval.signaturePart
@@ -39,6 +37,16 @@ export class JWT {
         }
 
         return retval;
+    }
+
+    public decode()
+    {
+        if (this.headerPart.length > 0 && this.header === null) {
+            this.header = this.decodeFromBase64(this.headerPart);
+        }
+        if (this.payloadPart.length > 0 && this.payload === null) {
+            this.payload = this.decodeFromBase64(this.payloadPart as string);
+        }
     }
 
     async verify(key:CryptoKey)
@@ -54,10 +62,19 @@ export class JWT {
         const algUsed = alg || this.header.alg || 'ES256';
         if (typeof(key) != 'function') {
             this.header.alg = algUsed;
-            this.header.kid = key.exportPublicKey();
         }
-        this.headerPart = this.encodeToBase64(this.header);
-        this.payloadPart = this.encodeToBase64(this.payload);
+        if (this.header) {
+            this.headerPart = this.encodeToBase64(this.header);
+        }
+        else if (!this.headerPart) {
+            this.headerPart = '';
+        }
+        if (this.payload) {
+            this.payloadPart = this.encodeToBase64(this.payload);
+        }
+        else if (!this.payloadPart) {
+            this.payloadPart = '';
+        }
         const data = Buffer.from(this.headerPart + '.' + this.payloadPart);
         if (typeof(key) != 'function') {
             this.signaturePart = await key.sign(algUsed, data, 'base64url');
@@ -68,7 +85,7 @@ export class JWT {
         this.token = this.headerPart + '.' + this.payloadPart + '.' + this.signaturePart;
     }
 
-    decodeFromBase64(payload:string)
+    public decodeFromBase64(payload:string)
     {
         let bytes = fromString(payload, 'base64url');
         let jsonstring = toString(bytes);
@@ -81,7 +98,7 @@ export class JWT {
         return null;
     }
 
-    encodeToBase64(payload:any)
+    public encodeToBase64(payload:any)
     {
         const encoded = Buffer.from(JSON.stringify(payload));
         return toString(encoded, 'base64url');

@@ -1,4 +1,4 @@
-import { FieldSettings } from './determineFieldLengths';
+import { FieldSettings } from '#root/utils/cli/determineFieldLengths';
 import moment from 'moment';
 
 function padWithSpaces(str:string, length:number, onRight:boolean)

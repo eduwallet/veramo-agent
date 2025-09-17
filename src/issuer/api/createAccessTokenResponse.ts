@@ -1,20 +1,19 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { AccessTokenResponse } from 'types/specification/access_token';
-import { Issuer } from 'issuer/Issuer';
-import { CredentialOfferStatus } from 'types/api';
-import { SessionState } from 'utils/SessionStateManager';
+import { AccessTokenResponse } from 'types/specification/access_token.js';
+import { Issuer } from 'issuer/Issuer.js';
+import { CredentialOfferStatus } from 'types/api.js';
 import { JWT } from '#root/jwt/JWT';
-import { createUniqueId } from '#root/utils/createUniqueId';
+import { Session } from '#root/packages/datastore/entities/Session';
+import moment from 'moment';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
 
-export async function createAccessTokenResponse(issuer:Issuer,session:SessionState) {
+export async function createAccessTokenResponse(issuer:Issuer, session:Session) {
     debug("creating access token");
-    session.lastUpdatedAt = Date.now();
-    session.status = CredentialOfferStatus.ACCESS_TOKEN_CREATED;
-    issuer.storeSession(session);
-    
+    session.data.lastUpdatedAt = Date.now();
+    session.data.status = CredentialOfferStatus.ACCESS_TOKEN_CREATED;
+    await issuer.storeSession(session);
 
     const access_token = await generateAccessToken(issuer, session);
     debug("signed token", access_token);
@@ -26,25 +25,35 @@ export async function createAccessTokenResponse(issuer:Issuer,session:SessionSta
         // refresh_token is optional
     };
 
-    // if using pre-authorised code flow, we do not have authorization_details
-    // in our authorization request, hence the spec does not allow us to
-    // use it in our token response.
-    // The only option left is to use the scope attribute, which is actually
-    // required according to RFC6749 if it was not specified by the client
-    response.scope = session.credentialId!;
+    // ID-1: 6.2: authorization_details is required if it was sent earlier on, optional
+    // if not.
+    // For now: we set this to the one credentialId of this interaction
+    // TODO: update this when we want to support multiple credential issuance
+    // We need to find all the datasets linked to the same credentialId and list these here,
+    // so the wallet can potentially loop through these identifiers and request multiple
+    // credentials in a row
+    // We set the credential_configuration_id to the same value for lack of better ids
+    // Please note: credential_configuration_id must be present in metadata.credential_configurations_supported
+    // whereas credential_identifiers are a transaction-unique set of dataset-identifiers
+    response.authorization_details = [{
+        "type": "openid_credential",
+        "credential_identifiers": [session.data.credentialId],
+        "credential_configuration_id": session.data.credentialId
+    }];
 
+    // in ID2, nonces are retrieved from a nonce endpoint
+    // DIIPv4 compliance: remove this section
     if (issuer.usesNonces) {
-        const cNonce = createUniqueId();
-        issuer.nonceStates.set(cNonce, session.id);
-        debug("nonce created: ", cNonce);
-        response.c_nonce = cNonce;
-        response.c_nonce_expires_in = TOKEN_EXPIRY / 1000;
+        const nonce = await issuer.nonceStates.get('', {session: session.uuid });
+        debug("nonce created: ", nonce);
+        response.c_nonce = nonce.uuid;
+        response.c_nonce_expires_in = Math.floor((moment(nonce.expirationDate).toDate().getTime() - Date.now()) / 1000);
     }
     debug("access token response", response);
     return response
 }
   
-async function generateAccessToken(issuer:Issuer, session:SessionState)
+async function generateAccessToken(issuer:Issuer, session:Session)
 {
     debug("generating access token");
     // JWT uses seconds for iat and exp
@@ -56,7 +65,7 @@ async function generateAccessToken(issuer:Issuer, session:SessionState)
             iat,
             exp,
             iss: issuer.did!.did,
-            ...(session.preAuthorizedCode && { issuer_state: session.preAuthorizedCode }),
+            issuer_state: session.state,
             token_type: 'Bearer',
     };
     debug("access token content", jwt);

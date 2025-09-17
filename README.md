@@ -1,9 +1,12 @@
 # Veramo Agent
-Implementation of a generic veramo agent
+Implementation of a generic OID4VCI issuing agent.
 
-This configuration is derived in a large part from the Veramo agent configuration of the Sphereon OID4VC-demo
+This application has evolved out of an earlier version of the Sphereon OID4VC-demo
 
 For more details about the Sphereon code, please see: https://github.com/Sphereon-Opensource/OID4VC-demo
+
+Although it is called the 'veramo-agent', it no longer implements the veramo libraries, nor any Sphereon modules.
+
 
 ## Preface
 
@@ -36,24 +39,6 @@ docker run -t -i \
 
 Make sure to replace the `POSTGRES_PASSWORD` and the `<veramo-agent-path>` with proper values and in general match the vales with the `.env` or `.env.local` configuration.
 
-### OpenObserver
-
-The application can log to an OpenObserver log application. Please provide the service URL and user bearer token in the environment file.
-
-You can run a local dockerised OpenObserver container using the following command:
-
-```bash
-docker run -t -i \
-    --env-file .env
-    --env ZO_DATA_DIR=/data
-    --env ZO_ROOT_USER=<root user login/email>
-    --env ZO_ROOT_USER_PASSWORD=topsecret
-    --env ZO_INGEST_FLATTEN_LEVEL=1
-    -v ./data:/data
-    -p 5080:5080
-    public.ecr.aws/zinclabs/openobserve:latest
-```
-
 ### Docker instance
 
 The project comes with a `Dockerfile` with a basic configuration to run the `veramo-agent` directly inside a container.
@@ -69,13 +54,9 @@ Make sure to install the environment file `.env` and  configurations in the `/co
 
 ### Docker Compose
 
-Alternatively, just run `docker compose build` and then `docker compose up` to
-install and run the agent, the database and the openobserver log container.
+Run `docker compose build` and then `docker compose up` to build and run the agent, the database and the openobserver log container.
 
-This *won't* install packages, so `yarn install` is still needed. The app
-directory is mounted read-only in docker. This way, we can inspect dependencies
-in intellisense/lsp while avoiding node_modules to get files and dirs that we
-cannot remove on the host.
+The Docker setup installs all dependencies inside the container, so there's no need to run `yarn install` locally unless you're developing outside of Docker.
 
 ## Configuration
 
@@ -107,6 +88,8 @@ The credential configuration as defined by the OpenID4VCI spec as part of the `c
 
 Please note that the application assumes the credential metadata is in `vc_jwt` format, so the credential attributes are listed in the `credential_definition.credentialSubject` attribute. The content of this attribute is converted automatically if the credential has format `vc+sd-jwt`, which uses a `claims` attribute instead.
 
+Please note that the application supports both VCDM 1.1 and VCDM 2.0 type credentials. To enable a VCDM 2.0 credential, configure it with format 'vc+jwt' instead of 'json_vc_jwt'. This is automatically rewritten in the metadata output, because the OID4VCI spec does not understand 'vc+jwt'.
+
 ### Dids
 
 The key material configuration is stored in the `conf/dids/` directory. Each entry looks as follows:
@@ -115,20 +98,18 @@ The key material configuration is stored in the `conf/dids/` directory. Each ent
 {
     "did": <(optional) full did name, only usable for did:web keys where the key name is known in advance>,
     "alias": <(optional) string alias that can be used with issuers>,
-    "createArgs": {
-        "provider": <key provider, like did:web or did:key>,
-        "options": {
-            "kid": "auth-key",
-            "keyType": <key type, like Ed25519>,
-            "keys": [{"type": <key type>, "isController": true }]
-        }
-    }
+    "provider": "type of identifier, like did:web, did:key or did:jwk",
+    "type": "type of the key, like ed25519, Secp256r1, RSA",
+    "path": "optional path at which to serve this key as a did document",
+    "services": ["optional list of service objects for the did document"]
 }
 ```
 
 If the key is not found at start-up, it is created.
 
-Please note that the alias needs to contain the key provider as well, because the alias search of veramo requires a provider. To work around this, the implemented alias search will try to extract the key provider from the start of the alias. If not found, the default provider as configured in the `plugins.ts` script will be used. A correct example alias would be: `did:key:mbob` for a non-default-provider `did:key` identifier.
+The keys used for issuers are served at the `/<issuer>/.well-known/did.json` endpoint as well, if configured as a `did:web`. The `path` attribute here can be used to also serve a specific key as a `did:web` on the root of the application for example.
+
+`did:web` keys served as part of an issuer get the `OID4VCI` service with an endpoint pointing to the issuer base url.
 
 ### Metadata
 
@@ -151,6 +132,8 @@ Optionally, instead of extending a credential based on the credential identifier
 
 The `extends` attribute is removed from the output if it was present.
 
+The `format` attribute is rewritten if it is `vc+jwt` to `json_vc_jwt`. This format indicates the credential should be output as VCDM 2.0.
+
 ### Issuers
 
 The issuer configurations are specified in the `conf/issuer/` directory. Each entry there will instantiate an issuer service. The configuration is as follows (*Please note: this configuration has changed significantly*):
@@ -166,11 +149,14 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
     "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
     "statusLists": <optional status list specifications>,
     "did": <did alias or did name as configured in the did section above>,
+    "key": "optional key reference index, like '0', depending on the identifier key format",
     "usesNonces": <boolean value that indicates if a nonce value should be generated in the access token>
 }
 ```
 
 The definition is available in the `src/types/internal.ts` file, `IssuerConfiguration` interface.
+
+The `key` attribute is automatically set based on the type of the key, usually to '0'. If you have a very specific key configuration, you can override it with the `key` attribute, but it should not be necessary. The `did:jwk` keys always have a key reference of '0'. The `did:web` implementation has a key reference of '0' as well. The `did:key` specification indicates the key reference is the multibase encoded public key, but that is not known in advance if the key needs to be generated fresh.
 
 The statuslist configuration lists the available status lists for this issuer:
 
@@ -249,6 +235,7 @@ The current setup supports the basic endpoints:
 - `<base URL>/<instance>/.well-known/oauth-authorization-server`
 - `<base URL>/<instance>/.well-known/did.json`
 - `<base URL>/<instance>/credentials`
+- `<base URL>/<instance>/nonce`
 - `<base URL>/<instance>/get-credential-offer/:id`
 
 The first URL serves the JSON metadata that configures the issuer. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute for `vc+sd-jwt` type credentials, allowing the metadata to only list the `vc_jwt` type configuration.
@@ -261,6 +248,8 @@ The `did.json` endpoint provides a convenient way of publishing the `did:web` co
 is restarted or keys refreshed, the key configuration will be correct.
 
 The `credentials` URL serves the credential, provided the user can supply the required data (grant, authorization code, pin, credential reference, etc.). This follows the basic OpenID4VC specification.
+
+The `nonce` POST endpoint serves a fresh nonce value, not linked to any session. This follows the basic OpenID4VC specification version 1.16 and higher.
 
 The `get-credential-offer` endpoint serves the actual credential issuance offer, which is referenced by URI in the QR code.
 
@@ -301,12 +290,13 @@ Please note the following:
 - the example displays two grant types. Usually only one of either is used (the front-end-issuer either has authenticated the user, or it has not). Which one is used depends on the configuration of the back-end-issuer for this specific instance
 - in the `authorization_code.issuer_state` field, the example shows the content `generate`. This is a special-case situation forcing the back-end-issuer to generate a new state value. Preferably the `issuer_state` was left undefined, but that may cause the entire `authorization_code` object to be removed by intermediate libraries. To prevent that, fill the `issuer_state` with the special `generate` value. The response will provide the actual state identifier used for this session
 - the `pre-authorized_code` field can be undefined, in which case a random code is generated. However, to prevent the grant containing an empty object which may be removed by the intermediate libraries, the value `generate` may be used to force a random state code, like for the `issuer_state` above
-- the `tx_code` can either be a boolean or an object. If boolean `true`, a pin code of 4 digits is generated. If it is an object, it is expected to contain attributes `input_mode` ('text' or 'numeric' (default)), `length` (default: 4) and a `description` (default 'PIN'). This information is transferred to the `tx_code` attribute of the pre-auth-grant in the offer and used to generate the `txCode` return value.
+- the `tx_code` can either be a boolean or an object. If boolean `true`, a pin code of 4 digits is generated. If it is an object, it is expected to contain attributes `input_mode` ('text' or 'numeric' (default)), `length` (default: 4) and a `description` (default 'PIN'). This information is transferred to the `tx_code` attribute of the pre-auth-grant in the offer and used to generate the `txCode` return value. Front end issuers can indicate a transaction code of their own by supplying that code in the `code` field, which is then reflected back to the caller.
 
 The `credentialMetadata` attribute can contain settings about the credential. Currently the following are defined:
 
 - `expiration`: a number representing the seconds after issuance date for the credential to expire. For backwards compatibility, the credential data fields `_exp` and `_ttl` are also supported and serve the same purpose
 - `enableStatusLists`: a boolean field that enables or disables generating status list information. If not specified, but status lists are configured for an issuer, status list information is generated. Set this field explicitely to `false` to prevent generating status list information
+- `evidence`: an object or array containing evidence data as specified in the VCDM spec.
 
 The call returns a JSON object containing the following elements:
 

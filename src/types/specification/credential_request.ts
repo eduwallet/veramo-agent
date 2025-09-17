@@ -1,5 +1,5 @@
 import { JWK } from 'jose'
-import { ClaimsList, NameSpacedClaimsList } from './metadata';
+import { ClaimsList, NameSpacedClaimsList } from '#root/types/specification/metadata';
 
 // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-request
 export type CredentialRequest = CredentialRequestBase &
@@ -12,6 +12,7 @@ export type CredentialRequest = CredentialRequestBase &
 export interface CredentialRequestBase {
     format?:string;  // REQUIRED when credential_identifiers was NOT returned from the token response
     proof?: ProofOfPossession;
+    proofs?: ProofOfPossessionTypes;
     credential_identifier?: string;
     credential_response_encryption?:CredentialResponseEncryption;
 }
@@ -65,4 +66,9 @@ export interface ProofOfPossession {
     jwt?:string;            // REQUIRED for proof_type jwt
     cwt?:string;            // REQUIRED for proof type cwt
     ldp_vp:any;             // REQUIRED for proof type ldp_vp. Composition of this object is not further implemented
+}
+
+export interface ProofOfPossessionTypes {
+    jwt?:string[];
+    // the other types are currently not supported
 }

@@ -1,12 +1,11 @@
 import { Request, Response } from 'express'
-import { sendErrorResponse } from '@sphereon/ssi-express-support'
-import { Issuer } from 'issuer/Issuer'
+import { sendErrorResponse } from '#root/server/sendErrorResponse'
+import { Issuer } from '#root/issuer/Issuer'
 import passport from 'passport';
-import { openObserverLog } from 'utils/openObserverLog';
-import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from 'types/api/credentialOffer';
-import { validateCreateCredentialOffer } from 'issuer/api/validateCreateCredentialOffer';
-import { createCredentialOffer } from 'issuer/api/createCredentialOffer';
-import { ErrorCodes } from 'types/api';
+import { CreateCredentialOfferResponse, CreateCredentialOfferRequest } from '#root/types/api/credentialOffer';
+import { validateCreateCredentialOffer } from '#root/issuer/api/validateCreateCredentialOffer';
+import { createCredentialOffer } from '#root/issuer/api/createCredentialOffer';
+import { ErrorCodes } from '#root/types/api';
 
 export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: string, offerPath: string) {
     issuer.router!.post(createOfferPath,
@@ -18,8 +17,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             if (error.error != ErrorCodes.NO_ERROR) {
                 return sendErrorResponse(response, 400, { error: error.error, description: error.description });
             }
-            const credentialOfferData = createCredentialOffer(issuer, request.body);
-            await openObserverLog(credentialOfferData.id, "createoffer-request", request.body);
+            const credentialOfferData = await createCredentialOffer(issuer, request.body);
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-request', request.body);
 
             const resultResponse: CreateCredentialOfferResponse = {
@@ -27,7 +25,6 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
                 txCode: credentialOfferData.pinCode,
                 id: credentialOfferData.id
             }
-            await openObserverLog(credentialOfferData.id, "createoffer-response", resultResponse);
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-response', resultResponse);
             return response.json(resultResponse);
         } 

@@ -1,22 +1,30 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { Issuer } from '../Issuer';
-import { normalizeGrants } from '../../protocol/normalizeGrants';
-import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer';
-import { CreateCredentialOfferRequest } from 'types/api/credentialOffer';
-import { CredentialOfferData } from 'types/specification/credential_offer';
-import { CreateCredentialData } from 'types/internal';
-import { CredentialOfferStatus } from 'types/api';
+import { Issuer } from '../Issuer.js';
+import { normalizeGrants } from '../../protocol/normalizeGrants.js';
+import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer.js';
+import { CreateCredentialOfferRequest } from 'types/api/credentialOffer.js';
+import { CredentialOfferData } from 'types/specification/credential_offer.js';
+import { CreateCredentialData } from 'types/internal.js';
+import { CredentialOfferStatus } from 'types/api.js';
 
-export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):CreateCredentialData {
+export async function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):Promise<CreateCredentialData> {
     debug("creating credential offer", request);
     let { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(request.grants);
 
     const credentialConfigIds = request.credentials as string[]
 
     const credentialOffer:CredentialOfferData = {
+        // spec ID-1:4.1.1 -> Object indicating to the Wallet the Grant Types the Credential Issuer's
+        // Authorization Server is prepared to process for this Credential Offer.
         grants,
+        // spec ID-1:3.3.4 ->  the Credential Issuer identifies offered Credential Configurations using the
+        // credential_configuration_ids parameter
+        // spec ID-1:4.1.1 -> A non-empty array of unique strings that each identify one of the keys in the
+        // name/value pairs stored in the credential_configurations_supported Credential Issuer metadata.
         credential_configuration_ids: credentialConfigIds,
+        // spec ID-1:4.1.1 -> The URL of the Credential Issuer, as defined in Section 11.2.1, from which
+        // the Wallet is requested to obtain one or more Credentials. 
         credential_issuer: issuer.metadata.credential_issuer,
     };
 
@@ -38,44 +46,44 @@ export function createCredentialOffer(issuer:Issuer, request:CreateCredentialOff
     }
 
     // before we create a new session, clear out the old ones
-    issuer.clearExpired();
+    await issuer.clearExpired();
 
-    const session = issuer.getSessionById();
-    session.createdAt = Date.now();
-    session.lastUpdatedAt = Date.now();
-    session.status = CredentialOfferStatus.OFFER_CREATED;
-    session.credentialOffer = credentialOffer;
-    session.metaData = request.credentialMetadata || {};
-    session.credentialId = credentialConfigIds[0];
+    const session = await issuer.getSessionById();
+    session.data.status = CredentialOfferStatus.OFFER_CREATED;
+    session.data.credentialOffer = credentialOffer;
+    session.data.metaData = request.credentialMetadata || {};
+    // TODO: update this when we want to support multiple credential issuance
+    // We need to create a list of ids allowed for this session by the offer
+    session.data.credentialId = credentialConfigIds[0];
 
     // store the requested dataset as a credential-data-set named after the credential id
-    session.credentialDataSets = {};
-    session.credentialDataSets[credentialConfigIds[0]] = {
+    session.data.credentialDataSets = {};
+    // TODO: update this when we want to support multiple credential issuance
+    // We need to loop over all the ids supplied and set the relevant configuration and data
+    session.data.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
-        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0]),
+        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0], false),
         data: request.credentialDataSupplierInput
     };
 
     if (userPin) {
         debug("using pincode ", userPin);
-        session.pinCode = userPin;
+        session.data.pinCode = userPin;
     }
 
     if (preAuthorizedCode) {
         debug("using pre-authorized_code", preAuthorizedCode);
-        session.preAuthorizedCode = preAuthorizedCode;
-        issuer.authorizationState.set(preAuthorizedCode, session.id);
+        session.state = preAuthorizedCode;
     }
     if (issuerState) {
         debug("using issuerState", issuerState);
-        session.issuerState = issuerState;
-        issuer.authorizationState.set(issuerState, session.id);
+        session.state = issuerState;
     }
 
-    issuer.storeSession(session);
+    await issuer.storeSession(session);
 
     const retval = {
-        id: session.id,
+        id: session.uuid,
         ...(userPin && {pinCode:userPin })
     };
     debug("returning ", retval);

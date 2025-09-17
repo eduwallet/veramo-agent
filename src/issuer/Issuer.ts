@@ -3,46 +3,38 @@ const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";
-import { JsonWebKey } from 'did-resolver';
-import { jwtDecode } from 'jwt-decode'
-import { StatusList } from "types/specification/statuslists";
-import { StatusListRevocationState } from 'types/api';
-import { IssuerConfiguration } from 'types/internal';
+import { StatusList, StatusListIETF, StatusListW3C } from "#root/types/internal/statuslists";
+import { StatusListRevocationState } from '#root/types/api';
+import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
-import { ExtendableCredentialConfiguration, MetadataConfiguration } from 'types/api/metadata';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from 'types/specification/metadata';
-import { CredentialPayload, DIDDocument, DIDResolutionOptions, IIdentifier, IKey } from '@veramo/core';
-import { bytesToBase64 } from '@veramo/utils';
-import { toJwk, JwkKeyUse } from '@sphereon/ssi-sdk-ext.key-utils';
-import { getFirstKeyWithRelation } from '@sphereon/ssi-sdk-ext.did-utils'
-import { getAgent } from 'agent';
-import { getCredentialConfigurationStore } from "credentials/Store";
-import { getDbConnection } from "database";
-import { Credential, Claims } from "database/entities/Credential";
-import { getContextConfigurationStore } from 'contexts/Store';
-import { credentialDataChecker } from "credentials/credentialDataChecker";
-import { algMapping, keyMapping } from 'crypto/index';
-import { getVctForCredentialType } from 'vct/Store';
-import { getIdentifier, getIdentifierByAlias } from 'utils/did';
-import { SessionState, SessionStateManager } from 'utils/SessionStateManager';
+import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/types/api/metadata';
+import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from '#root/types/specification/metadata';
+import { getCredentialConfigurationStore } from "#root/credentials/Store";
+import { getDbConnection } from "#root/database/databaseService";
+import { Credential as CredentialEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
+import { getContextConfigurationStore } from '#root/contexts/Store';
+import { Credential } from "#root/credentials/Credential";
+import { getVctForCredentialType } from '#root/vct/Store';
+import { SessionStateManager } from '#root/utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
-import { retrieveASServerKey } from './lib/retrieveASServerKey.js';
+import { retrieveASServerKey } from '#root/issuer/lib/retrieveASServerKey';
 import { createUniqueId } from '#root/utils/createUniqueId';
-import { Factory } from '@muisit/cryptokey';
-import { DIDDoc } from '#root/crypto/DIDDoc';
+import { CredentialFactory } from '#root/credentials/CredentialFactory';
+import { CryptoKey, Factory } from '@muisit/cryptokey';
+import { Session } from '#root/packages/datastore/entities/Session';
+import { NonceManager } from '#root/utils/NonceManager';
 
 export class Issuer
 {
     public name:string;
     public metadata:MetadataConfiguration;
     public options:IssuerConfiguration;
-    public did?:IIdentifier;
-    public key:IKey|null;
+    public did:IdentifierEntity|null = null;
+    public key:CryptoKey|null;
     public keyRef:string;
     public router:Router|undefined;
     public sessionData:SessionStateManager;
-    public authorizationState:Map<string, string>;
-    public nonceStates:Map<string, string>;
+    public nonceStates:NonceManager;
     public serverKeys:StringKeyedObject;
     public usesNonces:boolean;
 
@@ -50,33 +42,41 @@ export class Issuer
         this.options = _options;
         this.metadata = _metadata;
         this.key = null;
-        this.keyRef = '';
+        this.keyRef = _options.key ?? '';
         this.name = _options.name;
-        this.sessionData = new SessionStateManager();
-        this.authorizationState = new Map<string,string>();
-        this.nonceStates = new Map<string, string>();
+        this.sessionData = new SessionStateManager(this.name);
+        this.nonceStates = new NonceManager(this.name);
         this.serverKeys = {};
         this.usesNonces = _options.usesNonces ?? true;
     }
 
     public algorithm():string
     {
-        return algMapping[this.key!.type];
+        return this.key?.algorithms()[0] || 'EdDSA';
     }
 
     public async setDid()
     {
-        this.did = await getIdentifier(this.options.did);
-        if (!this.did) {
-            this.did = await getIdentifierByAlias(this.options.did);
-        }
-
+        const dbConnection = await getDbConnection();
+        const ids = dbConnection.getRepository(IdentifierEntity);
+        this.did = await ids.createQueryBuilder('identifier')
+            .innerJoinAndSelect("identifier.keys", "key")
+            .where('did=:did', {did: this.options.did})
+            .orWhere('alias=:alias', {alias: this.options.did})
+            .getOne();
+        
         if (!this.did) {
             throw new Error('Missing issuer did configuration');
         }
+        const dbKey = this.did.keys[0];
+        if (this.keyRef == '') {
+            this.keyRef = Factory.getKeyReference(this.did.did);
+        }
 
-        this.key = await getFirstKeyWithRelation({ identifier: this.did!, vmRelationship: 'assertionMethod', offlineWhenNoDIDRegistered: true }, { agent: getAgent() })
-        this.keyRef = this.key!.kid;
+        const pkeys = dbConnection.getRepository(PrivateKeyEntity);
+        const pkey = await pkeys.findOneBy({alias:dbKey.kid});
+
+        this.key = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
     }
 
     public async retrieveASServerKeys()
@@ -95,7 +95,7 @@ export class Issuer
 
     public async signData(data: Uint8Array)
     {
-        return getAgent().keyManagerSign({ keyRef: this.keyRef, algorithm: this.algorithm(), data});
+        return await this.key?.sign(this.algorithm(), data, 'base64url');
     }
 
     public async signToken(jwt: JWT) {
@@ -104,15 +104,14 @@ export class Issuer
         }
         jwt.payload.iss = this.did!.did;
         jwt.header.alg = this.algorithm();
-        await jwt.sign(async (data:Uint8Array) => this.signData(data));
+        await jwt.sign(this.key!);
         return jwt.token;
     }
 
     public async verifyToken(token:string)
     {
         const jwt = JWT.fromToken(token);
-        const key = Factory.createFromManagedKey(this.key!);
-        const verified = await jwt.verify(key);
+        const verified = await jwt.verify(this.key!);
         if (!verified) {
             return null;
         }
@@ -128,109 +127,92 @@ export class Issuer
         };   
     }
 
-    public getSessionById(id: string = ''): SessionState {
-        return this.sessionData.get(id, (el:SessionState) => { el.state = id; return el; });
+    public async getSessionById(id: string = ''): Promise<Session> {
+        return await this.sessionData.get(id, (el:Session) => { el.uuid = id; return el; });
     }
-    public storeSession(state:SessionState)
-    {
-        this.sessionData.set(state);
+    public async getSessionByState(id: string = ''): Promise<Session|null> {
+        return await this.sessionData.getByState(id);
     }
-    public removeSession(state:SessionState)
+    public async storeSession(state:Session)
     {
-        if (this.authorizationState.has(state.issuerState)) {
-            this.authorizationState.delete(state.issuerState);
-        }
-        if (this.authorizationState.has(state.preAuthorizedCode)) {
-            this.authorizationState.delete(state.preAuthorizedCode);
-        }
-        this.sessionData.clear(state.id);
+        await this.sessionData.set(state);
+    }
+    public async removeSession(state:Session)
+    {
+        await this.sessionData.clear(state.uuid);
     }
 
     public async storeRequestResponseData(id:string, phase:string, data:any, isJwt = false)
     {
-        const session = this.getSessionById(id);
+        const session = await this.getSessionById(id);
         if (session) {
-            if (!session.requestResponseData) {
-                session.requestResponseData = {};
+            if (!session.data.requestResponseData) {
+                session.data.requestResponseData = {};
             }
 
             if (isJwt && typeof(data) == 'string') {
                 // decode the JWT to get the payload
-                data = jwtDecode(data);
+                data = JWT.fromToken(data);
             }
-            session.requestResponseData[phase] = data;
+            session.data.requestResponseData[phase] = data;
+            await this.storeSession(session);
         }
     }
 
-    public async storeCredential(session:SessionState, credential:CredentialPayload)
+    public async storeCredential(session:Session, credential:Credential)
     {
-        if (session && credential && typeof(credential) !== 'string') {
-            const dbConnection = await getDbConnection();
-            const repo = dbConnection.getRepository(Credential);
-            const dbCred = new Credential();
-            dbCred.uuid = createUniqueId();
-            dbCred.state = session.state;
-            dbCred.issuanceDate = moment((credential.issuanceDate as string) || undefined).toDate();
-            dbCred.claims = credential.credentialSubject as Claims;
-            if (credential.expirationDate) {
-                dbCred.expirationDate = moment((credential.expirationDate as string) || undefined).toDate();
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(CredentialEntity);
+        const dbCred = new CredentialEntity();
+        dbCred.uuid = createUniqueId();
+        dbCred.state = session.state;
+        dbCred.issuanceDate = moment((credential.metaData.issuanceDate as string) || undefined).toDate();
+        dbCred.claims = credential.data as StringKeyedObject;
+        if (credential.metaData.expirationDate) {
+            dbCred.expirationDate = moment((credential.metaData.expirationDate as string) || undefined).toDate();
+        }
+        else {
+            dbCred.expirationDate = undefined;
+        }
+        dbCred.holder = session.data.holder || '';
+        dbCred.credpid = session.data.principalCredentialId || '';
+        dbCred.issuer = this.name;
+        dbCred.metadata = this.getCredentialConfiguration(session.data.credentialId) as StringKeyedObject;
+        dbCred.credentialId = session.data.credentialId || '';
+        if (credential.metaData.credentialStatus) {
+            if (!Array.isArray(credential.metaData.credentialStatus)) {
+                dbCred.statuslists = [credential.metaData.credentialStatus];
             }
             else {
-                dbCred.expirationDate = undefined;
+                dbCred.statuslists = credential.metaData.credentialStatus;
             }
-            dbCred.holder = session.holder || '';
-            dbCred.credpid = session.principalCredentialId || '';
-            dbCred.issuer = this.name;
-            dbCred.credentialId = session.credentialId || '';
-            if (credential.credentialStatus && typeof(credential.credentialStatus) == 'object') {
-                dbCred.statuslists = credential.credentialStatus;
-            }
-            await repo.save(dbCred);
-            session.uuid = dbCred.uuid;
         }
+        await repo.save(dbCred);
+        session.data.uuid = dbCred.uuid;
     }
 
     public async clearExpired()
     {
-        // do some random state cleanup to keep memory use down
-        this.sessionData.clearAll();
-        //await this.vcIssuer.cNonces.clearExpired();
-        //await this.vcIssuer.uris?.clearExpired();
+        await this.sessionData.clearAll();
     }
 
-    public checkCredentialData(credentialIds:string[], claims: any)
+    public checkCredentialData(type:string, claims: any)
     {
-        return credentialDataChecker(this, credentialIds[0], claims);
+        const credential = new Credential();
+        credential.issuer = this;
+        credential.type = type;
+        credential.data = claims;
+        return CredentialFactory.check(credential);
     }
 
-    public getDidDoc ():DIDDocument {
-        const allKeys = this.did!.keys.map((key:IKey) => ({
-            id: this.did!.did + '#' + key.kid,
-            type: keyMapping[key.type],
-            controller: this.did!.did,
-            publicKeyJwk: toJwk(key.publicKeyHex, key.type, { use: JwkKeyUse.Signature, key: key}) as JsonWebKey,
-        }));
-    
-        const services = this.did!.keys.map((key:IKey) => ({
-            id: this.did!.did + '#' + key.kid,
-            type: "OID4VCI",
-            serviceEndpoint: this.metadata.credential_issuer
-        }));
-    
-        const signingKeyIds = allKeys
-            .filter((key:any) => key.type !== 'X25519KeyAgreementKey2019')
-            .map((key:any) => key.kid)
-        
-        const didDoc:DIDDocument = {
-            '@context': 'https://w3id.org/did/v1',
-            id: this.did!.did,
-            verificationMethod: allKeys,
-            authentication: signingKeyIds,
-            assertionMethod: signingKeyIds,
-            service: [...services, ...(this.did?.services || [])],
-        }
-        
-        return didDoc;
+    public async getDidDoc () {
+        return await Factory.toDIDDocument(this.key!, this.did?.did, [
+            {
+                "id": this.did!.did + '#oid4vci',
+                "type": "OID4VCI",
+                "serviceEndpoint": this.options.baseUrl
+            }
+        ], "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
     }
 
     public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
@@ -254,10 +236,13 @@ export class Issuer
         return false;
     }
 
-    public getCredentialConfiguration(id:string): CredentialConfiguration|null {
-        const credential = this.hasCredentialConfiguration(id);
+    public getCredentialConfiguration(id:string, decorate:boolean = true): CredentialConfiguration|null {
+        let credential:any = this.hasCredentialConfiguration(id);
         if (credential !== false) {
-            return this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration);
+            if (decorate) {
+                credential = this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration);
+            }
+            return credential;
         }
         return null;
     }
@@ -269,12 +254,13 @@ export class Issuer
             // to all credentials defined in the set
             if (this.metadata['@context'] && this.metadata['@context'].length) {
                 const contextStore = getContextConfigurationStore();
-                return this.metadata['@context'].map((item) => {
-                    if (contextStore[item]) {
-                        return contextStore[item].fullPath!;
+                return this.metadata['@context'].map((item:string) => {
+                    const ctx = contextStore.get(item);
+                    if (ctx) {
+                        return ctx.fullPath!;
                     }
                     return null;
-                }).filter((i) => i !== null) as string[];
+                }).filter((i:string | null) => i !== null) as string[];
             }
         }
         return [];
@@ -291,6 +277,9 @@ export class Issuer
         metadata.credential_identifiers_supported = true;
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
+        if (this.usesNonces) {
+            metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
+        }
 
         return metadata;
     }
@@ -361,6 +350,10 @@ export class Issuer
         if (decoratedCredential.format == 'vc+sd-jwt') {
             decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential as CredentialConfigurationJwtVC);
         }
+        // vc+jwt is not a valid OpenID4VCI format
+        else if (decoratedCredential.format == 'vc+jwt') {
+            decoratedCredential.format = 'jwt_vc_json';
+        }
 
         return decoratedCredential as CredentialConfiguration;
     }
@@ -368,7 +361,7 @@ export class Issuer
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
     {
       const dbConnection = await getDbConnection();
-      var qb = dbConnection.createQueryBuilder().select('c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(Credential, 'c').where('c.id > 0');
+      var qb = dbConnection.createQueryBuilder().select('c.uuid, c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(CredentialEntity, 'c').where('c.id > 0');
       if (primaryId && primaryId.length) {
           qb = qb.andWhere('c.credpid=:credpid', {credpid: primaryId});
       }
@@ -392,8 +385,8 @@ export class Issuer
     {
         debug("revoking specific credential " + uuid);
         const dbConnection = await getDbConnection();
-        const userRepository = dbConnection.getRepository(Credential);
-        const credential = await userRepository.findOneBy({uuid});
+        const repo = dbConnection.getRepository(CredentialEntity);
+        const credential = await repo.findOneBy({uuid});
         if (!credential) {
             debug("credential not found in database");
             throw new Error("No such credential");
@@ -402,12 +395,14 @@ export class Issuer
             debug("credential has no statuslists associated");
             throw new Error("No statuslist available");
         }
-        // convert the if-only-one-than-not-an-array spec to an always-array-even-if-only-one implementation
+
         var retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
+        // we should have store this as an array, but you never know with these specs...
         const statuslists = Array.isArray(credential.statuslists) ? credential.statuslists : [credential.statuslists];
+
         debug("looping over " + statuslists.length + " statuslists");
         for (const statlist of statuslists) {
-            if (!listName || listName == statlist.id) {
+            if (!listName || statlist.credentialStatus?.id?.startsWith(listName)) {
                 retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
             }
         }
@@ -430,31 +425,46 @@ export class Issuer
         return oldState;
     }
 
-    private async revokeCredentialFromList(credential:Credential, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
+    private async revokeCredentialFromList(credential:CredentialEntity, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
     {
         debug("revoking credential of type " + credential.credentialId);
-        const slist = this.options.statusLists![credential.credentialId];
-        if (slist) {
-            debug("invoking " + slist.revoke + " with " + statlist.statusListIndex + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
-            const returnValue:any = await fetch(slist.revoke, {
-                method: 'POST',
-                body: JSON.stringify({
-                    list: statlist.statusListCredential,
-                    index: statlist.statusListIndex,
-                    state: doRevoke ? 'revoke' : 'unrevoke'
-                }),
-                headers: {
-                    'Content-type': 'application/json',
-                    'Authorization': 'Bearer ' + slist.token,
+        let slists = this.options.statusLists![credential.credentialId];
+        if (slists) {
+            // make sure it is an array
+            if (!Array.isArray(slists)) slists=[slists];
+            for (const slist of slists) {
+                // if we actually have a revoke interface, revoke it
+                // TODO: perhaps create other interfaces/services for suspend/message/etc
+                if (slist.url == statlist.uri && slist.revoke) {
+                    debug("invoking " + slist.revoke + " with " + statlist + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
+                    try {
+                        const listuri = statlist.type == 'statuslist+jwt' ? (statlist.credentialStatus as StatusListIETF).uri : (statlist.credentialStatus as StatusListW3C).statusListCredential
+                        const returnValue:any = await fetch(slist.revoke, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                list: listuri,
+                                index: statlist.index,
+                                status: doRevoke ? 'revoke' : 'unrevoke'
+                            }),
+                            headers: {
+                                'Content-type': 'application/json',
+                                'Authorization': 'Bearer ' + slist.token,
+                            }
+                        }).then((r) => r.json());
+                        debug("return value is " + JSON.stringify(returnValue));
+
+                        // an error in the call will cause an exception which is caught upstairs
+                        switch (returnValue.status) {
+                            case 'REVOKED': return StatusListRevocationState.REVOKED;
+                            case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
+                            case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
+                            default: return StatusListRevocationState.UNKNOWN;
+                        }
+                    }
+                    catch (e) {
+                        debug("caught exception ", e, " on revocation");
+                    }
                 }
-            }).then((r) => r.json());
-            debug("return value is " + JSON.stringify(returnValue));
-            // an error in the call will cause an exception which is caught upstairs
-            switch (returnValue.state) {
-                case 'REVOKED': return StatusListRevocationState.REVOKED;
-                case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
-                case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
-                default: return StatusListRevocationState.UNKNOWN;
             }
         }
         else {
@@ -469,26 +479,8 @@ export class Issuer
         return this.metadata.authorization_servers && this.metadata.authorization_servers.length;
     }
 
-    public async resolveDidToKey(did:string, method:string = "verificationMethod")
+    public async exportJWK()
     {
-        let keyRef = '';
-        // a hash cannot be the first character of a did
-        if (did.indexOf('#') > 0) {
-            keyRef = did.substring(did.indexOf('#') + 1);
-            did = did.substring(0, did.indexOf('#'));
-        }
-        const didDoc = await getAgent().resolveDid({ didUrl: did});
-        if (didDoc.didDocument) {
-            const document = new DIDDoc(didDoc.didDocument);
-            const fullkey = did + (keyRef === '' ? keyRef : ('#' + keyRef));
-            return document.findKey(fullkey, method);
-        }
-        return null;
-    }
-
-    public exportKeyAsJwk()
-    {
-        const ckey = Factory.createFromManagedKey(this.key!);
-        return ckey.toJWK();
+        return this.key!.toJWK();
     }
 }

@@ -1,62 +1,71 @@
 import moment from 'moment';
 import { createUniqueId } from '#root/utils/createUniqueId';
-
-export interface SessionState {
-    expires:number;
-    id:string;
-    [x:string]:any;
-}
+import { getDbConnection } from '#root/database/databaseService';
+import { Session } from '#root/packages/datastore/entities/Session';
+import { LessThan } from 'typeorm';
 
 export class SessionStateManager {
-    private states: Map<string, any>;
+    private issuer:string = '';
 
-    public constructor() {
-        this.states = new Map();
+    public constructor(issuer:string)
+    {
+        this.issuer = issuer;
     }
 
-    public clear(id: string) {
+    public async clear(id: string) {
         if (!id) {
             throw Error('No state id supplied');
         }
-        if (this.states.has(id)) {
-            this.states.delete(id);
-        }
+        
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Session);
+        await repo.delete({uuid: id, issuer: this.issuer});
     }
 
-    public get(id:string, callbackIfNotFound?:Function):SessionState {
-        if (this.states.has(id)) {
-            return this.states.get(id);
-        }
-        let state = this.newState();
-        if (callbackIfNotFound) {
-            state = callbackIfNotFound(state);
-        }
-        this.states.set(state.id, state);
-        return state;
-    }
+    public async get(id:string, callbackIfNotFound?:Function):Promise<Session> {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Session);
+        let session = await repo.findOneBy({uuid: id, issuer: this.issuer});
 
-    public set(state:SessionState)
-    {
-        this.states.set(state.id, state);
-    }
-
-    public newState():SessionState {
-        return {
-            expires: moment().add(1, 'hours').valueOf(),
-            id: createUniqueId()
-        }
-    }
-
-    public clearAll() {
-        const now = moment().valueOf();
-        let expiredStates:string[] = [];
-        this.states.forEach((value, key) => {
-            if (value.expires < now) {
-                expiredStates.push(key);
+        if (!session) {
+            session = this.newState();
+            session.data = {};
+            if (callbackIfNotFound) {
+                session.data = callbackIfNotFound(session.data);
             }
-        })
-        for (const key of expiredStates) {
-            this.states.delete(key);
         }
+        return session;
+    }
+
+    public async getByState(id:string):Promise<Session|null>
+    {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Session);
+        return await repo.findOneBy({state: id, issuer: this.issuer});
+    }
+
+    public async set(state:Session)
+    {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Session);
+        await repo.save(state);
+    }
+
+    public newState():Session {
+        const session = new Session();
+        session.issuer = this.issuer;
+        session.uuid = createUniqueId();
+        session.expirationDate = moment().add(4, 'hours').toDate();
+        return session;
+    }
+
+    public async clearAll()
+    {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Session);
+        await repo.delete({
+            expirationDate: LessThan(new Date()),
+            issuer: this.issuer
+        });
     }
 }

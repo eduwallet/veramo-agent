@@ -1,14 +1,14 @@
 import Debug from 'debug';
 const debug = Debug('issuer:db');
+
 import { DataSource } from 'typeorm'
-import { dbConfig } from './config'
-import { DB_SCHEMA } from 'environment';
+import { dbConfig } from './config.js'
+import { DB_SCHEMA } from 'environment.js';
 
 /**
  * Todo, move to a class
  */
 var dataSource:DataSource|null = null;
-debug("exporting getDbConnection");
 export const getDbConnection = async (skipMigrate?:boolean): Promise<DataSource> => {
   debug("getting db connection");
   if (dbConfig.synchronize) {

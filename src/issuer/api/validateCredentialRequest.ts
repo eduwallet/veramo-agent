@@ -1,15 +1,16 @@
 import Debug from 'debug';
 const debug = Debug('issuer:api');
-import { verifyAccessTokenJWT } from '../lib/verifyAccessTokenJWT';
+import { verifyAccessTokenJWT } from '#root/issuer/lib/verifyAccessTokenJWT';
 import { Request } from 'express'
-import { Issuer } from 'issuer/Issuer';
-import { CredentialOfferStatus, ErrorCodes } from 'types/api';
-import { ApiState } from 'types/internal';
-import { CredentialRequest } from 'types/specification/credential_request';
-import { SessionState } from 'utils/SessionStateManager';
+import { Issuer } from '#root/issuer/Issuer';
+import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
+import { ApiState } from '#root/types/internal';
+import { CredentialRequest, ProofOfPossession } from '#root/types/specification/credential_request';
 import { JWT } from '#root/jwt/JWT';
-import { getSignatureKeyFromProofJwt } from '../lib/getSignatureKeyFromProofJwt';
+import { getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
+import { Session } from '#root/packages/datastore/entities/Session';
+import moment from 'moment';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -24,7 +25,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
 
-    let session:SessionState|null = null;
+    let session:Session|null = null;
 
     // try to decode the access token as if it were a JWT
     try {
@@ -32,8 +33,8 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (issuer.usesAuthorisedCodeFlow()) {
             // the issuer should be one of our authorization servers
-            if (!issuer.metadata.authorization_servers.includes(data.payload.iss)) {
-                debug("invalid because the access token issuer is not in our AS list", data.payload.iss);
+            if (!issuer.metadata.authorization_servers!.includes(data?.payload?.iss)) {
+                debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
                 return error;
@@ -41,26 +42,18 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         }
         else  {
             // we must have issued it ourselves
-            if (data.payload.iss != issuer.did?.did) {
-                debug("invalid because the token issuer is not our did", data.payload.iss);
+            if (data?.payload?.iss != issuer.did?.did) {
+                debug("invalid because the token issuer is not our did", data?.payload?.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
                 return error;
             }
         }
     
-        const stateid = data.payload.issuer_state;
-        const sessionId = issuer.authorizationState.get(stateid);
+        const stateid = data?.payload?.issuer_state;
+        session = await issuer.getSessionByState(stateid);
 
-        if (!sessionId) {
-            debug("invalid because we could not find the state", stateid);
-            error.error = ErrorCodes.INVALID_REQUEST;
-            error.description = "No state found";
-            return error;
-        }
-        session = issuer.getSessionById(sessionId);
-
-        if (!issuer.usesAuthorisedCodeFlow() && session && session.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
+        if (!issuer.usesAuthorisedCodeFlow() && session && session.data?.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
             debug("invalid because we use pre-authorised code flow and did not yet create an access token");
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "No access token created";
@@ -78,24 +71,37 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         error.description = "No state found";
         return error;
     }
-    session.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
-    issuer.storeSession(session);
+    session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
+    await issuer.storeSession(session);
 
     let credentialDataSet:any = null;
+    // spec ID-1: 8.2: credential_identifier: REQUIRED when an Authorization Details of type
+    // openid_credential was returned from the Token Response. 
     if (request.body.credential_identifier) {
-        credentialDataSet = session.credentialDataSets[request.body.credential_identifier];
+        credentialDataSet = session.data?.credentialDataSets[request.body.credential_identifier];
+    }
+    // spec ID-1: 8.2: credential_configuration_id: REQUIRED if a credential_identifiers
+    // parameter was not returned from the Token Response as part of the authorization_details parameter.
+    // As we return authorization_details, this should never happen for proper wallets
+    else if(request.body.credential_configuration_id) {
+        debug("determining credential data set based on configuration id, which is not supported");
+        credentialDataSet = session.data?.credentialDataSets[request.body.credential_configuration_id];
     }
 
+    // the following overrides if the credential request refers to incorrect datasets
+    // However, this only works if we have a single credential to hand out
     if (!credentialDataSet) {
+        // TODO: update this when we want to support multiple credential issuance
         // see if we have a set based on the session credential id
-        credentialDataSet = session.credentialDataSets[session.credentialId];
+        credentialDataSet = session.data?.credentialDataSets[session.data?.credentialId];
     }
 
     if (!credentialDataSet) {
+    // TODO: update this when we want to support multiple credential issuance
         // if we did not get a credentialDataSet back, we rely on the id as documented in the session
-        const credentialConfiguration = issuer.getCredentialConfiguration(session.credentialId);
+        const credentialConfiguration = issuer.getCredentialConfiguration(session.data?.credentialId, false);
         if (credentialConfiguration === null) {
-            debug("invalid because credential configuration could not be found", session.credentialId);
+            debug("invalid because credential configuration could not be found", session.data?.credentialId);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Credential type not found";
             return error;
@@ -107,37 +113,73 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
             error.description = "Requested credential format not supported";
             return error;
         }
+        debug("Creating request credential data set based on session data instead of request data");
         credentialDataSet = {
-            credentialId: session.credentialId,
+            credentialId: session.data?.credentialId,
             credentialConfiguration,
             data: {} // we hope the credential implementation can determine the required values itself
         };
     }
 
-    error = await validateCredentialRequestProof(issuer, session, request.body);
-    if (error.error != ErrorCodes.NO_ERROR) {
+    const proofResults = await validateCredentialRequestProofs(issuer, session, request.body);
+    // if we get a single ApiState back, it is the error on the proof that fails
+    if (!Array.isArray(proofResults.data) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
         debug("invalid proof");
         return error;
     }
+    session.data.proofs = proofResults.data;
+    await issuer.storeSession(session);
 
     // return a CredentialProofData object
-    error.data = { session, credentialDataSet, nonce: error.data.nonce, key: error.data.key, did: error.data.did};
+    error.data = { session, credentialDataSet, proofResults: proofResults.data};
     debug("credential request is valid");
     return error;
 }
 
-async function validateCredentialRequestProof(issuer:Issuer, session:SessionState, credentialRequest:CredentialRequest): Promise<ApiState>
+async function validateCredentialRequestProofs(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState>
+{
+    // we only support JWT proofs at this moment
+    let proofs:string[] = credentialRequest.proofs?.jwt || [];
+
+    // TODO: Version 16 does no longer specify the singular proof version.
+    if ((!proofs || !proofs.length) && credentialRequest.proof && credentialRequest.proof.proof_type == 'jwt' && credentialRequest.proof.jwt) {
+        proofs = [credentialRequest.proof?.jwt];
+    }
+    let proofResults:ApiState[] = [];
+
+    if (!proofs || proofs.length < 1) {
+        return {
+            error: ErrorCodes.INVALID_REQUEST,
+            description: "Proof of possession missing"
+        };
+    }
+
+    for(const proof of proofs) {
+        let proofError = await validateCredentialRequestProof(issuer, session, proof);
+
+        if (proofError.error != ErrorCodes.NO_ERROR) {
+            return proofError;
+        }
+        proofResults.push(proofError.data);
+    }
+
+    // return the did of the proof, this is the holder key
+    debug("Proof is valid", proofResults);
+    return { error: ErrorCodes.NO_ERROR, description: '', data: proofResults};
+}
+
+async function validateCredentialRequestProof(issuer:Issuer, session:Session, proof:string):Promise<ApiState>
 {
     let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
-    // we only support JWT proofs at this moment
-    if (!credentialRequest.proof || !credentialRequest.proof.jwt) {
-        debug("Proof is invalid because it is missing", credentialRequest.proof);
+    
+    if (!proof || !proof.length) {
+        debug("Proof is invalid because it is missing", proof);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Proof of possession missing";
         return error;
     }
 
-    const jwt = JWT.fromToken(credentialRequest.proof.jwt!);
+    const jwt = JWT.fromToken(proof);
     if (!jwt.header.kid && !jwt.header.jwk) {
         debug("Proof is invalid because the issuer key is not set");
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -153,7 +195,6 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
         return error;
     }
     const verificationResult = await jwt.verify(ckey);
-    
     if (!verificationResult) {
         debug("Proof is invalid because the token could not be verified", verificationResult);
         error.error = ErrorCodes.INVALID_REQUEST;
@@ -181,7 +222,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     // typ: required, must be openid4vci-proof+jwt'
     // the did-jwt library predefines the typ header claim to always be JWT, which is
     // obviously not the case
-    if ((header.typ as string) !== 'openid4vci-proof+jwt') {
+    if ((header.typ as string) !== 'openid4vci-proof+jwt' && (header.typ as string) !== 'JWT') {
         debug("Proof is invalid because the JWT type is incorrect", header.typ);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid proof type";
@@ -198,19 +239,17 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
     }
     else {
         // create a did from the key material so we can use it as credentialSubject id
-        did = Factory.toDIDJWK(ckey);
+        // this is a special case for wwwallet, which uses a jwk in the proof and hence
+        // does not have a regular did
+        did = await Factory.toDIDJWK(ckey);
     }
 
     const payload = jwt.payload;
     const { iss, aud, iat, nonce } = payload;
     // in the body:
     // iss: optional, must not be present for pre-auth, contains client_id
-    if (session.issuerState && !iss) {
-        debug("Proof is invalid because iss claim is not found", iss);
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "No iss claim found";
-        return error;
-    }
+    // not testing for this. We could test that it is not present in pre-auth, but who cares
+    // we could test that it IS present in auth flow, but it is optional...
 
     // aud: required, credential issuer identifier
     if (!aud || aud !== issuer.metadata.credential_issuer) {
@@ -222,13 +261,13 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
 
     // iat: required, time the proof was created
     // cannot be after the expiration time
-    if (!iat || iat > Math.round(session.expires / 1000)) {
-        debug("Proof is invalid because it expired based in iat", iat, Math.round(session.expires / 1000));
+    if (!iat || moment(iat * 1000).toDate() > session.expirationDate!) {
+        debug("Proof is invalid because it expired based in iat", iat, (session.expirationDate!.getTime() / 1000));
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid iat claim";
         return error;
     }
-    
+
     if (issuer.usesNonces && !issuer.usesAuthorisedCodeFlow()) {
         // nonce: optional, must be present if a c_nonce was supplied
         if (!nonce) {
@@ -238,7 +277,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
             return error;
         }
 
-        const cNonceState = issuer.nonceStates.get(nonce);
+        const cNonceState = await issuer.nonceStates.get(nonce);
         if (!cNonceState) {
             debug("Proof is invalid because the nonce was not found", nonce);
             error.error = ErrorCodes.INVALID_REQUEST;
@@ -246,7 +285,8 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
             return error;
         }
 
-        if (cNonceState !== session.id) {
+        // with the nonce endpoint, we do not always match a nonce with a session or state
+        if (cNonceState.session != '' && cNonceState.session !== session.uuid) {
             debug("Proof is invalid because the nonce does not match", cNonceState, session.id);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Invalid nonce";
@@ -263,7 +303,6 @@ async function validateCredentialRequestProof(issuer:Issuer, session:SessionStat
 
     // return the did of the proof, this is the holder key
     error.data = {did, nonce, key: ckey};
-    debug("Proof is valid");
     return error;
 }
 
