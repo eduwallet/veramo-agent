@@ -1,5 +1,5 @@
 import { getDbConnection } from "#root/database/databaseService";
-import { Identifier, Key } from "#root/packages/datastore/index";
+import { Identifier, Issuer, Key } from "#root/packages/datastore/index";
 import moment from "moment";
 
 export interface DataList {
@@ -49,5 +49,42 @@ export async function identifierToScheme(id:Identifier) {
             isController: key.kid === id.controllerKeyId
         });
     }
+    return retval;
+}
+
+export interface IssuerScheme {
+    id?: number;
+    name: string;
+    baseUrl: string;
+    did: string;
+    adminToken: string;
+    authorizationEndpoint?:string;
+    tokenEndpoint?: string;
+    clientId?:string;
+    metadata?:any;
+    statusLists?:any;
+    saved: string;
+    updated:string;
+}
+
+export async function issuerToScheme(issuer:Issuer, doFull = false) {
+    const retval:IssuerScheme = {
+        id: issuer.id,
+        name: issuer.name,
+        did: issuer.did,
+        baseUrl: issuer.baseUrl,
+        adminToken: issuer.adminToken,
+        authorizationEndpoint: issuer.authorizationEndpoint,
+        tokenEndpoint: issuer.tokenEndpoint,
+        clientId: issuer.clientId,
+        saved: moment(issuer.saveDate).format('YYYY-MM-DD HH:mm:ss'),
+        updated: moment(issuer.updateDate).format('YYYY-MM-DD HH:mm:ss')
+    };
+
+    if (doFull) {
+        retval.metadata = JSON.parse(issuer.metadata ?? '{}');
+        retval.statusLists = JSON.parse(issuer.statuslists ?? '{}');
+    }
+
     return retval;
 }

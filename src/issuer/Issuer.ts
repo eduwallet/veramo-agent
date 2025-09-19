@@ -26,6 +26,7 @@ import { NonceManager } from '#root/utils/NonceManager';
 
 export class Issuer
 {
+    public id?:number;
     public name:string;
     public metadata:MetadataConfiguration;
     public options:IssuerConfiguration;
@@ -43,6 +44,7 @@ export class Issuer
         this.metadata = _metadata;
         this.key = null;
         this.keyRef = _options.key ?? '';
+        this.id = _options.id;
         this.name = _options.name;
         this.sessionData = new SessionStateManager(this.name);
         this.nonceStates = new NonceManager(this.name);

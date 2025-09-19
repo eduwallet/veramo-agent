@@ -4,10 +4,12 @@ import { PrivateKey } from './entities/PrivateKey.js'
 import { Credential } from './entities/Credential.js';
 import { Session } from './entities/Session.js';
 import { Nonce } from './entities/Nonce.js';
+import { Issuer } from './entities/Issuer.js';
 
 export const Entities = [
   Key,
   Identifier,
+  Issuer,
   PrivateKey,
   Credential,
   Session,
@@ -17,6 +19,7 @@ export const Entities = [
 export {
   Key,
   Identifier,
+  Issuer,
   PrivateKey,
   Credential,
   Session,
