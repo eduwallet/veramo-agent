@@ -2,6 +2,7 @@ import Debug from 'debug';
 const debug = Debug('issuer:server');
 import { dumpExpressRoutes } from 'utils/dumpExpressRoutes.js';
 import { getIssuerStore } from 'issuer/Store.js';
+import { createRoutesForAdmin } from './admin/createRoutesForAdmin.js';
 import { createRoutesForIssuer } from './createRoutesForIssuer.js';
 import { bearerAdminForIssuer } from './bearerAdminForIssuer.js';
 import { getContextConfigurationStore } from "contexts/Store.js";
@@ -25,6 +26,8 @@ export const initialiseServer = async () => {
   app.use(bodyParser.json({ limit: '5mb' }));
 
   app.use(cors({origin: '*', credentials: true, optionsSuccessStatus: 204}));
+
+  await createRoutesForAdmin(app);
 
   const contextStore = getContextConfigurationStore();
   const rootRouter = express.Router();
