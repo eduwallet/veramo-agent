@@ -31,6 +31,21 @@ export async function listIssuers(request: Request, response: Response) {
     }
 }
 
+export async function getIssuer(request: Request, response: Response) {
+    try {
+        const dbConnection = await getDbConnection();
+        const ids = dbConnection.getRepository(Issuer);
+        const issuer =  await ids.createQueryBuilder('issuer').where('id=:id', {id: request.params.id}).getOne();
+        debug("retrieved a single issuer with id ", request.params.id, issuer);
+        return response.status(200).json(await issuerToScheme(issuer!, true));
+    }
+    catch (e) {
+        response.header('Content-Type', 'application/json')
+        return response.status(500).json({"error": JSON.stringify(e)});
+    }
+}
+
+
 function is_valid_name(p:string) {
     if (!p || p.length < 1) {
         debug("invalid name, returning error");

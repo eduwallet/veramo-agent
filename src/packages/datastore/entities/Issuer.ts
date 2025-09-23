@@ -63,11 +63,11 @@ export class Issuer extends BaseEntity {
         this.updateDate = new Date()
     }
 
-    @Column({ type: 'timestamp', select: false })
+    @Column({ type: 'timestamp'})
     // @ts-ignore
     saveDate: Date
 
-    @Column({ type: 'timestamp', select: false })
+    @Column({ type: 'timestamp'})
     // @ts-ignore
     updateDate: Date
 }

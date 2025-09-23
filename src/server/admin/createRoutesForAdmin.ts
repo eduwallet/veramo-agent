@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy } from 'passport-http-bearer';
 import express, { Express } from 'express'
 import { listIdentifiers, storeIdentifier, deleteIdentifier, createIdentifier } from './identifiers.js';
-import { createIssuer, deleteIssuer, listIssuers, storeIssuer } from './issuers.js';
+import { createIssuer, deleteIssuer, getIssuer, listIssuers, storeIssuer } from './issuers.js';
 
 function bearerAdminForAPI() {
     passport.use('admin-api', new Strategy(
@@ -40,6 +40,10 @@ export async function createRoutesForAdmin(app:Express) {
     router.get('/issuers', 
         passport.authenticate('admin-api', { session: false }),
         listIssuers
+    );
+    router.get('/issuers/:id', 
+        passport.authenticate('admin-api', { session: false }),
+        getIssuer
     );
     router.post('/issuers', 
         passport.authenticate('admin-api', { session: false }),
