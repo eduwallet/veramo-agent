@@ -6,6 +6,8 @@ import { Session } from './entities/Session.js';
 import { Nonce } from './entities/Nonce.js';
 import { Issuer } from './entities/Issuer.js';
 import { CredentialType } from './entities/CredentialType.js';
+import { ContextDocument } from './entities/ContextDocument.js';
+import { VCTDocument } from './entities/VCTDocument.js';
 
 export const Entities = [
   Key,
@@ -15,7 +17,9 @@ export const Entities = [
   Credential,
   Session,
   Nonce,
-  CredentialType
+  CredentialType,
+  ContextDocument,
+  VCTDocument
 ]
 
 export {
@@ -26,6 +30,8 @@ export {
   Credential,
   Session,
   Nonce,
-  CredentialType
+  CredentialType,
+  ContextDocument,
+  VCTDocument
 }
 export { migrations } from './migrations/index.js'

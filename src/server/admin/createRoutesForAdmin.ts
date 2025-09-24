@@ -4,6 +4,8 @@ import express, { Express } from 'express'
 import { listIdentifiers, storeIdentifier, deleteIdentifier, createIdentifier } from './identifiers.js';
 import { createIssuer, deleteIssuer, getIssuer, listIssuers, storeIssuer } from './issuers.js';
 import { createCredential, deleteCredential, listCredentials, storeCredential } from './credentials.js';
+import { createContextDocument, deleteContextDocument, listContextDocuments, storeContextDocument } from './contexts.js';
+import { createVCTDocument, deleteVCTDocument, listVCTs, storeVCTDocument } from './vcts.js';
 
 function bearerAdminForAPI() {
     passport.use('admin-api', new Strategy(
@@ -53,6 +55,40 @@ export async function createRoutesForAdmin(app:Express) {
     router.put('/credentials', 
         passport.authenticate('admin-api', { session: false }),
         createCredential
+    );
+
+    router.get('/contexts', 
+        passport.authenticate('admin-api', { session: false }),
+        listContextDocuments
+    );
+    router.post('/contexts', 
+        passport.authenticate('admin-api', { session: false }),
+        storeContextDocument
+    );
+    router.delete('/contexts', 
+        passport.authenticate('admin-api', { session: false }),
+        deleteContextDocument
+    );
+    router.put('/contexts', 
+        passport.authenticate('admin-api', { session: false }),
+        createContextDocument
+    );
+
+    router.get('/credentials', 
+        passport.authenticate('admin-api', { session: false }),
+        listVCTs
+    );
+    router.post('/credentials', 
+        passport.authenticate('admin-api', { session: false }),
+        storeVCTDocument
+    );
+    router.delete('/credentials', 
+        passport.authenticate('admin-api', { session: false }),
+        deleteVCTDocument
+    );
+    router.put('/credentials', 
+        passport.authenticate('admin-api', { session: false }),
+        createVCTDocument
     );
 
     router.get('/issuers', 

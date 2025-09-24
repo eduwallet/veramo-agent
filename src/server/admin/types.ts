@@ -1,5 +1,5 @@
 import { getDbConnection } from "#root/database/databaseService";
-import { CredentialType, Identifier, Issuer, Key } from "#root/packages/datastore/index";
+import { ContextDocument, CredentialType, Identifier, Issuer, Key, VCTDocument } from "#root/packages/datastore/index";
 import moment from "moment";
 
 export interface DataList {
@@ -104,6 +104,51 @@ export async function credentialToScheme(credential:CredentialType) {
         configuration: credential.configuration,
         saved: moment(credential.saveDate).format('YYYY-MM-DD HH:mm:ss'),
         updated: moment(credential.updateDate).format('YYYY-MM-DD HH:mm:ss')
+    };
+    return retval;
+}
+
+export interface ContextScheme {
+    id: number;
+    name:string;
+    path:string;
+    document:string;
+    saved: string;
+    updated:string;
+}
+
+export async function contextToScheme(context:ContextDocument) {
+    const retval:ContextScheme = {
+        id: context.id,
+        name: context.name,
+        path: context.path,
+        document: context.document,
+        saved: moment(context.saveDate).format('YYYY-MM-DD HH:mm:ss'),
+        updated: moment(context.updateDate).format('YYYY-MM-DD HH:mm:ss')
+    };
+    return retval;
+}
+
+
+export interface VCTScheme {
+    id: number;
+    name:string;
+    path:string;
+    credentials:string;
+    document:string;
+    saved: string;
+    updated:string;
+}
+
+export async function vctToScheme(vct:VCTDocument) {
+    const retval:VCTScheme = {
+        id: vct.id,
+        name: vct.name,
+        path: vct.path,
+        credentials: vct.credentials,
+        document: vct.document,
+        saved: moment(vct.saveDate).format('YYYY-MM-DD HH:mm:ss'),
+        updated: moment(vct.updateDate).format('YYYY-MM-DD HH:mm:ss')
     };
     return retval;
 }
