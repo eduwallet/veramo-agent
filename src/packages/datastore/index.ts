@@ -5,6 +5,7 @@ import { Credential } from './entities/Credential.js';
 import { Session } from './entities/Session.js';
 import { Nonce } from './entities/Nonce.js';
 import { Issuer } from './entities/Issuer.js';
+import { CredentialType } from './entities/CredentialType.js';
 
 export const Entities = [
   Key,
@@ -13,7 +14,8 @@ export const Entities = [
   PrivateKey,
   Credential,
   Session,
-  Nonce
+  Nonce,
+  CredentialType
 ]
 
 export {
@@ -23,6 +25,7 @@ export {
   PrivateKey,
   Credential,
   Session,
-  Nonce
+  Nonce,
+  CredentialType
 }
 export { migrations } from './migrations/index.js'

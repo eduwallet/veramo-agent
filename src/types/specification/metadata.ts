@@ -11,6 +11,7 @@ export interface Metadata {
     batch_credential_endpoint?:string;         // URL of the issuer batch credential endpoint
     deferred_credential_endpoint?:string;      // URL of the issuer deferred credential endpoint 
     notification_endpoint?:string;             // URL of the issuer notification endpoint
+    credential_request_encryption?:any;
     credential_response_encryption?:CredentialResponseEncryptionOptions;
     credential_identifiers_supported?:boolean; // if true, the credential_identifiers parameter is used in authorization_details
     signed_metadata?:string;                   // signed JWT containing metadata as claims

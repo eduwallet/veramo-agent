@@ -1,5 +1,5 @@
 import { getDbConnection } from "#root/database/databaseService";
-import { Identifier, Issuer, Key } from "#root/packages/datastore/index";
+import { CredentialType, Identifier, Issuer, Key } from "#root/packages/datastore/index";
 import moment from "moment";
 
 export interface DataList {
@@ -86,5 +86,24 @@ export async function issuerToScheme(issuer:Issuer, doFull = false) {
         retval.statusLists = JSON.parse(issuer.statuslists ?? '{}');
     }
 
+    return retval;
+}
+
+export interface CredentialScheme {
+    id: number;
+    name:string;
+    configuration:string;
+    saved: string;
+    updated:string;
+}
+
+export async function credentialToScheme(credential:CredentialType) {
+    const retval:CredentialScheme = {
+        id: credential.id,
+        name: credential.name,
+        configuration: credential.configuration,
+        saved: moment(credential.saveDate).format('YYYY-MM-DD HH:mm:ss'),
+        updated: moment(credential.updateDate).format('YYYY-MM-DD HH:mm:ss')
+    };
     return retval;
 }
