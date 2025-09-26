@@ -25,6 +25,7 @@ export interface IssuerSessionData {
 }
 
 export interface IssuerConfiguration {
+    id?: number;
     name:string;
     baseUrl: string
     clientId?:string;

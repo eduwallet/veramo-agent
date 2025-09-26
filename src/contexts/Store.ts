@@ -8,6 +8,8 @@ import { CONTEXT_CONFIGURATION_PATH } from "#root/environment";
 import { loadJsonFiles } from "#root/utils/generic";
 import { getBaseUrl } from "#root/utils/getBaseUrl";
 import fs from 'fs';
+import { getDbConnection } from '#root/database/databaseService';
+import { ContextDocument } from '#root/packages/datastore/entities/ContextDocument';
 
 export interface ContextConfiguration {
     basePath: string;
@@ -43,16 +45,33 @@ class ContextConfigurationStore {
       }
     };
 
-    public init()
+    public async init()
     {
         try {
+            const dbConnection = await getDbConnection();
+            const repo = dbConnection.getRepository(ContextDocument);
+            const objs = await repo.createQueryBuilder('context_document').getMany();
+            for (const obj of objs) {
+                const fullPath = getBaseUrl() + obj.path;
+                this.add(fullPath, JSON.parse(obj.document), obj.path);
+            }
+
             debug('Loading context configurations, path: ' + CONTEXT_CONFIGURATION_PATH);
             const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
             for (const key of Object.keys(configurations.asObject)) {
                 var cfg = configurations.asObject[key];
                 cfg.fullPath = getBaseUrl() + cfg.basePath;
-                debug("context full path is ", cfg.fullPath);
-                this.add(cfg.fullPath, cfg.document, cfg.basePath);
+
+                if (!this.configuration[cfg.fullPath]) {
+                    debug("context full path is ", cfg.fullPath);
+                    this.add(cfg.fullPath, cfg.document, cfg.basePath);
+
+                    const cDoc = new ContextDocument();
+                    cDoc.name = key;
+                    cDoc.path = cfg.basePath;
+                    cDoc.document = JSON.stringify(cfg.document);
+                    await repo.save(cDoc);
+                }
             }
         }
         catch (e) {

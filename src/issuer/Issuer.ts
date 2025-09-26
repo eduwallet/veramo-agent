@@ -26,6 +26,7 @@ import { NonceManager } from '#root/utils/NonceManager';
 
 export class Issuer
 {
+    public id?:number;
     public name:string;
     public metadata:MetadataConfiguration;
     public options:IssuerConfiguration;
@@ -43,6 +44,7 @@ export class Issuer
         this.metadata = _metadata;
         this.key = null;
         this.keyRef = _options.key ?? '';
+        this.id = _options.id;
         this.name = _options.name;
         this.sessionData = new SessionStateManager(this.name);
         this.nonceStates = new NonceManager(this.name);
@@ -280,6 +282,13 @@ export class Issuer
         if (this.usesNonces) {
             metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
         }
+        // leftover from older configurations: we do not support additional encryption at this point
+        if (metadata.credential_response_encryption) {
+            delete metadata.credential_response_encryption;
+        }
+        if (metadata.credential_request_encryption) {
+            delete metadata.credential_request_encryption;
+        }
 
         return metadata;
     }
@@ -354,6 +363,15 @@ export class Issuer
         else if (decoratedCredential.format == 'vc+jwt') {
             decoratedCredential.format = 'jwt_vc_json';
         }
+
+        // set the algorithms according to what we support
+        decoratedCredential.credential_signing_alg_values_supported = [this.algorithm()];
+        decoratedCredential.cryptographic_binding_methods_supported = ['did:jwk', 'did:key'];
+        decoratedCredential.proof_types_supported = {
+            "jwt": {
+                "proof_signing_alg_values_supported": ["ES256", "ES256K", "EdDSA", "RS256"]
+            }
+        };
 
         return decoratedCredential as CredentialConfiguration;
     }
