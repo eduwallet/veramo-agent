@@ -8,8 +8,8 @@
   "scripts": {
     "build": "tsc",
     "build:clean": "tsc --build --clean && tsc --build",
-    "start": "tsx --watch src/main.ts",
-    "nowatch": "tsx src/main.ts",
+    "watch": "tsx --watch src/main.ts",
+    "start": "tsx src/main.ts",
     "cli": "tsx src/cli.ts",
     "test": "vitest run",
     "lint": "eslint src --ext .ts"
