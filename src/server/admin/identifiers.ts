@@ -107,7 +107,7 @@ export async function storeIdentifier(request: Request<StoreIdentifierRequest>, 
             await ids.delete({did: request.body.original});
         }
 
-        return response.status(200).json(identifierToScheme(identifier));
+        return response.status(200).json(await identifierToScheme(identifier));
     }
     catch (e) {
         debug("storeIdentifier: caught", e);
@@ -146,7 +146,7 @@ export async function createIdentifier(request: Request<CreateIdentifierRequest>
         debug("saving new key");
         await saveKey(identifier, ckey);
 
-        return response.status(200).json(identifierToScheme(identifier));
+        return response.status(200).json(await identifierToScheme(identifier));
     }
     catch (e) {
         response.header('Content-Type', 'application/json')

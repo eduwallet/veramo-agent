@@ -23,6 +23,13 @@ export async function createRoutesForAdmin(app:Express) {
     app.use('/api', router);
     bearerAdminForAPI();
 
+    router.get('/exit',
+        passport.authenticate('admin-api', { session: false }),
+        () => {
+            setTimeout(() => { process.exit(0)}, 2000);
+        }
+    )
+
     router.get('/identifiers', 
         passport.authenticate('admin-api', { session: false }),
         listIdentifiers
@@ -74,19 +81,19 @@ export async function createRoutesForAdmin(app:Express) {
         createContextDocument
     );
 
-    router.get('/credentials', 
+    router.get('/vcts', 
         passport.authenticate('admin-api', { session: false }),
         listVCTs
     );
-    router.post('/credentials', 
+    router.post('/vcts', 
         passport.authenticate('admin-api', { session: false }),
         storeVCTDocument
     );
-    router.delete('/credentials', 
+    router.delete('/vcts', 
         passport.authenticate('admin-api', { session: false }),
         deleteVCTDocument
     );
-    router.put('/credentials', 
+    router.put('/vcts', 
         passport.authenticate('admin-api', { session: false }),
         createVCTDocument
     );

@@ -65,7 +65,7 @@ export async function storeVCTDocument(request: Request<StoreRequest>, response:
         debug("saving vct document", obj);
         await repo.save(obj);
 
-        return response.status(200).json(vctToScheme(obj));
+        return response.status(200).json(await vctToScheme(obj));
     }
     catch (e) {
         debug("storeVCTDocument: caught", e);
@@ -95,7 +95,7 @@ export async function createVCTDocument(request: Request<CreateRequest>, respons
         await setData(obj, request.body.name, request.body.path, request.body.credentials, request.body.document);
         await repo.save(obj);
 
-        return response.status(200).json(vctToScheme(obj));
+        return response.status(200).json(await vctToScheme(obj));
     }
     catch (e) {
         response.header('Content-Type', 'application/json')

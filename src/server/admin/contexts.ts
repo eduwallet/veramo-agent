@@ -63,7 +63,7 @@ export async function storeContextDocument(request: Request<StoreRequest>, respo
         debug("saving context document", obj);
         await repo.save(obj);
 
-        return response.status(200).json(contextToScheme(obj));
+        return response.status(200).json(await contextToScheme(obj));
     }
     catch (e) {
         debug("storeContextDocument: caught", e);
@@ -92,7 +92,9 @@ export async function createContextDocument(request: Request<CreateRequest>, res
         await setData(obj, request.body.name, request.body.path, request.body.document);
         await repo.save(obj);
 
-        return response.status(200).json(contextToScheme(obj));
+        const json = await contextToScheme(obj);
+        debug("returning json", json);
+        return response.status(200).json(json);
     }
     catch (e) {
         response.header('Content-Type', 'application/json')

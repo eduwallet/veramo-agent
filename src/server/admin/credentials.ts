@@ -62,7 +62,7 @@ export async function storeCredential(request: Request<StoreCredentialRequest>, 
         debug("saving credential", obj);
         await repo.save(obj);
 
-        return response.status(200).json(credentialToScheme(obj));
+        return response.status(200).json(await credentialToScheme(obj));
     }
     catch (e) {
         debug("storeCredential: caught", e);
@@ -90,7 +90,7 @@ export async function createCredential(request: Request<CreateCredentialRequest>
         await setData(obj, request.body.name, request.body.configuration);
         await repo.save(obj);
 
-        return response.status(200).json(credentialToScheme(obj));
+        return response.status(200).json(await credentialToScheme(obj));
     }
     catch (e) {
         response.header('Content-Type', 'application/json')

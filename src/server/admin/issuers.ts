@@ -102,7 +102,7 @@ export async function storeIssuer(request: Request<StoreIssuerRequest>, response
         debug("saving issuer", issuer);
         await issuers.save(issuer);
 
-        return response.status(200).json(issuerToScheme(issuer));
+        return response.status(200).json(await issuerToScheme(issuer));
     }
     catch (e) {
         debug("storeIssuer: caught", e);
@@ -128,7 +128,7 @@ export async function createIssuer(request: Request<StoreIssuerRequest>, respons
         await setIssuerData(obj, request.body);
         await issuers.save(obj);
 
-        return response.status(200).json(issuerToScheme(obj));
+        return response.status(200).json(await issuerToScheme(obj));
     }
     catch (e) {
         response.header('Content-Type', 'application/json')
