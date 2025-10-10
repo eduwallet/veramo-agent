@@ -15,25 +15,35 @@ var _credentialConfigurationStore: CredentialConfigurationStore = {};
 export const getCredentialConfigurationStore = (): CredentialConfigurationStore => _credentialConfigurationStore;
 
 export async function initialiseCredentialConfigurationStore() {
-  const dbConnection = await getDbConnection();
-  const credRepo = dbConnection.getRepository(CredentialType);
-  const credTypes = await credRepo.createQueryBuilder('credential_type').getMany();
-  for (const credType of credTypes) {
-    _credentialConfigurationStore[credType.name] = JSON.parse(credType.configuration);
-  }
-
-  debug('Loading credential configurations, path: ' + CREDENTIAL_CONFIGURATION_PATH);
-  const configurations = loadJsonFiles<CredentialConfiguration>({ path: CREDENTIAL_CONFIGURATION_PATH }).asObject;
-  for (const configId of Object.keys(configurations)) {
-    if (!_credentialConfigurationStore[configId]) {
-      debug("adding file base credential configuration to store");
-      _credentialConfigurationStore[configId] = configurations[configId];
-
-      const credType = new CredentialType();
-      credType.name = configId;
-      credType.configuration = JSON.stringify(configurations[configId]);
-      credRepo.save(credType);
+  try {
+    const dbConnection = await getDbConnection();
+    const credRepo = dbConnection.getRepository(CredentialType);
+    const credTypes = await credRepo.createQueryBuilder('credential_type').getMany();
+    for (const credType of credTypes) {
+      _credentialConfigurationStore[credType.name] = JSON.parse(credType.configuration);
     }
+
+    debug('Loading credential configurations, path: ' + CREDENTIAL_CONFIGURATION_PATH);
+    try {
+      const configurations = loadJsonFiles<CredentialConfiguration>({ path: CREDENTIAL_CONFIGURATION_PATH }).asObject;
+      for (const configId of Object.keys(configurations)) {
+        if (!_credentialConfigurationStore[configId]) {
+          debug("adding file base credential configuration to store");
+          _credentialConfigurationStore[configId] = configurations[configId];
+
+          const credType = new CredentialType();
+          credType.name = configId;
+          credType.configuration = JSON.stringify(configurations[configId]);
+          credRepo.save(credType);
+        }
+      }
+    }
+    catch (e) {
+      debug("Missing credentials configuration path");
+    }
+  }
+  catch (e) {
+    console.error("Caught error on initialising credentials", e);
   }
   debug('end of credential configuration store initialisation');
 }

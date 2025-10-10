@@ -57,21 +57,26 @@ class ContextConfigurationStore {
             }
 
             debug('Loading context configurations, path: ' + CONTEXT_CONFIGURATION_PATH);
-            const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
-            for (const key of Object.keys(configurations.asObject)) {
-                var cfg = configurations.asObject[key];
-                cfg.fullPath = getBaseUrl() + cfg.basePath;
+            try {
+                const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
+                for (const key of Object.keys(configurations.asObject)) {
+                    const cfg = configurations.asObject[key];
+                    cfg.fullPath = getBaseUrl() + cfg.basePath;
 
-                if (!this.configuration[cfg.fullPath]) {
-                    debug("context full path is ", cfg.fullPath);
-                    this.add(cfg.fullPath, cfg.document, cfg.basePath);
+                    if (!this.configuration[cfg.fullPath]) {
+                        debug("context full path is ", cfg.fullPath);
+                        this.add(cfg.fullPath, cfg.document, cfg.basePath);
 
-                    const cDoc = new ContextDocument();
-                    cDoc.name = key;
-                    cDoc.path = cfg.basePath;
-                    cDoc.document = JSON.stringify(cfg.document);
-                    await repo.save(cDoc);
+                        const cDoc = new ContextDocument();
+                        cDoc.name = key;
+                        cDoc.path = cfg.basePath;
+                        cDoc.document = JSON.stringify(cfg.document);
+                        await repo.save(cDoc);
+                    }
                 }
+            }
+            catch (e) {
+                debug("Missing configuration path");
             }
         }
         catch (e) {

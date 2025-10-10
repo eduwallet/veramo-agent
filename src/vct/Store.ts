@@ -29,45 +29,55 @@ export const getVctConfigurationStore = (): VctConfigurationStore => _vctConfigu
 
 export async function initialiseVctConfigurationStore() {
 
-    const dbConnection = await getDbConnection();
-    const repo = dbConnection.getRepository(VCTDocument);
-    const objs = await repo.createQueryBuilder('vct_document').getMany();
-    for (const obj of objs) {
-        const fullPath = getBaseUrl() + obj.path;
-        var jsonDoc = obj.document;
-        jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, fullPath);
-        const cfg:VctConfiguration = {
-            credentials: JSON.parse(obj.credentials),
-            path: obj.path,
-            fullPath: fullPath,
-            document: JSON.parse(jsonDoc)
-        }
-        cfg.document.vct = cfg.fullPath;
-        _vctConfigurationStore[obj.name] = cfg;
-    }
-
-
-    debug('Loading vct configurations, path: ' + VCT_CONFIGURATION_PATH);
-    const configurations = loadJsonFiles<VctConfiguration>({ path: VCT_CONFIGURATION_PATH }).asObject;
-    for (const key of Object.keys(configurations)) {
-        if (!_vctConfigurationStore[key]) {
-            var cfg = Object.assign({}, configurations[key]);
-            cfg.fullPath = getBaseUrl() + cfg.path;
-            var jsonDoc = JSON.stringify(cfg['document']);
-            jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, cfg.fullPath);
-            cfg.document = JSON.parse(jsonDoc);
+    try {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(VCTDocument);
+        const objs = await repo.createQueryBuilder('vct_document').getMany();
+        for (const obj of objs) {
+            const fullPath = getBaseUrl() + obj.path;
+            let jsonDoc = obj.document;
+            jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, fullPath);
+            const cfg:VctConfiguration = {
+                credentials: JSON.parse(obj.credentials),
+                path: obj.path,
+                fullPath: fullPath,
+                document: JSON.parse(jsonDoc)
+            }
             cfg.document.vct = cfg.fullPath;
-            _vctConfigurationStore[key] = cfg;
+            _vctConfigurationStore[obj.name] = cfg;
+        }
 
-            const vctDoc = new VCTDocument();
-            vctDoc.name = key;
-            vctDoc.path = cfg.path;
-            vctDoc.document = JSON.stringify(configurations[key].document);
-            vctDoc.credentials = JSON.stringify(cfg.credentials);
-            await repo.save(vctDoc);
+
+        debug('Loading vct configurations, path: ' + VCT_CONFIGURATION_PATH);
+        try {
+            const configurations = loadJsonFiles<VctConfiguration>({ path: VCT_CONFIGURATION_PATH }).asObject;
+            for (const key of Object.keys(configurations)) {
+                if (!_vctConfigurationStore[key]) {
+                    const cfg = Object.assign({}, configurations[key]);
+                    cfg.fullPath = getBaseUrl() + cfg.path;
+                    let jsonDoc = JSON.stringify(cfg['document']);
+                    jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, cfg.fullPath);
+                    cfg.document = JSON.parse(jsonDoc);
+                    cfg.document.vct = cfg.fullPath;
+                    _vctConfigurationStore[key] = cfg;
+
+                    const vctDoc = new VCTDocument();
+                    vctDoc.name = key;
+                    vctDoc.path = cfg.path;
+                    vctDoc.document = JSON.stringify(configurations[key].document);
+                    vctDoc.credentials = JSON.stringify(cfg.credentials);
+                    await repo.save(vctDoc);
+                }
+            }
+        }
+        catch (e) {
+            debug("Missing conf path for vcts", e);
         }
     }
-    debug('end of context configuration store initialisation', _vctConfigurationStore);
+    catch (e) {
+        console.error("Caught exception on VCT store initialisation", e);
+    }
+    debug('end of VCT configuration store initialisation', _vctConfigurationStore);
 }
 
 export function getVctForCredentialType(credentialType:string): Vct|null

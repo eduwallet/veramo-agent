@@ -41,12 +41,12 @@ class DIDConfigurationStore {
             debug('Loading DID configurations, path: ' + DID_OPTIONS_PATH);
             const configurations = loadJsonFiles<DIDConfiguration>({ path: DID_OPTIONS_PATH });
             for (const key of Object.keys(configurations.asObject)) {
-                var cfg = configurations.asObject[key];
+                const cfg = configurations.asObject[key];
                 await this.add(key, cfg);
             }
         }
         catch (e) {
-            console.error(e);
+            debug("Missing conf path for DIDs");
         }
     }
 

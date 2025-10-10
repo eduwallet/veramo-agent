@@ -21,69 +21,79 @@ var _issuerStore:IssuerStore = {};
 export const getIssuerStore = ():IssuerStore => _issuerStore;
 
 export async function initialiseIssuerStore() {
-    debug('initialising issuer store, reading database');
-    const dbConnection = await getDbConnection();
-    const issuerRepo = dbConnection.getRepository(IssuerEntity);
-    const issuers = await issuerRepo.createQueryBuilder('issuer').getMany();
-    for (const issuer of issuers) {
-        const entry = new Issuer({
-            name: issuer.name,
-            baseUrl: issuer.baseUrl,
-            clientId: issuer.clientId,
-            adminToken: issuer.adminToken,
-            authorizationEndpoint: issuer.authorizationEndpoint,
-            tokenEndpoint: issuer.tokenEndpoint,
-            statusLists: JSON.parse(issuer.statuslists ?? '{}'),
-            did: issuer.did,
-        }, JSON.parse(issuer.metadata ?? '{}'));
-        try {
-            await entry.setDid(); // do some asynchronous post-initialisation
-            await entry.retrieveASServerKeys(); // retrieve the AS server keys
-
-            _issuerStore[issuer.name] = entry;
-        }
-        catch (e) {
-            console.error("Caught error initialising issuer, skipping entry", e);
-        }
-    }
-
-    debug('initialising issuer store, reading json files');
-    const issuerOptionsObjects = loadJsonFiles<IssuerConfiguration>({path: ISSUER_PATH});
-    const metadatas = loadJsonFiles<MetadataConfiguration>({path: METADATA_PATH});
-
-    debug('looping of ', issuerOptionsObjects.asArray.length,' objects');
-    for(const correlationId of Object.keys(issuerOptionsObjects.asObject)) {
-        debug('creating new issuer');
-        if (!_issuerStore[correlationId]) {
-            const metadata = metadatas.asObject[correlationId];
-            if (!metadata) {
-                throw new Error("Unable to find matching metadata for " + correlationId);
-            }
-            const config = issuerOptionsObjects.asObject[correlationId];
-            const issuer = new Issuer(config, metadata);
+    try {
+        debug('initialising issuer store, reading database');
+        const dbConnection = await getDbConnection();
+        const issuerRepo = dbConnection.getRepository(IssuerEntity);
+        const issuers = await issuerRepo.createQueryBuilder('issuer').getMany();
+        for (const issuer of issuers) {
+            const entry = new Issuer({
+                name: issuer.name,
+                baseUrl: issuer.baseUrl,
+                clientId: issuer.clientId,
+                adminToken: issuer.adminToken,
+                authorizationEndpoint: issuer.authorizationEndpoint,
+                tokenEndpoint: issuer.tokenEndpoint,
+                statusLists: JSON.parse(issuer.statuslists ?? '{}'),
+                did: issuer.did,
+            }, JSON.parse(issuer.metadata ?? '{}'));
             try {
-                await issuer.setDid(); // do some asynchronous post-initialisation
-                await issuer.retrieveASServerKeys(); // retrieve the AS server keys
-                debug('setting issuer on store');
-                _issuerStore[correlationId] = issuer;
+                await entry.setDid(); // do some asynchronous post-initialisation
+                await entry.retrieveASServerKeys(); // retrieve the AS server keys
+
+                _issuerStore[issuer.name] = entry;
             }
             catch (e) {
-                console.error('Caught exception on initialising file based issuer config, skipping entry', e);
+                console.error("Caught error initialising issuer, skipping entry", e);
             }
-
-            // save the entry to the database as well
-            const dbIssuer = new IssuerEntity();
-            dbIssuer.name = correlationId;
-            dbIssuer.adminToken = config.adminToken || '';
-            dbIssuer.did = config.did;
-            dbIssuer.baseUrl = config.baseUrl;
-            dbIssuer.authorizationEndpoint = config.authorizationEndpoint;
-            dbIssuer.tokenEndpoint = config.tokenEndpoint;
-            dbIssuer.clientId = config.clientId;
-            dbIssuer.metadata = JSON.stringify(metadata);
-            dbIssuer.statuslists = JSON.stringify(config.statusLists);
-            await issuerRepo.save(dbIssuer);
         }
-    };
+
+        debug('initialising issuer store, reading json files');
+        try {
+            const issuerOptionsObjects = loadJsonFiles<IssuerConfiguration>({path: ISSUER_PATH});
+            const metadatas = loadJsonFiles<MetadataConfiguration>({path: METADATA_PATH});
+
+            debug('looping of ', issuerOptionsObjects.asArray.length,' objects');
+            for(const correlationId of Object.keys(issuerOptionsObjects.asObject)) {
+                debug('creating new issuer');
+                if (!_issuerStore[correlationId]) {
+                    const metadata = metadatas.asObject[correlationId];
+                    if (!metadata) {
+                        throw new Error("Unable to find matching metadata for " + correlationId);
+                    }
+                    const config = issuerOptionsObjects.asObject[correlationId];
+                    const issuer = new Issuer(config, metadata);
+                    try {
+                        await issuer.setDid(); // do some asynchronous post-initialisation
+                        await issuer.retrieveASServerKeys(); // retrieve the AS server keys
+                        debug('setting issuer on store');
+                        _issuerStore[correlationId] = issuer;
+                    }
+                    catch (e) {
+                        console.error('Caught exception on initialising file based issuer config, skipping entry', e);
+                    }
+
+                    // save the entry to the database as well
+                    const dbIssuer = new IssuerEntity();
+                    dbIssuer.name = correlationId;
+                    dbIssuer.adminToken = config.adminToken || '';
+                    dbIssuer.did = config.did;
+                    dbIssuer.baseUrl = config.baseUrl;
+                    dbIssuer.authorizationEndpoint = config.authorizationEndpoint;
+                    dbIssuer.tokenEndpoint = config.tokenEndpoint;
+                    dbIssuer.clientId = config.clientId;
+                    dbIssuer.metadata = JSON.stringify(metadata);
+                    dbIssuer.statuslists = JSON.stringify(config.statusLists);
+                    await issuerRepo.save(dbIssuer);
+                }
+            }
+        }
+        catch (e) {
+            debug("Missing issuer configuration path", e);
+        }
+    }
+    catch (e) {
+        console.error("Caught error initialising issuer store", e);
+    }
     debug('end of issuer store initialisation');
 }
