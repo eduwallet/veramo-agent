@@ -53,12 +53,8 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath);
     getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath);
   
-    // OpenID4VC endpoint to retrieve a specific credential
-    let credentialEndpoint = issuer.metadata.credential_endpoint;
-    if (credentialEndpoint.startsWith(issuer.options.baseUrl)) {
-        credentialEndpoint = credentialEndpoint.substring(issuer.options.baseUrl.length);
-    }
-    getCredential(issuer, credentialEndpoint);
+    // this is hard coded in the Issuer when metadata is generated
+    getCredential(issuer, '/credentials');
   
     // Enable the back channel interface to create a new credential offer
     createCredentialOfferResponse(issuer, '/api/create-offer', '/get-credential-offer');
