@@ -4,6 +4,7 @@ import { NonceAndSession1750939106000 } from './3.NonceAndSession.js';
 import { Issuer1758281913150 } from './4.Issuer.js';
 import { CredentialType1758699016150 } from './5.CredentialType.js';
 import { Documents1758721139150 } from './6.Documents.js';
+import { DIDPath1760691999150 } from './7.DIDPath.js';
 
 export * from './migration-functions.js'
 
@@ -13,5 +14,6 @@ export const migrations = [
   NonceAndSession1750939106000,
   Issuer1758281913150,
   CredentialType1758699016150,
-  Documents1758721139150
+  Documents1758721139150,
+  DIDPath1760691999150
 ]

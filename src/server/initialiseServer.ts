@@ -48,9 +48,12 @@ export const initialiseServer = async () => {
   };
 
   const didStore = getDIDConfigurationStore();
-  for (const did of didStore.keys()) {
-    const didValue = didStore.get(did);
-    if (didValue?.path && didValue?.path.length) {
+  debug('looping over keys in store', (await didStore.keysWithPath())?.length);
+  for (const did of (await didStore.keysWithPath())) {
+    const didValue = await didStore.get(did);
+    debug('evaluating did ', didValue?.identifier.did, ' for path ', didValue?.identifier.path);
+    if (didValue?.identifier.path && didValue?.identifier.path.length) {
+      debug('adding did-web path for ', didValue.identifier);
       getDidWebSpec(rootRouter, didValue);
     }
   }

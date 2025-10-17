@@ -13,8 +13,6 @@ import { getDbConnection } from '#root/database/databaseService';
 export interface DIDStoreValue {
     identifier: Identifier;
     key:CryptoKey;
-    path?:string;
-    service?:any;
 }
 
 export interface DIDConfiguration {
@@ -65,19 +63,23 @@ class DIDConfigurationStore {
             value = await this.initialiseKey(configuration);
         }
         else {
-            const dbKey = result.keys[0];
-            const pkeys = dbConnection.getRepository(PrivateKey);
-            const pkey = await pkeys.findOneBy({alias:dbKey.kid});
-            const ckey = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
-            value = {
-                identifier: result,
-                key: ckey,
-                ...(configuration.path ? { path: configuration.path} : null),
-                ...(configuration.service ? {service: configuration.service }: null)
-            };
+            value = await this.initialiseDBKey(result);
         }
 
         this.configuration[key] = value;
+    }
+
+    private async initialiseDBKey(result:Identifier): Promise<DIDStoreValue>
+    {
+        const dbConnection = await getDbConnection();
+        const dbKey = result.keys[0];
+        const pkeys = dbConnection.getRepository(PrivateKey);
+        const pkey = await pkeys.findOneBy({alias:dbKey.kid});
+        const ckey = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
+        return {
+            identifier: result,
+            key: ckey
+        };
     }
 
     private async initialiseKey(configuration:DIDConfiguration): Promise<DIDStoreValue>
@@ -104,6 +106,12 @@ class DIDConfigurationStore {
         identifier.alias = configuration.alias ?? configuration.did;
         identifier.provider = configuration.provider ?? 'did:jwk';
         identifier.controllerKeyId = ckey.exportPublicKey();
+        if (configuration.path) {
+            identifier.path = configuration.path;
+        }
+        if (configuration.service) {
+            identifier.services = configuration.service;
+        }
 
         const dbConnection = await getDbConnection();
         const irepo = dbConnection.getRepository(Identifier);
@@ -127,19 +135,37 @@ class DIDConfigurationStore {
 
         return {
             identifier,
-            key:ckey,
-            ...(configuration.path ? { path: configuration.path} : null),
-            ...(configuration.service ? {service: configuration.service }: null)
+            key:ckey
         };
     }
 
-    public keys() {
-        return Object.keys(this.configuration);
+    public async keysWithPath() {
+        const dbConnection = await getDbConnection();
+        const irepo = dbConnection.getRepository(Identifier);
+        const keys = await irepo.createQueryBuilder('identifier')
+            .where('identifier.path <> NULL')
+            .where("identifier.path <> ''")
+            .getMany();
+        return keys.map((i) => i.did);
     }
 
-    public get(key:string) {
+    public async get(key:string) {
         if (this.configuration[key]) {
             return this.configuration[key];
+        }
+        else {
+            const dbConnection = await getDbConnection();
+            const ids = dbConnection.getRepository(Identifier);
+            const result = await ids.createQueryBuilder('identifier')
+                .innerJoinAndSelect("identifier.keys", "key")
+                .where('identifier.did=:did', {did: key})
+                .orWhere('identifier.alias=:alias', {alias: key})
+                .getOne();
+            if (result && result.did) {
+                const value = await this.initialiseDBKey(result);
+                this.configuration[key] = value;
+                return value;
+            }
         }
         return null;
     }

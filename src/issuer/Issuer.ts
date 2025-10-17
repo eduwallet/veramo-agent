@@ -23,6 +23,7 @@ import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
 import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
+import { getDIDConfigurationStore } from '#root/dids/Store';
 
 export class Issuer
 {
@@ -59,26 +60,14 @@ export class Issuer
 
     public async setDid()
     {
-        const dbConnection = await getDbConnection();
-        const ids = dbConnection.getRepository(IdentifierEntity);
-        this.did = await ids.createQueryBuilder('identifier')
-            .innerJoinAndSelect("identifier.keys", "key")
-            .where('did=:did', {did: this.options.did})
-            .orWhere('alias=:alias', {alias: this.options.did})
-            .getOne();
+        const store = getDIDConfigurationStore();
+        const value = await store.get(this.options.did);
         
-        if (!this.did) {
+        if (!value) {
             throw new Error('Missing issuer did configuration');
         }
-        const dbKey = this.did.keys[0];
-        if (this.keyRef == '') {
-            this.keyRef = Factory.getKeyReference(this.did.did);
-        }
-
-        const pkeys = dbConnection.getRepository(PrivateKeyEntity);
-        const pkey = await pkeys.findOneBy({alias:dbKey.kid});
-
-        this.key = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
+        this.did = value.identifier;
+        this.key = value.key;
     }
 
     public async retrieveASServerKeys()
@@ -208,13 +197,17 @@ export class Issuer
     }
 
     public async getDidDoc () {
-        return await Factory.toDIDDocument(this.key!, this.did?.did, [
+        const services = [
             {
                 "id": this.did!.did + '#oid4vci',
                 "type": "OID4VCI",
                 "serviceEndpoint": this.options.baseUrl
             }
-        ], "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
+        ];
+        if (this.did!.services) {
+            services.concat(JSON.parse(this.did!.services));
+        }
+        return await Factory.toDIDDocument(this.key!, this.did?.did, services, "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
     }
 
     public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
