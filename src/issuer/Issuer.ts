@@ -72,13 +72,11 @@ export class Issuer
 
     public async retrieveASServerKeys()
     {
-        if (this.metadata.authorization_servers) {
-            for(const as of this.metadata.authorization_servers) {
-                const keys = await retrieveASServerKey(as);
-                if (keys !== null && keys.length) {
-                    for (const key of keys) {
-                        this.serverKeys[key.kid] = key;
-                    }
+        if (this.options.authorizationEndpoint) {
+            const keys = await retrieveASServerKey(this.options.authorizationEndpoint);
+            if (keys !== null && keys.length) {
+                for (const key of keys) {
+                    this.serverKeys[key.kid] = key;
                 }
             }
         }
@@ -281,6 +279,16 @@ export class Issuer
         }
         if (metadata.credential_request_encryption) {
             delete metadata.credential_request_encryption;
+        }
+        if (this.options.authorizationEndpoint && this.options.authorizationEndpoint.length) {
+            metadata.authorization_servers = [this.options.authorizationEndpoint];
+        }
+        else if(metadata.authorization_servers) {
+            delete metadata.authorization_servers;
+        }
+        // left-overs from backwards compatible metadata
+        if(metadata.authorization_server) {
+            delete metadata.authorization_server;
         }
 
         return metadata;
@@ -487,7 +495,7 @@ export class Issuer
 
     public usesAuthorisedCodeFlow()
     {
-        return this.metadata.authorization_servers && this.metadata.authorization_servers.length;
+        return this.options.authorizationEndpoint && this.options.authorizationEndpoint.length;
     }
 
     public async exportJWK()

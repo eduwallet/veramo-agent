@@ -50,8 +50,11 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     }
   
     // This endpoint serves the /.well-known/openid-configuration document
-    getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath);
-    getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath);
+    // only required if we act as AS
+    if (!issuer.usesAuthorisedCodeFlow()) {
+        getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath);
+        getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath);
+    }
   
     // this is hard coded in the Issuer when metadata is generated
     getCredential(issuer, '/credentials');
