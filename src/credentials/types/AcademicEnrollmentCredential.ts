@@ -2,10 +2,11 @@ import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { CredentialType } from '#root/credentials/types/CredentialType';
 import { Credential } from '#root/credentials/Credential';
 import { createUniqueId } from "#root/utils/createUniqueId";
+import { Session } from "#root/packages/datastore/index";
 
 export class AcademicEnrollmentCredential extends CredentialType
 {
-    public async resolve(credential:Credential) {
+    public async resolve(credential:Credential, session:Session) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
         credential.data = this.convertDataToClaims(credential.data);

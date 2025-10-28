@@ -153,19 +153,17 @@ class DIDConfigurationStore {
         if (this.configuration[key]) {
             return this.configuration[key];
         }
-        else {
-            const dbConnection = await getDbConnection();
-            const ids = dbConnection.getRepository(Identifier);
-            const result = await ids.createQueryBuilder('identifier')
-                .innerJoinAndSelect("identifier.keys", "key")
-                .where('identifier.did=:did', {did: key})
-                .orWhere('identifier.alias=:alias', {alias: key})
-                .getOne();
-            if (result && result.did) {
-                const value = await this.initialiseDBKey(result);
-                this.configuration[key] = value;
-                return value;
-            }
+        const dbConnection = await getDbConnection();
+        const ids = dbConnection.getRepository(Identifier);
+        const result = await ids.createQueryBuilder('identifier')
+            .innerJoinAndSelect("identifier.keys", "key")
+            .where('identifier.did=:did', {did: key})
+            .orWhere('identifier.alias=:alias', {alias: key})
+            .getOne();
+        if (result && result.did) {
+            const value = await this.initialiseDBKey(result);
+            this.configuration[key] = value;
+            return value;
         }
         return null;
     }

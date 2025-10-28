@@ -33,7 +33,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (issuer.usesAuthorisedCodeFlow()) {
             // the issuer should be one of our authorization servers
-            if (!issuer.metadata.authorization_servers!.includes(data?.payload?.iss)) {
+            if (!issuer.options?.authorizationEndpoint == data?.payload?.iss) {
                 debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
@@ -72,6 +72,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
     session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
+    session.data.accessToken = jwt;
     await issuer.storeSession(session);
 
     let credentialDataSet:any = null;

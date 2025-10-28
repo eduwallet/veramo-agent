@@ -45,7 +45,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         credential.metaData = session.data.metaData;
         credential.holder = proof.did;
 
-        if (!await CredentialFactory.resolve(credential)) {
+        if (!await CredentialFactory.resolve(credential, session)) {
             debug("error creating actual credential");
             throw Error('Could not create a credential');
         }

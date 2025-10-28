@@ -24,6 +24,7 @@ import { CryptoKey, Factory } from '@muisit/cryptokey';
 import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
+import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 
 export class Issuer
 {
@@ -38,6 +39,7 @@ export class Issuer
     public sessionData:SessionStateManager;
     public nonceStates:NonceManager;
     public serverKeys:StringKeyedObject;
+    public serverMetadata:any;
     public usesNonces:boolean;
 
     public constructor(_options:IssuerConfiguration, _metadata: MetadataConfiguration) {
@@ -79,6 +81,8 @@ export class Issuer
                     this.serverKeys[key.kid] = key;
                 }
             }
+
+            this.serverMetadata = await retrieveServerMetadata(this.options.authorizationEndpoint);
         }
     }
 

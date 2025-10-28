@@ -1,3 +1,4 @@
+import { Session } from "#root/packages/datastore/index";
 import { CredentialProofData } from "#root/types/internal";
 import { CredentialDisplay } from "#root/types/specification/metadata";
 import { Credential } from "../Credential.js";
@@ -9,7 +10,7 @@ export interface ClaimList {
 export abstract class CredentialType
 {
     public abstract check(credential:Credential):boolean;
-    public abstract resolve(credential:Credential):Promise<boolean>;
+    public abstract resolve(credential:Credential, session:Session):Promise<boolean>;
     
     protected claimPresent(claim:string, type:string, claims:ClaimList)
     {

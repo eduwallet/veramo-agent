@@ -9,6 +9,8 @@ import { SDJWT } from "#root/credentials/formats/SDJWT";
 import { JOSE } from "#root/credentials/formats/JOSE";
 import { JSONLD } from "./formats/JSONLD.js";
 import { VCDM } from "./formats/VCDM.js";
+import { EduID } from "./types/EduID.js";
+import { Session } from "#root/packages/datastore/index";
 
 export class CredentialFactory
 {
@@ -23,6 +25,8 @@ export class CredentialFactory
                 return new PID();
             case 'OpenBadgeCredential':
                 return new OpenBadgeCredential();
+            case 'eduID':
+                return new EduID();
             default:
             case 'GenericCredential':
                 return new GenericCredential();
@@ -33,19 +37,19 @@ export class CredentialFactory
     {
         const instance = this.createInstance(credential);
 
-        if (instance && credential.data && credential.issuer) {
+        if (instance && credential.issuer) {
             return instance.check(credential);
         }
         return false;
     }
 
-    public static async resolve(credential:Credential)
+    public static async resolve(credential:Credential, session:Session)
     {
         await credential.resolve();
         const instance = this.createInstance(credential);
 
         if (instance && credential.data && credential.issuer) {
-            await instance.resolve(credential);
+            await instance.resolve(credential, session);
         }
         return true;
     }
