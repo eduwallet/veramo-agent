@@ -20,22 +20,32 @@ export class Credential extends BaseEntity {
 
     @Column('varchar')
     //@ts-ignore
+    // the original issuer state used to issue this credential
     state: string
 
     @Column('varchar')
     //@ts-ignore
+    // the current revocation state of the credential
+    status: string
+
+    @Column('varchar')
+    //@ts-ignore
+    // principal id by which this credential is known
     credpid: string
 
     @Column('varchar')
     //@ts-ignore
+    // did representation of the holder key
     holder: string
 
     @Column('varchar')
     //@ts-ignore
+    // configured name of the issuer
     issuer: string
 
     @Column('varchar')
     //@ts-ignore
+    // configured type of the credential
     credentialId: string
 
     @Column({ type: 'simple-json' })

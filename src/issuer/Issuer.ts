@@ -167,11 +167,11 @@ export class Issuer
         else {
             dbCred.expirationDate = undefined;
         }
-        dbCred.holder = session.data.holder || '';
-        dbCred.credpid = session.data.principalCredentialId || '';
+        dbCred.holder = credential.holder || '';
+        dbCred.credpid = credential.principalId || '';
         dbCred.issuer = this.name;
-        dbCred.metadata = this.getCredentialConfiguration(session.data.credentialId) as StringKeyedObject;
-        dbCred.credentialId = session.data.credentialId || '';
+        dbCred.metadata = this.getCredentialConfiguration(credential.type) as StringKeyedObject;
+        dbCred.credentialId = credential.type || '';
         if (credential.metaData.credentialStatus) {
             if (!Array.isArray(credential.metaData.credentialStatus)) {
                 dbCred.statuslists = [credential.metaData.credentialStatus];
@@ -180,6 +180,7 @@ export class Issuer
                 dbCred.statuslists = credential.metaData.credentialStatus;
             }
         }
+        dbCred.status='ISSUED'; // initial status
         await repo.save(dbCred);
         session.data.uuid = dbCred.uuid;
     }
@@ -400,11 +401,12 @@ export class Issuer
       if (holder && holder.length) {
           qb = qb.andWhere('c.holder=:holder', {holder});
       }
+      qb = qb.andWhere('c.issuer=:issuer', {issuer: this.name});
 
       return await qb.orderBy('c.id', 'ASC').getRawMany();
     }
 
-    public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string): Promise<StatusListRevocationState>
+    public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string|null, onlyRevoke:boolean = false): Promise<StatusListRevocationState>
     {
         debug("revoking specific credential " + uuid);
         const dbConnection = await getDbConnection();
@@ -426,9 +428,18 @@ export class Issuer
         debug("looping over " + statuslists.length + " statuslists");
         for (const statlist of statuslists) {
             if (!listName || statlist.credentialStatus?.id?.startsWith(listName)) {
-                retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+                // if we are only revoking, only call on the lists with purpose revocation
+                // this allows us to explicitely suspend credentials
+                // TODO: if we only suspend, this implementation still returns REVOKED and stores it
+                // as such on the credential. We need to implement the additional features of the
+                // remote status list and its messages
+                if (!onlyRevoke || !statlist.purpose || statlist.purpose == 'revocation') {
+                    retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+                }
             }
         }
+        credential.status = retval;
+        await repo.save(credential);
         return retval;
     }
 
