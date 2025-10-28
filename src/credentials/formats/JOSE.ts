@@ -95,6 +95,8 @@ export class JOSE
         return await this.credential.issuer!.signToken(jwt);
     }
 
+    // add the status-list data for IETF token lists. The regular VCDM encoded status lists
+    // are added in the VCDM object
     private addStatusListData(jwt:JWT)
     {
         if (this.credential.metaData.credentialStatus) {

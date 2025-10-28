@@ -45,6 +45,7 @@ export class SDJWT
         if (this.credential.metaData.expirationDate) {
             baseCredential.exp = moment(this.credential.metaData.expirationDate).unix();
         }
+        this.addStatusListData(baseCredential);
 
         // TODO: encode the baseCredential.status referring to the status list implementation
         // the spec does not define this explicitely
@@ -104,5 +105,34 @@ export class SDJWT
             disclosureFrame[key] = frame as any;
         }
         return disclosureFrame;
+    }
+
+    // add the status-list data for IETF token lists.
+    private addStatusListData(baseCredential:SdJwtVcPayload)
+    {
+        if (this.credential.metaData.credentialStatus) {
+            let statusses:any = [];
+
+            if (this.credential.metaData.credentialStatus.type) {
+                statusses = [this.credential.metaData.credentialStatus];
+            }
+            else {
+                statusses = this.credential.metaData.credentialStatus;
+            }
+            
+            // as opposed to the JOSE implementation, we retain all the available
+            // status lists and add them as entries here.
+            // However, the IETF spec only allows a single status list. We take the first
+            // one if there are more, so SDJWT implementations must restrict the number
+            // of configured status lists
+            if (statusses.length > 0) {
+                // IETF specifies that the status of a JWT is embedded in the status claim
+                // as a status_list entry, no matter the encoding.
+                // The statuslist agent returns a ready to use return value
+                baseCredential.status = {
+                    status_list: statusses[0].credentialStatus
+                };
+            }
+        }
     }
 }
