@@ -25,7 +25,7 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
         credential_configuration_ids: credentialConfigIds,
         // spec ID-1:4.1.1 -> The URL of the Credential Issuer, as defined in Section 11.2.1, from which
         // the Wallet is requested to obtain one or more Credentials. 
-        credential_issuer: issuer.metadata.credential_issuer,
+        credential_issuer: issuer.options.baseUrl,
     };
 
     // If we use Authorized Code flow, pass the OAuth2 client_id in the offer

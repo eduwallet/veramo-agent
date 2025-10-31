@@ -44,7 +44,8 @@ export abstract class CredentialType
     protected setIssuer(credential:Credential)
     {
         if (credential.issuer) {
-            const display = (credential.issuer.metadata.display ?? [{}]);
+            const metadata = credential.issuer.generateMetadata();
+            const display = (metadata.display ?? [{}]);
             for (const label of display) {
                 if (label.name) {
                     credential.addDictionaryValue('issuer_name', label.name, label.locale ?? 'en_US');

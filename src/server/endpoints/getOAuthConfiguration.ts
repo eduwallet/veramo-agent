@@ -4,8 +4,8 @@ import { Issuer } from 'issuer/Issuer.js';
 export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined) {
     const path = `/.well-known/oauth-authorization-server`
     issuer.router!.get(path, (request: Request, response: Response) => {
-        var data:any = {
-            "issuer": issuer.metadata.credential_issuer
+        const data:any = {
+            "issuer": issuer.options.baseUrl
         };
 
         if (issuer.options.authorizationEndpoint) {

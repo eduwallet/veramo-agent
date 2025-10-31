@@ -254,7 +254,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     // we could test that it IS present in auth flow, but it is optional...
 
     // aud: required, credential issuer identifier
-    if (!aud || aud !== issuer.metadata.credential_issuer) {
+    if (!aud || aud !== issuer.options.baseUrl) {
         debug("Proof is invalid because aud claim is incorrect", aud);
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid aud claim";
