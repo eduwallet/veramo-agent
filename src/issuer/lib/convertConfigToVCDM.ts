@@ -36,11 +36,11 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
         let path = [key];
         if (config.format == 'jwt_vc_json') {
             // old skool VCDM 1.0, which puts the credential in a vc top claim
-            path = ['vc', 'credentialSubject', 'key'];
+            path = ['vc', 'credentialSubject', key];
         }
         else {
             // VCDM 2 puts everything in the credentialSubject claim
-            path = ['credentialSubject', 'key'];
+            path = ['credentialSubject', key];
         }
         const claim:CredentialConfigurationClaimData = {
             path,
