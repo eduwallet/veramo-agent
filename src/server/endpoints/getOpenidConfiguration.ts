@@ -1,13 +1,20 @@
-import { Request, Response } from 'express'
+import { getBasePath } from '#root/utils/getBasePath';
+import { Request, Response, Router } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
 
-export function getOpenidConfiguration(
-    issuer:Issuer,
-    tokenpath: string|undefined) {
+export function getOpenidConfiguration(issuer:Issuer,tokenpath: string|undefined, wellKnownRouter:Router) {
     const path = `/.well-known/openid-configuration`
-    issuer.router!.get(path, (request: Request, response: Response) => {
-        var data:any = {
-            "issuer": issuer.metadata.credential_issuer
+    issuer.router!.get(path, getOIDCConfig(issuer, tokenpath));
+
+    const tenanturl = getBasePath(issuer.options.baseUrl);
+    wellKnownRouter.get('/oauth-authorization-server' + tenanturl, getOIDCConfig(issuer, tokenpath));
+}
+
+function getOIDCConfig(issuer:Issuer, tokenpath:string|undefined)
+{
+    return (request: Request, response: Response) => {
+        const data:any = {
+            "issuer": issuer.options.baseUrl
         };
 
         if (issuer.options.authorizationEndpoint) {
@@ -21,5 +28,5 @@ export function getOpenidConfiguration(
         }
 
         return response.json(data)
-    })
+    };
 }

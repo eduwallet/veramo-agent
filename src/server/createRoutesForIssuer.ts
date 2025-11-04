@@ -1,6 +1,6 @@
 import Debug from 'debug';
 const debug = Debug('issuer:server');
-import express, { Express } from 'express'
+import express, { Express, Router } from 'express'
 import { Issuer } from "issuer/Issuer.js";
 
 import {
@@ -19,7 +19,7 @@ import {
 } from './endpoints/index.js'
 import { getBasePath } from 'utils/getBasePath.js';
 
-export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
+export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnownRouter:Router) {
     var tokenPath = '/token';
     debug('creating routes for ', issuer.name);
     /*
@@ -42,7 +42,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     }
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
-    getMetadata(issuer)
+    getMetadata(issuer, wellKnownRouter)
   
     if (issuer.did?.provider == 'did:web') {
         // This endpoint serves the /.well-known/did.json document
@@ -52,8 +52,8 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express) {
     // This endpoint serves the /.well-known/openid-configuration document
     // only required if we act as AS
     if (!issuer.usesAuthorisedCodeFlow()) {
-        getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath);
-        getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath);
+        getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath, wellKnownRouter);
+        getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath, wellKnownRouter);
     }
   
     // this is hard coded in the Issuer when metadata is generated
