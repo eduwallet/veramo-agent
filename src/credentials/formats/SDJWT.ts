@@ -9,6 +9,7 @@ import { getVctForCredentialType } from "#root/vct/Store";
 import { VctClaimPathElement } from "#root/types/specification/vct";
 import { fromString } from 'uint8arrays';
 import moment from 'moment';
+import { Factory } from '@muisit/cryptokey';
 
 export class SDJWT
 {
@@ -66,7 +67,7 @@ export class SDJWT
           header: {
             typ: this.type,
             cty: 'vc',
-            kid: '#' + this.credential.issuer!.keyRef
+            kid: '#' + Factory.getKeyReference(this.credential.issuer!.did!.did)
           },
         });
     

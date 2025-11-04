@@ -8,7 +8,15 @@ import { StatusListRevocationState } from "#root/types/api";
 
 export class EduID extends CredentialType
 {
-    private acceptedClaims:string[] = ["name", "given_name", "family_name", "email", "eduperson_assurance", "schac_home_organization", "eduperson_affiliation", "eduperson_scoped_affiliation"];
+    private acceptedClaims:string[] = [
+            "name",
+            "given_name",
+            "family_name",
+            "email",
+            "eduperson_assurance",
+            "schac_home_organization",
+            "eduperson_scoped_affiliation"
+    ];
 
     public async resolve(credential:Credential, session:Session) {
         this.setCredentialDisplay(credential);
