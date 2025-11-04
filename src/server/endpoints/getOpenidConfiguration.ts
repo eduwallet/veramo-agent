@@ -7,7 +7,7 @@ export function getOpenidConfiguration(issuer:Issuer,tokenpath: string|undefined
     issuer.router!.get(path, getOIDCConfig(issuer, tokenpath));
 
     const tenanturl = getBasePath(issuer.options.baseUrl);
-    wellKnownRouter.get('/oauth-authorization-server' + tenanturl, getOIDCConfig(issuer, tokenpath));
+    wellKnownRouter.get('/openid-configuration' + tenanturl, getOIDCConfig(issuer, tokenpath));
 }
 
 function getOIDCConfig(issuer:Issuer, tokenpath:string|undefined)
