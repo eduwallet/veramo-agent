@@ -13,31 +13,59 @@ export class OpenBadgeCredential extends CredentialType {
     public async resolve(credential:Credential) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
-
-        const achievement = credential.data?.achievement ?? {};
-        const result = credential.data?.result ?? null; 
-        const validFrom: string = credential.data?.validFrom;
-        const validUntil: string | undefined = credential.data?.validUntil;
-
-        credential.contexts.push("https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.2.json");
-        credential.principalId = createUniqueId();
-
-        if (validFrom) {
-          credential.metaData.validFrom = validFrom;
-          credential.metaData.issuanceDate = validFrom;
-        }
-
-        if (validUntil) {
-          credential.metaData.validUntil = validUntil;
-          credential.metaData.expirationDate = validUntil;
-        }
-
         credential.type = "OpenBadgeCredential";
-        credential.data = {
-          type: ["VerifiableCredential", "OpenBadgeCredential"],
-          achievement,
-          ...(result !== null && {result})
-        };
+
+        if (credential.presetCredential) {
+          credential.contexts.push("https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.2.json");
+          for (const key of Object.keys(credential.presetCredential)) {
+            switch (key) {
+              case '@context':
+                credential.contexts = credential.presetCredential[key];
+                break;
+              case 'credentialSubject':
+                credential.data = credential.presetCredential[key];
+                break;
+              case 'name':
+              case 'description':
+                credential.addDictionaryValue(key, credential.presetCredential[key], 'en_US');
+                break;
+              case 'validFrom':
+                credential.metaData.issuanceDate = credential.presetCredential[key];
+                break;
+              case 'validUntil':
+                credential.metaData.expirationDate = credential.presetCredential[key];
+                break;
+              default:
+                credential.metaData[key] = credential.presetCredential[key];
+                break;
+            }
+          }
+        }
+        else {
+          const achievement = credential.data?.achievement ?? {};
+          const result = credential.data?.result ?? null; 
+          const validFrom: string = credential.data?.validFrom;
+          const validUntil: string | undefined = credential.data?.validUntil;
+
+          credential.contexts.push("https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.2.json");
+          credential.principalId = createUniqueId();
+
+          if (validFrom) {
+            credential.metaData.validFrom = validFrom;
+            credential.metaData.issuanceDate = validFrom;
+          }
+
+          if (validUntil) {
+            credential.metaData.validUntil = validUntil;
+            credential.metaData.expirationDate = validUntil;
+          }
+
+          credential.data = {
+            type: ["VerifiableCredential", "OpenBadgeCredential"],
+            achievement,
+            ...(result !== null && {result})
+          };
+        }
         return true;
     }
 }

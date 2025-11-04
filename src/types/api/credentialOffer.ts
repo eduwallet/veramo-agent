@@ -28,6 +28,7 @@ export interface CreateCredentialOfferRequest {
     grants: APIGrants;
     credentialDataSupplierInput?: StringKeyedObject;
     credentialMetadata?: StringKeyedObject;
+    credential?:any;
 }
   
 export type CreateCredentialOfferResponse = {

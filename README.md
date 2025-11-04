@@ -281,7 +281,8 @@ This creates a credential offer in the agent database based on supplied credenti
         }
     },
     "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
-    "credentialMetadata": "object containing key-value pairs defining the metadata"
+    "credentialMetadata": "object containing key-value pairs defining the metadata",
+    "credential": "optional object containing a prefilled credential, including metadata"
 }
 ```
 
@@ -297,6 +298,8 @@ The `credentialMetadata` attribute can contain settings about the credential. Cu
 - `expiration`: a number representing the seconds after issuance date for the credential to expire. For backwards compatibility, the credential data fields `_exp` and `_ttl` are also supported and serve the same purpose
 - `enableStatusLists`: a boolean field that enables or disables generating status list information. If not specified, but status lists are configured for an issuer, status list information is generated. Set this field explicitely to `false` to prevent generating status list information
 - `evidence`: an object or array containing evidence data as specified in the VCDM spec.
+
+The `credential` attribute can contain a full credential, some values of which will be overwritten or adjusted by the issuer during issuance. Fields that are supported, like `@context`, `name`, `description`, `credentialStatus` or `evidence`, will be interpreted if possible, other fields (including `credentialSubject`) are transported verbatim to the output. This feature is mainly used for the `VCDM` `OpenBadgeCredential` implementation and should be used with care. 
 
 The call returns a JSON object containing the following elements:
 
