@@ -5,11 +5,9 @@ import { AcademicEnrollmentCredential } from '#root/credentials/types/AcademicEn
 import { PID } from '#root/credentials/types/PID'
 import { OpenBadgeCredential } from '#root/credentials/types/OpenBadgeCredential'
 import { GenericCredential } from '#root/credentials/types/GenericCredential'
-import { SDJWT } from '#root/credentials/formats/SDJWT'
-import { JOSE } from '#root/credentials/formats/JOSE'
 import { EuropeanDigitalCredential } from '#root/credentials/types/EuropeanDigitalCredential'
-import { JSONLD } from './formats/JSONLD.js'
-import { VCDM } from './formats/VCDM.js'
+import { JOSE } from '#root/credentials/formats/JOSE'
+import { SDJWT } from '#root/credentials/formats/SDJWT'
 
 export class CredentialFactory {
   private static createInstance(credential: Credential): CredentialType | null {
