@@ -8,6 +8,8 @@ import { GenericCredential } from '#root/credentials/types/GenericCredential'
 import { EuropeanDigitalCredential } from '#root/credentials/types/EuropeanDigitalCredential'
 import { JOSE } from '#root/credentials/formats/JOSE'
 import { SDJWT } from '#root/credentials/formats/SDJWT'
+import { VCDM } from '#root/credentials/formats/VCDM'
+import { JSONLD } from '#root/credentials/formats/JSONLD'
 
 export class CredentialFactory {
   private static createInstance(credential: Credential): CredentialType | null {
@@ -60,6 +62,10 @@ export class CredentialFactory {
         const jose = new JOSE(credential, credential.format)
         await jose.sign()
         break
+      case 'ldp_vc':
+        const vcdm = new VCDM(credential)
+        const ld = await JSONLD.sign(credential, vcdm.build())
+        credential.output = ld
     }
     return true
   }
