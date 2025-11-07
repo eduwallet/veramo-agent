@@ -60,6 +60,23 @@ The Docker setup installs all dependencies inside the container, so there's no n
 
 ## Configuration
 
+### Environment variables
+
+- `CONF_PATH`: base path for the file based configuration
+- `DB_TYPE`: database driver type, only `postgres` is currently actively tested
+- `DB_HOST`: hostname for database connections
+- `DB_USER`: user to connect as to the database
+- `DB_PASSWORD`: password to connect with to the database
+- `DB_NAME`: name of the database (`postgres`)
+- `DB_SCHEMA`: name of the database schema
+- `PORT`: port for the Express server
+- `LISTEN_ADDRESS`: local bind address for the Express server
+- `BASEURL`: base url served by the issuer agent
+- `BEARER_TOKEN`: access token for the administration api
+- `PASSPHRASE`: encoding passphrase used to encrypt secrets
+
+### File based configuration
+
 Configuration for the Issuer services is done inside the `conf/` directory. There are *5* entities that can be configured:
 
 - `contexts`: linked data proof (`json-ld`) contexts that are served by this issuer.
@@ -392,3 +409,12 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 - `UNREVOKED`: credential was unrevoked (bit not set)
 - `WAS_UNREVOKED`: credential was not revoked, state has not changed
 - `UNKNOWN`: status list cannot be determined, bit was never reserved, etc.
+
+
+# Changelog / Release Notes
+
+| Version | Commit  | Date       | Comment             |
+| ------- | ------- | ---------- | ------------------- |
+|         |         | 2025-11-07 | Implementation of encoded private keys. When running this version, make sure the PASSPHRASE environment variable is set. If it is not set, the keys are not encoded with the migration (so remain unchanged). This will work, but encoding manually afterwards is a pain. The easiest way to fix this is to remove the EncKey migration from the `migrations` table, which will retry to encode all private keys. |
+|         | 1dd29dd | 2025-11-04 | Added `credential` option to `create-offer` api call |
+
