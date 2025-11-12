@@ -61,7 +61,7 @@ export class EduID extends CredentialType
                         }
                         const fieldvalue = toStringByJoin(input[key]);
                         for (const aff of this.affiliations) {
-                            retval['is_' + aff] = (fieldvalue.indexOf(aff + '@') >= 0);
+                            retval['is_' + aff] = (fieldvalue.indexOf(aff + '@') >= 0) ? 1 : 0;
                         }
                         break;
                     default:
