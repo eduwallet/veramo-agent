@@ -5,6 +5,7 @@ import { CredentialType } from "#root/credentials/types/CredentialType";
 import { Session, Credential as DBCredential } from "#root/packages/datastore/index";
 import { getDbConnection } from "#root/database/databaseService";
 import { StatusListRevocationState } from "#root/types/api";
+import moment from "moment";
 
 export class EduID extends CredentialType
 {
@@ -70,6 +71,8 @@ export class EduID extends CredentialType
     {
         // a holder key that received a EduID in the past cannot receive a new EduID again
         // UNLESS it is for the same EduID.
+        // Or UNLESS the previous EduID has expired. We should clear out expired credentials
+        // automatically.
         const uid = credential.principalId;
         if (!uid || uid.length == 0) {
             throw new Error("Invalid uid detected, not issuing credential");
@@ -79,13 +82,45 @@ export class EduID extends CredentialType
             throw new Error("Invalid holder key detected");
         }
 
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(DBCredential);
-        const obj =  await repo.createQueryBuilder('credential').where('holder=:holder and credpid<>:id and "credentialId"=\'eduID\'', {holder: holderKey, id:uid}).getOne();
-        if (obj) {
-            throw new Error("Holder already has a different eduID assigned");
+        let obj =  await this.getCredentialForHolderAndId(holderKey, uid);
+        while (obj) {
+            // if this holder has an expired credential, we can forget about it.
+            // It is allowed to load someone else's eduID if your eduID has expired
+            if (this.credentialHasExpired(obj)) {
+                await this.deleteCredential(obj);
+                obj = await this.getCredentialForHolderAndId(holderKey, uid);
+            }
+            else {
+                // we found a non-expired eduID for this holder and a different uid
+                throw new Error("Holder already has a different eduID assigned");
+            }
         }
         return true;
+    }
+
+    private credentialHasExpired(credential:DBCredential)
+    {
+        if (credential.expirationDate) {
+            const dt = moment(credential.expirationDate);
+            if (dt.isBefore(moment())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private async deleteCredential(credential:DBCredential)
+    {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(DBCredential);
+        await repo.createQueryBuilder('credential').delete().where("id=:id", {id: credential.id}).execute();
+    }
+
+    private async getCredentialForHolderAndId(holder:string, id:string)
+    {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(DBCredential);
+        return await repo.createQueryBuilder('credential').where('holder=:holder and credpid<>:id and "credentialId"=\'eduID\'', {holder, id}).getOne();
     }
 
     private async revokePreviousCredentials(credential:Credential)
