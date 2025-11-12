@@ -38,7 +38,17 @@ export class EduID extends CredentialType
         var retval:any = {};
         for (const key of Object.keys(input)) {
             if (this.acceptedClaims.includes(key)) {
-                retval[key] = toStringByJoin(input[key]);
+                switch (key) {
+                    case "eduperson_assurance":
+                    case "eduperson_scoped_affiliation":
+                        if (Array.isArray(input[key])) {
+                            retval[key] = input[key];
+                        }
+                        break;
+                    default:
+                        retval[key] = toStringByJoin(input[key]);
+                        break;
+                }
             }
         }
         return retval;
