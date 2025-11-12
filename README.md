@@ -410,11 +410,10 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 - `WAS_UNREVOKED`: credential was not revoked, state has not changed
 - `UNKNOWN`: status list cannot be determined, bit was never reserved, etc.
 
-
 # Changelog / Release Notes
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
-|         |         | 2025-11-07 | Implementation of encoded private keys. When running this version, make sure the PASSPHRASE environment variable is set. If it is not set, the keys are not encoded with the migration (so remain unchanged). This will work, but encoding manually afterwards is a pain. The easiest way to fix this is to remove the EncKey migration from the `migrations` table, which will retry to encode all private keys. |
+|         | 3a9baf8 | 2025-11-07 | Implementation of encoded private keys. When running this version, make sure the PASSPHRASE environment variable is set. If it is not set, the keys are not encoded with the migration (so remain unchanged). This will work, but encoding manually afterwards is a pain. The easiest way to fix this is to remove the EncKey migration from the `migrations` table, which will retry to encode all private keys. |
 |         | 1dd29dd | 2025-11-04 | Added `credential` option to `create-offer` api call |
 
