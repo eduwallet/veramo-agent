@@ -19,6 +19,11 @@ export class EduID extends CredentialType
             "eduperson_scoped_affiliation"
     ];
 
+    // https://wiki.refeds.org/display/STAN/eduPerson+%28202208%29+v4.4.0#eduPerson(202208)v4.4.0-eduPersonAffiliation
+    private affiliations:string[] = [
+        'faculty', 'student', 'staff', 'alum', 'member', 'affiliate', 'employee', 'library-walk-in'
+    ];
+
     public async resolve(credential:Credential, session:Session) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
@@ -40,9 +45,23 @@ export class EduID extends CredentialType
             if (this.acceptedClaims.includes(key)) {
                 switch (key) {
                     case "eduperson_assurance":
+                        if (Array.isArray(input[key])) {
+                            retval[key] = input[key];
+                        }
+                        else {
+                            retval[key] = toStringByJoin(input[key]);    
+                        }
+                        break;
                     case "eduperson_scoped_affiliation":
                         if (Array.isArray(input[key])) {
                             retval[key] = input[key];
+                        }
+                        else {
+                            retval[key] = toStringByJoin(input[key]);
+                        }
+                        const fieldvalue = toStringByJoin(input[key]);
+                        for (const aff of this.affiliations) {
+                            retval['is_' + aff] = (fieldvalue.indexOf(aff + '@') >= 0);
                         }
                         break;
                     default:
