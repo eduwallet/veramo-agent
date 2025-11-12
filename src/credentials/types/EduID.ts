@@ -27,7 +27,7 @@ export class EduID extends CredentialType
     public async resolve(credential:Credential, session:Session) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
-        await this.enrichDataWithCallback(credential, session);
+        this.enrichDataWithUserInfo(credential, session);
         await this.checkHolderkeyReuse(credential, session);
         await this.revokePreviousCredentials(credential);
         credential.data = this.convertDataToClaims(credential.data);
@@ -73,26 +73,14 @@ export class EduID extends CredentialType
         return retval;
     }
 
-    private async enrichDataWithCallback(credential:Credential, session:Session)
+    private enrichDataWithUserInfo(credential:Credential, session:Session)
     {
-        const endpoint = credential.issuer?.serverMetadata.userinfo_endpoint;
-        try {
-            const json = await fetch(endpoint, {
-                headers: {
-                    'Authorization': 'Bearer ' + session.data.accessToken
-                }
-            }).then((r) => r.json());
-            if (json && Object.keys(json).length > 0) {
-                for (const nm of this.acceptedClaims) {
-                    if (json[nm]) credential.data[nm] = json[nm];
-                }
-                credential.principalId = toStringByJoin(json['uid']);
+        const data = session.data.accessData;
+        if (data && Object.keys(data).length > 0) {
+            for (const nm of this.acceptedClaims) {
+                if (data[nm]) credential.data[nm] = data[nm];
             }
-        }
-        catch (e) {
-            console.error('Failed to fetch user info endpoint');
-            // throw an error, do not issue a credential
-            throw e;
+            credential.principalId = toStringByJoin(data['uid']);
         }
     }
 

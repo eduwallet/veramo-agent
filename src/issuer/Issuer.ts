@@ -86,6 +86,23 @@ export class Issuer
         }
     }
 
+    public async retrieveASUserInfo(token:string)
+    {
+        const endpoint = this.serverMetadata.userinfo_endpoint;
+        try {
+            const json = await fetch(endpoint, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            }).then((r) => r.json());
+            return json;
+        }
+        catch (e:any) {
+            console.error("Caught error retrieving the user info endpoint", endpoint, token)
+        }
+        return {};
+    }
+
     public async signData(data: Uint8Array)
     {
         return await this.key?.sign(this.algorithm(), data, 'base64url');

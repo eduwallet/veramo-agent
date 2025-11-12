@@ -5,7 +5,7 @@ import { Request } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 import { ApiState } from '#root/types/internal';
-import { CredentialRequest, ProofOfPossession } from '#root/types/specification/credential_request';
+import { CredentialRequest } from '#root/types/specification/credential_request';
 import { JWT } from '#root/jwt/JWT';
 import { getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
@@ -29,6 +29,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
     // try to decode the access token as if it were a JWT
     try {
+        // this decodes the JWT, or retrieves data from the user info endpoint
         const data  = await verifyAccessTokenJWT(jwt, issuer);
 
         if (issuer.usesAuthorisedCodeFlow()) {
@@ -52,6 +53,9 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     
         const stateid = data?.payload?.issuer_state;
         session = await issuer.getSessionByState(stateid);
+        if (session) {
+            session.data.accessData = data?.payload;
+        }
 
         if (!issuer.usesAuthorisedCodeFlow() && session && session.data?.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
             debug("invalid because we use pre-authorised code flow and did not yet create an access token");
@@ -72,7 +76,6 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
     session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
-    session.data.accessToken = jwt;
     await issuer.storeSession(session);
 
     let credentialDataSet:any = null;
