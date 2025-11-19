@@ -247,22 +247,25 @@ Routing and endpoints are set in various places. There are two kinds of endpoint
 
 The current setup supports the basic endpoints:
 
-- `<base URL>/<instance>/.well-known/openid-credential-issuer`
-- `<base URL>/<instance>/.well-known/openid-configuration`
-- `<base URL>/<instance>/.well-known/oauth-authorization-server`
-- `<base URL>/<instance>/.well-known/did.json`
-- `<base URL>/<instance>/credentials`
-- `<base URL>/<instance>/nonce`
-- `<base URL>/<instance>/get-credential-offer/:id`
+- `<base URL>/<tenant>/.well-known/openid-credential-issuer`
+- `<base URL>/.well-known/openid-credential-issuer/<tenant>`
+- `<base URL>/<tenant>/.well-known/openid-configuration`
+- `<base URL>/.well-known/openid-configuration/<tenant>`
+- `<base URL>/<tenant>/.well-known/oauth-authorization-server`
+- `<base URL>/.well-known/oauth-authorization-server/<tenant>`
+- `<base URL>/<tenant>/.well-known/did.json`
+- `<base URL>/<tenant>/credentials`
+- `<base URL>/<tenant>/nonce`
+- `<base URL>/<tenant>/get-credential-offer/:id`
 
-The first URL serves the JSON metadata that configures the issuer. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute for `vc+sd-jwt` type credentials, allowing the metadata to only list the `vc_jwt` type configuration.
+The first and second URL serves the JSON metadata that configures the issuer tenant. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute. For historical reasons, the `credentialSubject` entry is still used in the metadata specification.
 
 The `openid-configuration` and `oauth-authorization-server` are published to configure the token endpoint in the pre-authorized_code flow. The UniMe wallet
 requires the latter and does not read the former. Sphereon reads both. The spec does not require any of them, but then the token endpoint is undefined.
 
 The `did.json` endpoint provides a convenient way of publishing the `did:web` configuration. Configure a reverse proxy on the actual domain of the 
 `did:web` to point to this endpoint to complete the configuration. In this way, the agent contains both public and private keys and if the agent
-is restarted or keys refreshed, the key configuration will be correct.
+is restarted or keys refreshed, the key configuration will be correct. The did specification also allows a `path` setting to host the did directly on the root of the issuer, which is convenient if there is only one actual issuer tenant. Make sure to include the `:.well-known` subpath if you want to use the did directly on the published path above, e.g.: `did:web:example.com:tenant:.well-known` for the did on `https://example.com/tenant`.
 
 The `credentials` URL serves the credential, provided the user can supply the required data (grant, authorization code, pin, credential reference, etc.). This follows the basic OpenID4VC specification.
 
@@ -274,14 +277,14 @@ The `get-credential-offer` endpoint serves the actual credential issuance offer,
 
 The setup has the following endpoints for the back-end API:
 
-- POST `<base URL>/<institute>/api/create-offer`
-- POST `<base URL>/<institute>/api/check-offer`
-- POST `<base URL>/<institute>/api/list-credentials`
-- POST `<base URL>/<institute>/api/revoke-credential`
+- POST `<base URL>/<tenant>/api/create-offer`
+- POST `<base URL>/<tenant>/api/check-offer`
+- POST `<base URL>/<tenant>/api/list-credentials`
+- POST `<base URL>/<tenant>/api/revoke-credential`
 
 #### Create Offer
 
-POST `<base URL>/<institute>/api/create-offer`
+POST `<base URL>/<tenant>/api/create-offer`
 
 This creates a credential offer in the agent database based on supplied credentials. The request contains a JSON object:
 
@@ -332,7 +335,7 @@ At the moment, the agent by default creates a 4 digit random code when a tx_code
 
 #### Check Offer
 
-POST `<base URL>/<institute>/api/check-offer`
+POST `<base URL>/<tenant>/api/check-offer`
 
 The `check-offer` endpoint allows the front-end to poll the status of the offer. Depending on the state of the offer, the front-end
 can display different messages or adjust the interface. The offer `id` is the `id` value returned in the `create-offer` call.
@@ -368,7 +371,7 @@ transaction code and asks the user if he/she wants to accept the credential.
 
 #### List Credentials
 
-POST `<base URL>/<institute>/api/list-credentials`
+POST `<base URL>/<tenant>/api/list-credentials`
 
 This endpoint allows an issuer to list the credentials it has previously issued. This can be used in use cases where
 users want to revoke or re-issue/refresh credentials. The POST data field can contain filtering options (each field
@@ -389,7 +392,7 @@ and saved-updated dates. This data can be used in further interactions.
 
 #### Revoke Credential
 
-POST `<base URL>/<institute>/api/revoke-credential`
+POST `<base URL>/<tenant>/api/revoke-credential`
 
 This endpoint allows an issuer to list the credentials it has previously issued. This can be used in use cases where
 users want to revoke or re-issue/refresh credentials.:
