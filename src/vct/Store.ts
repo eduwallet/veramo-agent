@@ -10,6 +10,7 @@ import { getBaseUrl } from "#root/utils/getBaseUrl";
 import { Vct } from "#root/types/specification/vct";
 import { getDbConnection } from '#root/database/databaseService';
 import { VCTDocument } from '#root/packages/datastore/index';
+import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 
 export interface VctConfiguration
@@ -27,8 +28,8 @@ export interface VctConfigurationStore {
 var _vctConfigurationStore: VctConfigurationStore = {};
 export const getVctConfigurationStore = (): VctConfigurationStore => _vctConfigurationStore;
 
-export async function initialiseVctConfigurationStore() {
-
+async function readFromDB()
+{
     try {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(VCTDocument);
@@ -46,8 +47,29 @@ export async function initialiseVctConfigurationStore() {
             cfg.document.vct = cfg.fullPath;
             _vctConfigurationStore[obj.name] = cfg;
         }
+    }
+    catch (e) {
+        console.error("Caught exception on VCT store initialisation", e);
+    }
+}
 
+async function clearDB()
+{
+    try {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(VCTDocument);
+        await repo.clear();
+    }
+    catch (e) {
+        console.error("Caught exception on VCT store initialisation", e);
+    }  
+}
 
+async function readFromFile()
+{
+    try {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(VCTDocument);
         debug('Loading vct configurations, path: ' + VCT_CONFIGURATION_PATH);
         try {
             const configurations = loadJsonFiles<VctConfiguration>({ path: VCT_CONFIGURATION_PATH }).asObject;
@@ -77,6 +99,16 @@ export async function initialiseVctConfigurationStore() {
     catch (e) {
         console.error("Caught exception on VCT store initialisation", e);
     }
+}
+
+export async function initialiseVctConfigurationStore() {
+    if (hasAdminBearerToken()) {
+        await readFromDB();
+    }
+    else {
+        await clearDB();
+    }
+    await readFromFile();
     debug('end of VCT configuration store initialisation', _vctConfigurationStore);
 }
 
