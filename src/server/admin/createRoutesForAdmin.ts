@@ -7,6 +7,10 @@ import { createCredential, deleteCredential, listCredentials, storeCredential } 
 import { createContextDocument, deleteContextDocument, listContextDocuments, storeContextDocument } from './contexts.js';
 import { createVCTDocument, deleteVCTDocument, listVCTs, storeVCTDocument } from './vcts.js';
 import { adminBearerToken, hasAdminBearerToken } from '#root/utils/adminBearerToken';
+import { getBuildInfo } from '#root/utils/getBuildInfo';
+import { sendErrorResponse } from '../sendErrorResponse.js';
+import { ErrorCodes } from '#root/types/api';
+import { getVersion } from './getVersion.js';
 
 function bearerAdminForAPI() {
     passport.use('admin-api', new Strategy(
@@ -20,13 +24,15 @@ function bearerAdminForAPI() {
 }
 
 export async function createRoutesForAdmin(app:Express) {
+    const router = express.Router();
+    app.use('/api', router);
+    router.get('/version', getVersion);
+
     // no BEARER_TOKEN means no administration api
     if (!hasAdminBearerToken()) {
         return;
     }
 
-    const router = express.Router();
-    app.use('/api', router);
     bearerAdminForAPI();
 
     router.get('/exit',
