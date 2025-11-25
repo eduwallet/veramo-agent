@@ -65,6 +65,7 @@ export interface IssuerScheme {
     authorizationEndpoint?:string;
     tokenEndpoint?: string;
     clientId?:string;
+    clientSecret?:string;
     metadata?:any;
     statusLists?:any;
     saved: string;
@@ -81,6 +82,7 @@ export async function issuerToScheme(issuer:Issuer, doFull = false) {
         authorizationEndpoint: issuer.authorizationEndpoint,
         tokenEndpoint: issuer.tokenEndpoint,
         clientId: issuer.clientId,
+        clientSecret: issuer.clientSecret,
         saved: moment(issuer.saveDate).format('YYYY-MM-DD HH:mm:ss'),
         updated: moment(issuer.updateDate).format('YYYY-MM-DD HH:mm:ss')
     };

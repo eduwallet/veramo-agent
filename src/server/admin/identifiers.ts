@@ -54,21 +54,22 @@ interface StoreIdentifierRequest {
     provider:string;
     path?:string;
     services?:string;
+    keytype?:string;
 }
 
-async function setIdentifierData(identifier:Identifier, did:string, alias:string, provider:string, path?:string, services?:string, ckey:CryptoKey)
+async function setIdentifierData(data:StoreIdentifierRequest, identifier:Identifier, ckey:CryptoKey)
 {
-    identifier.alias = alias;
-    identifier.provider = provider;
-    identifier.path = path && path.length ? path : undefined;
-    identifier.services = services && services.length ? services : undefined;
+    identifier.alias = data.alias;
+    identifier.provider = data.provider;
+    identifier.path = (data.path && data.path.length) ? path : undefined;
+    identifier.services = (data.services && data.services.length) ? services : undefined;
 
     switch (identifier.provider) {
         case 'did:web':
-            if (!did.startsWith('did:web:') || did.length < 10) {
+            if (!data.did.startsWith('did:web:') || data.did.length < 10) {
                 throw new Error("Invalid did set for did:web identifier");
             }
-            identifier.did = did;
+            identifier.did = data.did;
             break;
         case 'did:key':
             identifier.did = await Factory.toDIDKey(ckey);
@@ -101,7 +102,7 @@ export async function storeIdentifier(request: Request<StoreIdentifierRequest>, 
         const pkey = await pkeys.findOneBy({alias:dbKey.kid});
         const ckey = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
 
-        await setIdentifierData(identifier, request.body.did, request.body.alias, request.body.provider, request.body.path, request.body.services, ckey);
+        await setIdentifierData(request.body, identifier, ckey);
 
         debug("saving identifier", identifier);
         await ids.save(identifier);
@@ -120,15 +121,7 @@ export async function storeIdentifier(request: Request<StoreIdentifierRequest>, 
     }
 }
 
-interface CreateIdentifierRequest {
-    did:string;
-    alias:string;
-    provider:string;
-    path?:string;
-    services?:string;
-    keytype:string;
-}
-export async function createIdentifier(request: Request<CreateIdentifierRequest>, response: Response) {
+export async function createIdentifier(request: Request<StoreIdentifierRequest>, response: Response) {
     try {
         is_valid_provider(request.body.provider);
         is_valid_key(request.body.keytype ?? '');
@@ -146,7 +139,7 @@ export async function createIdentifier(request: Request<CreateIdentifierRequest>
 
         const identifier = new Identifier();
         const ckey = await createNewKey(request.body.keytype ?? '');
-        await setIdentifierData(identifier, request.body.did, request.body.alias, request.body.provider, request.body.path, request.body.services, ckey);
+        await setIdentifierData(request.body, identifier, ckey);
         await ids.save(identifier);
 
         debug("saving new key");

@@ -38,11 +38,15 @@ export async function initialiseIssuerStore() {
                 statusLists: JSON.parse(issuer.statuslists ?? '{}'),
                 did: issuer.did,
             }, JSON.parse(issuer.metadata ?? '{}'));
+
+            // we store the entry, then initialise. If there is an error on
+            // initialisation, do not read the file config to override this
+            // (which may/would/will cause double entries)
+            _issuerStore[issuer.name] = entry;
             try {
                 await entry.setDid(); // do some asynchronous post-initialisation
                 await entry.retrieveASServerKeys(); // retrieve the AS server keys
 
-                _issuerStore[issuer.name] = entry;
             }
             catch (e) {
                 console.error("Caught error initialising issuer, skipping entry", e);

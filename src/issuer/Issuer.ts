@@ -25,6 +25,7 @@ import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
+import { fromString, toString } from 'uint8arrays';
 
 export class Issuer
 {
@@ -107,10 +108,16 @@ export class Issuer
     {
         const endpoint = this.serverMetadata.authorization_introspection_endpoint;
         try {
+            // the client secret contains the clientId + ':' + clientSecret, allowing us to use the clientId as the id sent to the wallet for use
+            const basicauth = toString(fromString(this.options.clientSecret ?? '', 'utf-8'), 'base64');
             const json = await fetch(endpoint, {
                 headers: {
-                    'Authorization': 'Bearer ' + token
-                }
+                    'Authorization': 'Basic ' + basicauth,
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: new URLSearchParams({
+                    'access-token': token
+                })
             }).then((r) => r.json());
             return json;
         }
