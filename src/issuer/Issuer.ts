@@ -8,13 +8,12 @@ import { StatusListRevocationState } from '#root/types/api';
 import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
 import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/types/api/metadata';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from '#root/types/specification/metadata';
+import { CredentialConfiguration, CredentialConfigurations,  Metadata } from '#root/types/specification/metadata';
 import { getCredentialConfigurationStore } from "#root/credentials/Store";
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential as CredentialEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
+import { Credential as CredentialEntity, Identifier as IdentifierEntity} from "#root/packages/datastore/index";
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import { Credential } from "#root/credentials/Credential";
-import { getVctForCredentialType } from '#root/vct/Store';
 import { SessionStateManager } from '#root/utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from '#root/issuer/lib/retrieveASServerKey';
@@ -26,6 +25,8 @@ import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 import { fromString, toString } from 'uint8arrays';
+import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
+import { convertConfigToSDJWT } from './lib/convertConfigToSDJWT.js';
 
 export class Issuer
 {
@@ -309,7 +310,7 @@ export class Issuer
         const metadata:Metadata = Object.assign({}, this.metadata) as Metadata;
         var credentials:CredentialConfigurations = {};
         for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
-            const credentialConfiguration = this.decorateCredentialConfiguration(id);
+            const credentialConfiguration = this.decorateCredentialConfiguration(id, this.metadata.credential_configurations_supported[id]);
             credentials[id] = credentialConfiguration;
         }
         metadata.credential_configurations_supported = credentials;
@@ -342,34 +343,6 @@ export class Issuer
 
     /**
      * 
-     * @param credentialId : string uniquely identifying this credential configuration in the metadata
-     * @param credential : credential configuration in vc_jwt format (with credential_definition)
-     * @returns : credential metadata in vc+sd-jwt format
-     * 
-     * We do some name and type mangling here to be able to convert one object type (JwtVC) to
-     * another (SD-JWT) and test/delete the attributes that are missing or need to be converted
-     */
-    private convertToSdCredential(credentialId:string, credential:CredentialConfigurationJwtVC): CredentialConfiguration
-    {
-        const vct = getVctForCredentialType(credentialId);
-        const sdjwt = (credential as unknown) as CredentialConfigurationSdJwt;
-        if (vct !== null) {
-            sdjwt.vct = vct.vct!;
-            if (!sdjwt.claims && credential.credential_definition.credentialSubject) {
-                const subjects = credential.credential_definition.credentialSubject;
-                if (subjects) {
-                    sdjwt.claims = subjects as ClaimsList;
-                }
-            }
-            if (credential.credential_definition) {
-                delete (sdjwt as any).credential_definition;
-            }
-        }
-        return sdjwt as CredentialConfiguration;
-    }
-
-    /**
-     * 
      * @param credentialId: string uniquely identifying this credential configuration in the metadata
      * @param configuration: an ExtendableCredentialConfiguration for this id
      * @returns credential metadata
@@ -378,49 +351,49 @@ export class Issuer
      * for this credential. 
      * If required, convert this from vc_jwt to vc+sw-jwt configuration.
      */
-    private decorateCredentialConfiguration(credentialId:string, configuration?:ExtendableCredentialConfiguration):CredentialConfiguration {
+    private decorateCredentialConfiguration(credentialId:string, overriddenConfiguration:ExtendableCredentialConfiguration):CredentialConfiguration {
         const store = getCredentialConfigurationStore();
-        let overriddenConfiguration:ExtendableCredentialConfiguration;
-        if (!configuration) {
-            overriddenConfiguration = this.metadata?.credential_configurations_supported[credentialId] ?? {}
-        }
-        else {
-            overriddenConfiguration = configuration;
-        }
 
         // allow the override configuration to specify which credential id it is explicitely overriding
         if (overriddenConfiguration.extends) {
             credentialId = overriddenConfiguration.extends as string;
         }
 
-        var decoratedCredential:CredentialConfiguration = Object.assign(
+        const decoratedCredential:ExtendableCredentialConfiguration = Object.assign(
             {},
             store[credentialId] ?? {},
-            overriddenConfiguration) as CredentialConfiguration;
+            overriddenConfiguration);
 
         // remove extension mechanism from ExtendableCredentialConfiguration
         if ((decoratedCredential as ExtendableCredentialConfiguration).extends) {
             delete (decoratedCredential as ExtendableCredentialConfiguration).extends;
         }
 
-        if (decoratedCredential.format == 'vc+sd-jwt') {
-            decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential as CredentialConfigurationJwtVC);
-        }
-        // vc+jwt is not a valid OpenID4VCI format
-        else if (decoratedCredential.format == 'vc+jwt') {
-            decoratedCredential.format = 'jwt_vc_json';
+        let resultCredential:CredentialConfiguration;
+        switch (decoratedCredential.format) {
+            default:
+            case 'jwt_vc_json':
+            case 'vc+jwt':
+            case 'jwt_vc_json-ld':
+            case 'ldp_vc':
+                resultCredential = convertConfigToVCDM(credentialId, decoratedCredential);
+                break;
+            case 'vc+sd-jwt':
+            case 'dc+sd-jwt':
+                resultCredential = convertConfigToSDJWT(credentialId, decoratedCredential);
+                break;
         }
 
-        // set the algorithms according to what we support
-        decoratedCredential.credential_signing_alg_values_supported = [this.algorithm()];
-        decoratedCredential.cryptographic_binding_methods_supported = ['did:jwk', 'did:key'];
-        decoratedCredential.proof_types_supported = {
+        // set the algorithms according to what we support as issuer
+        resultCredential.credential_signing_alg_values_supported = [this.algorithm()];
+        resultCredential.cryptographic_binding_methods_supported = ['did:jwk', 'did:key'];
+        resultCredential.proof_types_supported = {
             "jwt": {
                 "proof_signing_alg_values_supported": ["ES256", "ES256K", "EdDSA", "RS256"]
             }
         };
 
-        return decoratedCredential as CredentialConfiguration;
+        return resultCredential;
     }
 
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)

@@ -17,7 +17,6 @@ export class VCDM
     public build():VCDMType
     {
         debug("creating VCDM");
-
         const issuerName = this.createLanguageObject('issuer_name');
         const issuerDescription = this.createLanguageObject('issuer_description');
         let baseCredential:VCDMType = {
@@ -58,6 +57,7 @@ export class VCDM
 
         this.addStatusListData(baseCredential);
         this.addEvidenceData(baseCredential);
+        this.addOtherMetadata(baseCredential);
         return baseCredential;
     }
 
@@ -109,6 +109,24 @@ export class VCDM
             else if (this.credential.metaData.evidence.length) {
                 // array of entries
                 baseCredential.evidence = this.credential.metaData.evidence.slice();
+            }
+        }
+    }
+
+    private addOtherMetadata(baseCredential:VCDMType)
+    {
+        // this only works on the OpenBadgeCredential, because the other types cannot set other metadata
+        for (const key of Object.keys(this.credential.metaData)) {
+            switch (key) {
+                case 'evidence':
+                case 'credentialStatus':
+                case 'issuanceDate':
+                case 'expirationDate':
+                    // pass
+                    break;
+                default:
+                    baseCredential[key] = this.credential.metaData[key];
+                    break;
             }
         }
     }

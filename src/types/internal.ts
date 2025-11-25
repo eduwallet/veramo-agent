@@ -54,6 +54,7 @@ export interface CredentialDataSet {
     credentialId: string;
     credentialConfiguration:CredentialConfiguration;
     data: StringKeyedObject;
+    credential?:any;
 }
 
 export interface SingleProofData {

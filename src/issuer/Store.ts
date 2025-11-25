@@ -12,6 +12,7 @@ import { IssuerConfiguration } from "types/internal.js";
 import { MetadataConfiguration } from "types/api/metadata.js";
 import { getDbConnection } from '#root/database/databaseService';
 import { Issuer as IssuerEntity } from '#root/packages/datastore/index';
+import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface IssuerStore {
     [x:string]:Issuer;
@@ -20,7 +21,8 @@ export interface IssuerStore {
 var _issuerStore:IssuerStore = {};
 export const getIssuerStore = ():IssuerStore => _issuerStore;
 
-export async function initialiseIssuerStore() {
+async function readFromDB()
+{
     try {
         debug('initialising issuer store, reading database');
         const dbConnection = await getDbConnection();
@@ -52,8 +54,32 @@ export async function initialiseIssuerStore() {
                 console.error("Caught error initialising issuer, skipping entry", e);
             }
         }
+    }
+    catch (e) {
+        console.error("Caught error initialising issuer store", e);
+    }
+}
 
+async function clearDB()
+{
+    try {
+        debug('initialising issuer store, reading database');
+        const dbConnection = await getDbConnection();
+        const issuerRepo = dbConnection.getRepository(IssuerEntity);
+        await issuerRepo.clear();
+    }
+    catch (e) {
+        console.error("Caught error initialising issuer store", e);
+    }
+}
+
+async function readFromFile()
+{
+    try {
         debug('initialising issuer store, reading json files');
+        const dbConnection = await getDbConnection();
+        const issuerRepo = dbConnection.getRepository(IssuerEntity);
+
         try {
             const issuerOptionsObjects = loadJsonFiles<IssuerConfiguration>({path: ISSUER_PATH});
             const metadatas = loadJsonFiles<MetadataConfiguration>({path: METADATA_PATH});
@@ -101,5 +127,15 @@ export async function initialiseIssuerStore() {
     catch (e) {
         console.error("Caught error initialising issuer store", e);
     }
+}
+
+export async function initialiseIssuerStore() {
+    if (hasAdminBearerToken()) {
+        await readFromDB();
+    }
+    else {
+        await clearDB();
+    }
+    await readFromFile();
     debug('end of issuer store initialisation');
 }

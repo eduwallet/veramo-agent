@@ -32,6 +32,9 @@ export const initialiseServer = async () => {
   const contextStore = getContextConfigurationStore();
   const rootRouter = express.Router();
   app.use('/', rootRouter);
+  const wellKnownRouter = express.Router();
+  app.use('/.well-known', wellKnownRouter);
+
   for (const key of contextStore.keys()) {
     const context = contextStore.get(key);
     // only serve it if we have content. If there is no content, it is cached on disk
@@ -66,7 +69,7 @@ export const initialiseServer = async () => {
     const issuer = store[key];
     // initialise the passport strategy
     bearerAdminForIssuer(issuer);
-    await createRoutesForIssuer(issuer, app);
+    await createRoutesForIssuer(issuer, app, wellKnownRouter);
   }
 
   debug("starting express server");

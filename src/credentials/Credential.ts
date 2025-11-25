@@ -18,6 +18,7 @@ export class Credential
 {
     public issuer?:Issuer;
     public data:StringKeyedObject = {};
+    public presetCredential:any = null; // used for passing a full-blown credential and hoping everything works out
     public metaData:StringKeyedObject = {};
     public dictionary:Dictionary = {};
     public id?:string; // the identifier in the credential data set for this session
@@ -41,20 +42,20 @@ export class Credential
 
     public async resolve()
     {
-        if (this.data._exp) {
+        if (this.data?._exp) {
             this.handleExpirationDate(this.data._exp);
             delete this.data._exp;
         }
-        if (this.data._ttl) {
+        if (this.data?._ttl) {
             this.handleExpirationDate(this.data._ttl);
             delete this.data._ttl;
         }
-        if (this.metaData.expiration) {
+        if (this.metaData?.expiration) {
             this.handleExpirationDate(this.metaData.expiration);
         }
         this.metaData.issuanceDate = moment().toISOString();
 
-        const enableLists = (typeof this.metaData.enableStatusLists === 'undefined') || (this.metaData.enableStatusLists === true);
+        const enableLists = (typeof this.metaData?.enableStatusLists === 'undefined') || (this.metaData?.enableStatusLists === true);
         if (this.issuer!.options.statusLists && enableLists) {
             await this.handleStatusLists();
         }
