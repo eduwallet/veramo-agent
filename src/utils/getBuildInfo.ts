@@ -4,7 +4,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 export function getBuildInfo() {
-  const { version } = require("./package.json");
+  const { version } = require("../../package.json");
 
   let commit = null;
   let tag = null;
@@ -17,5 +17,5 @@ export function getBuildInfo() {
     tag = execSync("git describe --tags --exact-match").toString().trim();
   } catch { /* empty */ }
 
-  return { version, commit, tag };
+  return { version, commit, tag: tag || '', node: process.version };
 }
