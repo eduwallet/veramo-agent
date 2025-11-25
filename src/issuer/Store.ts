@@ -31,6 +31,7 @@ export async function initialiseIssuerStore() {
                 name: issuer.name,
                 baseUrl: issuer.baseUrl,
                 clientId: issuer.clientId,
+                clientSecret: issuer.clientSecret,
                 adminToken: issuer.adminToken,
                 authorizationEndpoint: issuer.authorizationEndpoint,
                 tokenEndpoint: issuer.tokenEndpoint,
@@ -82,6 +83,7 @@ export async function initialiseIssuerStore() {
                     dbIssuer.authorizationEndpoint = config.authorizationEndpoint;
                     dbIssuer.tokenEndpoint = config.tokenEndpoint;
                     dbIssuer.clientId = config.clientId;
+                    dbIssuer.clientSecret = config.clientSecret;
                     dbIssuer.metadata = JSON.stringify(metadata);
                     dbIssuer.statuslists = JSON.stringify(config.statusLists);
                     await issuerRepo.save(dbIssuer);

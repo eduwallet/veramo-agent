@@ -46,6 +46,10 @@ export class Issuer extends BaseEntity {
 
     @Column({ type: 'text', nullable: true})
     // @ts-ignore
+    clientSecret?: string
+
+    @Column({ type: 'text', nullable: true})
+    // @ts-ignore
     metadata?: string
 
     @Column({ type: 'text', nullable: true})

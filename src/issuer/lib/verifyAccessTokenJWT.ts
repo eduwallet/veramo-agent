@@ -21,7 +21,7 @@ export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
     }
     catch (e) {
         if (issuer.usesAuthorisedCodeFlow()) {
-            const userdata = await issuer.retrieveASUserInfo(token);
+            const userdata = await issuer.retrieveASIssuerIntrospection(token);
             if (userdata && Object.keys(userdata).length > 0) {
                 const jwt = new JWT();
                 jwt.payload = userdata;
