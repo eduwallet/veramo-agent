@@ -434,10 +434,10 @@
   resolved "https://registry.yarnpkg.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.5.0.tgz#3188bcb273a414b0d215fd22a58540b989b9409a"
   integrity sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==
 
-"@muisit/cryptokey@1.2.2":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@muisit/cryptokey/-/cryptokey-1.2.2.tgz#d6f07d8335d111142eb113cbd991710dd5a43ea1"
-  integrity sha512-WZlngtraeLAMsuvObiNfErbJsTl13QC+uGT5jfdZTpIupEIfTyf0IryTx6RQwoLTCIlpmHJch8mLzS/rDQAyDg==
+"@muisit/cryptokey@^1.2.4":
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/@muisit/cryptokey/-/cryptokey-1.2.4.tgz#78661c0705a62df842856cd919b97529a7c365cd"
+  integrity sha512-brmxjcMpF1RJ0ZJfcyiW49x4PdPjLjSDLM2lJIVT2FKe3cHEXnepWFG0qFCbhrlmTe0jZUpV/XDe1kDo1NOCQw==
   dependencies:
     did-jwt "^8.0.11"
     did-resolver "^4.1.0"
