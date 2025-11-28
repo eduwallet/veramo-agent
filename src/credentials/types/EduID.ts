@@ -82,6 +82,7 @@ export class EduID extends CredentialType
             for (const nm of this.acceptedClaims) {
                 if (data[nm]) credential.data[nm] = data[nm];
             }
+            console.log('setting principalId to ', data['sub']);
             credential.principalId = toStringByJoin(data['sub']);
         }
     }
@@ -94,6 +95,7 @@ export class EduID extends CredentialType
         // automatically.
         const uid = credential.principalId;
         if (!uid || uid.length == 0) {
+            console.log('uid is ', uid);
             throw new Error("Invalid uid detected, not issuing credential");
         }
         const holderKey = credential.holder;
