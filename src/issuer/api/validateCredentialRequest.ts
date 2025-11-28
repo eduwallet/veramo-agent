@@ -54,6 +54,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         const stateid = data?.payload?.issuer_state;
         session = await issuer.getSessionByState(stateid);
         if (session) {
+            debug('setting session access data to ', data?.payload);
             session.data.accessData = data?.payload;
         }
 

@@ -1,4 +1,6 @@
 
+import Debug from 'debug';
+const debug = Debug('issuer:eduid');
 import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { Credential } from '#root/credentials/Credential';
 import { CredentialType } from "#root/credentials/types/CredentialType";
@@ -77,6 +79,7 @@ export class EduID extends CredentialType
 
     private enrichDataWithUserInfo(credential:Credential, session:Session)
     {
+        debug("enriching data with user info ", session.data.accessData);
         const data = session.data.accessData;
         if (data && Object.keys(data).length > 0) {
             for (const nm of this.acceptedClaims) {
@@ -95,7 +98,7 @@ export class EduID extends CredentialType
         // automatically.
         const uid = credential.principalId;
         if (!uid || uid.length == 0) {
-            console.log('uid is ', uid);
+            debug('uid is ', uid);
             throw new Error("Invalid uid detected, not issuing credential");
         }
         const holderKey = credential.holder;
