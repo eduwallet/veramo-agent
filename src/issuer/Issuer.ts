@@ -24,7 +24,6 @@ import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
-import { fromString, toString } from 'uint8arrays';
 import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
 import { convertConfigToSDJWT } from './lib/convertConfigToSDJWT.js';
 
@@ -110,8 +109,10 @@ export class Issuer
         const endpoint = this.serverMetadata.authorization_introspection_endpoint;
         try {
             // the client secret contains the clientId + ':' + clientSecret, allowing us to use the clientId as the id sent to the wallet for use
-            const basicauth = toString(fromString(this.options.clientSecret ?? '', 'utf-8'), 'base64');
-            const json = await fetch(endpoint, {
+            // use the Buffer route here instead of toString(fromString(x,'utf-8'),'base64') because that results in missing padding
+            const basicauth = Buffer.from(this.options.clientSecret ?? '', 'utf-8').toString('base64');
+            const resp = await fetch(endpoint, {
+                method: 'POST',
                 headers: {
                     'Authorization': 'Basic ' + basicauth,
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
@@ -119,7 +120,8 @@ export class Issuer
                 body: new URLSearchParams({
                     'access-token': token
                 })
-            }).then((r) => r.json());
+            });
+            const json = await resp.json();
             return json;
         }
         catch (e:any) {
