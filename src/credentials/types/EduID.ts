@@ -53,17 +53,19 @@ export class EduID extends CredentialType
                         }
                         break;
                     case "eduperson_scoped_affiliation":
-                        if (Array.isArray(input[key])) {
-                            retval[key] = input[key];
+                        {
+                            if (Array.isArray(input[key])) {
+                                retval[key] = input[key];
+                            }
+                            else {
+                                retval[key] = toStringByJoin(input[key]);
+                            }
+                            const fieldvalue = toStringByJoin(input[key]);
+                            for (const aff of this.affiliations) {
+                                retval['is_' + aff] = (fieldvalue.indexOf(aff + '@') >= 0) ? 1 : 0;
+                            }
+                            break;
                         }
-                        else {
-                            retval[key] = toStringByJoin(input[key]);
-                        }
-                        const fieldvalue = toStringByJoin(input[key]);
-                        for (const aff of this.affiliations) {
-                            retval['is_' + aff] = (fieldvalue.indexOf(aff + '@') >= 0) ? 1 : 0;
-                        }
-                        break;
                     default:
                         retval[key] = toStringByJoin(input[key]);
                         break;
@@ -80,7 +82,7 @@ export class EduID extends CredentialType
             for (const nm of this.acceptedClaims) {
                 if (data[nm]) credential.data[nm] = data[nm];
             }
-            credential.principalId = toStringByJoin(data['uid']);
+            credential.principalId = toStringByJoin(data['sub']);
         }
     }
 
