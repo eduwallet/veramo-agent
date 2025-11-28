@@ -28,7 +28,7 @@ export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
                 const jwt = new JWT();
                 jwt.payload = {
                     ...userdata.user_info,
-                    ...(userdata.token_details && userdata.token_details.issuer_state && {issuer_state: userdata.tokn_details.issuer_state})
+                    ...(userdata.token_details && userdata.token_details.issuer_state && {issuer_state: userdata.token_details.issuer_state})
                 };
                 jwt.payload.iss = issuer.options?.authorizationEndpoint; // the location where we got our info
                 return jwt;
