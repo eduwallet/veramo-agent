@@ -27,12 +27,18 @@ export class EduID extends CredentialType
     ];
 
     public async resolve(credential:Credential, session:Session) {
+        debug("resolving eduID credential");
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
+        debug("enriching data");
         this.enrichDataWithUserInfo(credential, session);
+        debug("credential data is ", credential.data);
+        debug("checking holder key reuse");
         await this.checkHolderkeyReuse(credential, session);
+        debug("revoking previous");
         await this.revokePreviousCredentials(credential);
         credential.data = this.convertDataToClaims(credential.data);
+        debug("credential data is ", credential.data);
         return true;
     }
 
@@ -85,7 +91,7 @@ export class EduID extends CredentialType
             for (const nm of this.acceptedClaims) {
                 if (data[nm]) credential.data[nm] = data[nm];
             }
-            console.log('setting principalId to ', data['sub']);
+            debug('setting principalId to ', data['sub']);
             credential.principalId = toStringByJoin(data['sub']);
         }
     }

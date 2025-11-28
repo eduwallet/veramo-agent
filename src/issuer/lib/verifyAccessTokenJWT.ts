@@ -21,7 +21,6 @@ export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
     }
     catch {
         if (issuer.usesAuthorisedCodeFlow()) {
-            console.log('Doing introspection');
             const userdata = await issuer.retrieveASIssuerIntrospection(token);
             console.log('introspection', userdata);
             if (userdata && Object.keys(userdata).length > 0 && userdata.user_info) {
