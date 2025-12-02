@@ -64,7 +64,8 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
         credentialId: credentialConfigIds[0],
         credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0], false),
         data: request.credentialDataSupplierInput,
-        ...(request.credential && {credential: request.credential})
+        ...(request.credential && {credential: request.credential}),
+        ...(request.credential_callback && {callback: request.credential_callback})
     };
 
     if (userPin) {

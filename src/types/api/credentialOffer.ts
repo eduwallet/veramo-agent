@@ -29,6 +29,7 @@ export interface CreateCredentialOfferRequest {
     credentialDataSupplierInput?: StringKeyedObject;
     credentialMetadata?: StringKeyedObject;
     credential?:any;
+    credential_callback?:string;
 }
   
 export type CreateCredentialOfferResponse = {

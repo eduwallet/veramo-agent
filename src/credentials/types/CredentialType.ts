@@ -63,4 +63,27 @@ export abstract class CredentialType
             }
         }
     }
+
+    public async retrieveExternalCredential(credential:Credential, session:Session)
+    {
+        if (credential.callback !== null) {
+            const result = await fetch(credential.callback, {
+                method: 'POST',
+                body: JSON.stringify({
+                    state: session.data.accessData.issuer_state,
+                    user_id: session.data.accessData.sub
+                }),
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            });
+
+            if (result.status == 200) {
+                credential.presetCredential = await result.json();
+            }
+            else {
+                throw new Error("Credential denied");
+            }
+        }
+    }
 }

@@ -51,7 +51,8 @@ export class CredentialFactory
         await credential.resolve();
         const instance = this.createInstance(credential);
 
-        if (instance && (credential.data || credential.presetCredential) && credential.issuer) {
+        if (instance && (credential.data || credential.presetCredential || credential.callback) && credential.issuer) {
+            await instance.retrieveExternalCredential(credential, session);
             await instance.resolve(credential, session);
         }
         return true;

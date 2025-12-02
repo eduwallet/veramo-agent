@@ -19,6 +19,7 @@ export class Credential
     public issuer?:Issuer;
     public data:StringKeyedObject = {};
     public presetCredential:any = null; // used for passing a full-blown credential and hoping everything works out
+    public callback:string|null = null; // used for retrieving a full-blowb credential over the network
     public metaData:StringKeyedObject = {};
     public dictionary:Dictionary = {};
     public id?:string; // the identifier in the credential data set for this session

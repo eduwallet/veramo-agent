@@ -43,6 +43,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         // format to indicate format, whose combination would lead to a credentialId
         credential.data = proofData.credentialDataSet.data;
         credential.presetCredential = proofData.credentialDataSet.credential ?? null;
+        credential.callback = proofData.credentialDataSet.callback ?? null;
         credential.metaData = session.data.metaData;
         credential.holder = proof.did;
 
