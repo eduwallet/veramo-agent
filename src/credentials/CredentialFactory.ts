@@ -11,6 +11,7 @@ import { JSONLD } from "./formats/JSONLD.js";
 import { VCDM } from "./formats/VCDM.js";
 import { EduID } from "./types/EduID.js";
 import { Session } from "#root/packages/datastore/index";
+import { EduIDEntitlement } from "./types/EduIDEntitlement.js";
 
 export class CredentialFactory
 {
@@ -27,6 +28,8 @@ export class CredentialFactory
                 return new OpenBadgeCredential();
             case 'eduID':
                 return new EduID();
+            case 'entitlement':
+                return new EduIDEntitlement();
             default:
             case 'GenericCredential':
                 return new GenericCredential();
