@@ -32,6 +32,9 @@ export const initialiseServer = async () => {
   const contextStore = getContextConfigurationStore();
   const rootRouter = express.Router();
   app.use('/', rootRouter);
+  const wellKnownRouter = express.Router();
+  app.use('/.well-known', wellKnownRouter);
+
   for (const key of contextStore.keys()) {
     const context = contextStore.get(key);
     // only serve it if we have content. If there is no content, it is cached on disk
@@ -48,9 +51,12 @@ export const initialiseServer = async () => {
   };
 
   const didStore = getDIDConfigurationStore();
-  for (const did of didStore.keys()) {
-    const didValue = didStore.get(did);
-    if (didValue?.path && didValue?.path.length) {
+  debug('looping over keys in store', (await didStore.keysWithPath())?.length);
+  for (const did of (await didStore.keysWithPath())) {
+    const didValue = await didStore.get(did);
+    debug('evaluating did ', didValue?.identifier.did, ' for path ', didValue?.identifier.path);
+    if (didValue?.identifier.path && didValue?.identifier.path.length) {
+      debug('adding did-web path for ', didValue.identifier);
       getDidWebSpec(rootRouter, didValue);
     }
   }
@@ -63,7 +69,7 @@ export const initialiseServer = async () => {
     const issuer = store[key];
     // initialise the passport strategy
     bearerAdminForIssuer(issuer);
-    await createRoutesForIssuer(issuer, app);
+    await createRoutesForIssuer(issuer, app, wellKnownRouter);
   }
 
   debug("starting express server");

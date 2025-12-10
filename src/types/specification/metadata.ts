@@ -2,6 +2,7 @@
  * Credential Issuer metadata
  *
  * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-issuer-metadata
+ * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.2.4
  */
 export interface Metadata {
     credential_issuer: string;                 // https URI without fragments or query
@@ -44,6 +45,8 @@ export interface CredentialConfigurations {
 
 export type CredentialConfiguration = CredentialConfigurationCommon & 
     (CredentialConfigurationJwtVC | CredentialConfigurationLdpVC | CredentialConfigurationIsoMdl | CredentialConfigurationSdJwt);
+export type CredentialConfigurationSD = CredentialConfigurationCommon & CredentialConfigurationSdJwt;
+export type CredentialConfigurationVCDM = CredentialConfigurationCommon & CredentialConfigurationJwtVC;
 
 export type CredentialFormat = 'jwt_vc_json' | 'jwt_vc_json-ld' | 'vc+sd-jwt' | 'dc+sd-jwt' | 'ldp_vc' | 'vc+jwt';
 
@@ -53,60 +56,48 @@ export interface CredentialConfigurationCommon {
     cryptographic_binding_methods_supported?:string[]; // cryptographic key material representations supported
     credential_signing_alg_values_supported?:string[]; // array of signing algorithms implemented
     proof_types_supported?:SupportedProofTypes;
-    display?:CredentialDisplay[];                      // array of display properties for this credential
+    credential_metadata?: CredentialConfigurationMetadata;
 }
 
-// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-issuer-metadata-2
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-A.1.1.2
 export interface CredentialConfigurationJwtVC {
     credential_definition: CredentialDefinition;
-    order?:string[];
 }
 
 export interface CredentialDefinition {
-    type:string[];
-    credentialSubject?:CredentialSubjects;
+    type: string[];
 }
 
-export interface CredentialSubjects {
-    [x:string]:CredentialSubjectConfiguration|CredentialSubjects|CredentialSubjects[];
-}
-
-export interface CredentialSubjectConfiguration {
-    mandatory?:boolean;
-    value_type?:string;
-    display?:CredentialDisplay[];
-}
-
-export interface CredentialDisplay {
-    name?:string;
-    locale?:string;
-}
-
-// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-issuer-metadata-3
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-A.1.2.2
 export interface CredentialConfigurationLdpVC extends CredentialConfigurationJwtVC {
     "@context":string[];
 }
 
-// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-issuer-metadata-5
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-A.2.2
 export interface CredentialConfigurationIsoMdl {
     doctype: string;
-    claims: NameSpacedClaimsList;
-    order?:string[];
 }
 
-export interface NameSpacedClaimsList {
-    [namespace:string]:ClaimsList;
-}
-
-export interface ClaimsList {
-    [claim:string]: CredentialSubjectConfiguration;
-}
-
-// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-issuer-metadata-6
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-A.3.2
 export interface CredentialConfigurationSdJwt {
     vct: string;
-    claims: ClaimsList;
-    order?:string[];
+}
+
+export interface CredentialConfigurationMetadata {
+    display?: CredentialDisplay[];
+    claims?: CredentialConfigurationClaimData[];
+};
+
+export interface CredentialConfigurationDisplay {
+    name?:string;
+    locale?:string;
+}
+
+// https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-B.2
+export interface CredentialConfigurationClaimData {
+    path: string[];
+    mandatory?:boolean;
+    display?: CredentialConfigurationDisplay[];
 }
 
 export type SupportedProofTypes = Partial<Record<"jwt" | "cbor" | "alg", SupportedProofType>>;

@@ -6,6 +6,7 @@ import { loadJsonFiles } from "utils/generic.js";
 import { CredentialConfiguration } from "types/specification/metadata.js";
 import { getDbConnection } from '#root/database/databaseService';
 import { CredentialType } from '#root/packages/datastore/index';
+import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface CredentialConfigurationStore {
   [x: string]: CredentialConfiguration;
@@ -14,7 +15,8 @@ export interface CredentialConfigurationStore {
 var _credentialConfigurationStore: CredentialConfigurationStore = {};
 export const getCredentialConfigurationStore = (): CredentialConfigurationStore => _credentialConfigurationStore;
 
-export async function initialiseCredentialConfigurationStore() {
+async function readFromDB()
+{
   try {
     const dbConnection = await getDbConnection();
     const credRepo = dbConnection.getRepository(CredentialType);
@@ -22,6 +24,25 @@ export async function initialiseCredentialConfigurationStore() {
     for (const credType of credTypes) {
       _credentialConfigurationStore[credType.name] = JSON.parse(credType.configuration);
     }
+  }
+  catch (e) {
+    console.error("Caught error on initialising credentials", e);
+  }
+}
+
+async function clearDB()
+{
+  const dbConnection = await getDbConnection();
+  const credRepo = dbConnection.getRepository(CredentialType);
+  await credRepo.clear();
+}
+
+
+async function readFromFile()
+{
+  try {
+    const dbConnection = await getDbConnection();
+    const credRepo = dbConnection.getRepository(CredentialType);
 
     debug('Loading credential configurations, path: ' + CREDENTIAL_CONFIGURATION_PATH);
     try {
@@ -34,7 +55,7 @@ export async function initialiseCredentialConfigurationStore() {
           const credType = new CredentialType();
           credType.name = configId;
           credType.configuration = JSON.stringify(configurations[configId]);
-          credRepo.save(credType);
+          await credRepo.save(credType);
         }
       }
     }
@@ -45,5 +66,15 @@ export async function initialiseCredentialConfigurationStore() {
   catch (e) {
     console.error("Caught error on initialising credentials", e);
   }
+}
+
+export async function initialiseCredentialConfigurationStore() {
+  if (hasAdminBearerToken()) {
+    await readFromDB();
+  }
+  else {
+    await clearDB();
+  }
+  await readFromFile();
   debug('end of credential configuration store initialisation');
 }

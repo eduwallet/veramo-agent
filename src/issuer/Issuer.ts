@@ -8,7 +8,7 @@ import { StatusListRevocationState } from '#root/types/api';
 import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
 import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/types/api/metadata';
-import { ClaimsList, CredentialConfiguration, CredentialConfigurationJwtVC, CredentialConfigurations, CredentialConfigurationSdJwt, Metadata } from '#root/types/specification/metadata';
+import { CredentialConfiguration, CredentialConfigurations,  Metadata } from '#root/types/specification/metadata';
 import { getCredentialConfigurationStore } from "#root/credentials/Store";
 import { getDbConnection } from "#root/database/databaseService";
 import { Credential as CredentialEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
@@ -23,6 +23,9 @@ import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
 import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
+import { getDIDConfigurationStore } from '#root/dids/Store';
+import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
+import { convertConfigToSDJWT } from './lib/convertConfigToSDJWT.js';
 
 export class Issuer
 {
@@ -59,37 +62,23 @@ export class Issuer
 
     public async setDid()
     {
-        const dbConnection = await getDbConnection();
-        const ids = dbConnection.getRepository(IdentifierEntity);
-        this.did = await ids.createQueryBuilder('identifier')
-            .innerJoinAndSelect("identifier.keys", "key")
-            .where('did=:did', {did: this.options.did})
-            .orWhere('alias=:alias', {alias: this.options.did})
-            .getOne();
+        const store = getDIDConfigurationStore();
+        const value = await store.get(this.options.did);
         
-        if (!this.did) {
+        if (!value) {
             throw new Error('Missing issuer did configuration');
         }
-        const dbKey = this.did.keys[0];
-        if (this.keyRef == '') {
-            this.keyRef = Factory.getKeyReference(this.did.did);
-        }
-
-        const pkeys = dbConnection.getRepository(PrivateKeyEntity);
-        const pkey = await pkeys.findOneBy({alias:dbKey.kid});
-
-        this.key = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
+        this.did = value.identifier;
+        this.key = value.key;
     }
 
     public async retrieveASServerKeys()
     {
-        if (this.metadata.authorization_servers) {
-            for(const as of this.metadata.authorization_servers) {
-                const keys = await retrieveASServerKey(as);
-                if (keys !== null && keys.length) {
-                    for (const key of keys) {
-                        this.serverKeys[key.kid] = key;
-                    }
+        if (this.options.authorizationEndpoint) {
+            const keys = await retrieveASServerKey(this.options.authorizationEndpoint);
+            if (keys !== null && keys.length) {
+                for (const key of keys) {
+                    this.serverKeys[key.kid] = key;
                 }
             }
         }
@@ -208,13 +197,17 @@ export class Issuer
     }
 
     public async getDidDoc () {
-        return await Factory.toDIDDocument(this.key!, this.did?.did, [
+        const services = [
             {
                 "id": this.did!.did + '#oid4vci',
                 "type": "OID4VCI",
                 "serviceEndpoint": this.options.baseUrl
             }
-        ], "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
+        ];
+        if (this.did!.services) {
+            services.concat(JSON.parse(this.did!.services));
+        }
+        return await Factory.toDIDDocument(this.key!, this.did?.did, services, "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
     }
 
     public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
@@ -272,7 +265,7 @@ export class Issuer
         const metadata:Metadata = Object.assign({}, this.metadata) as Metadata;
         var credentials:CredentialConfigurations = {};
         for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
-            const credentialConfiguration = this.decorateCredentialConfiguration(id);
+            const credentialConfiguration = this.decorateCredentialConfiguration(id, this.metadata.credential_configurations_supported[id]);
             credentials[id] = credentialConfiguration;
         }
         metadata.credential_configurations_supported = credentials;
@@ -289,36 +282,18 @@ export class Issuer
         if (metadata.credential_request_encryption) {
             delete metadata.credential_request_encryption;
         }
+        if (this.options.authorizationEndpoint && this.options.authorizationEndpoint.length) {
+            metadata.authorization_servers = [this.options.authorizationEndpoint];
+        }
+        else if(metadata.authorization_servers) {
+            delete metadata.authorization_servers;
+        }
+        // left-overs from backwards compatible metadata
+        if(metadata.authorization_server) {
+            delete metadata.authorization_server;
+        }
 
         return metadata;
-    }
-
-    /**
-     * 
-     * @param credentialId : string uniquely identifying this credential configuration in the metadata
-     * @param credential : credential configuration in vc_jwt format (with credential_definition)
-     * @returns : credential metadata in vc+sd-jwt format
-     * 
-     * We do some name and type mangling here to be able to convert one object type (JwtVC) to
-     * another (SD-JWT) and test/delete the attributes that are missing or need to be converted
-     */
-    private convertToSdCredential(credentialId:string, credential:CredentialConfigurationJwtVC): CredentialConfiguration
-    {
-        const vct = getVctForCredentialType(credentialId);
-        const sdjwt = (credential as unknown) as CredentialConfigurationSdJwt;
-        if (vct !== null) {
-            sdjwt.vct = vct.vct!;
-            if (!sdjwt.claims && credential.credential_definition.credentialSubject) {
-                const subjects = credential.credential_definition.credentialSubject;
-                if (subjects) {
-                    sdjwt.claims = subjects as ClaimsList;
-                }
-            }
-            if (credential.credential_definition) {
-                delete (sdjwt as any).credential_definition;
-            }
-        }
-        return sdjwt as CredentialConfiguration;
     }
 
     /**
@@ -331,49 +306,49 @@ export class Issuer
      * for this credential. 
      * If required, convert this from vc_jwt to vc+sw-jwt configuration.
      */
-    private decorateCredentialConfiguration(credentialId:string, configuration?:ExtendableCredentialConfiguration):CredentialConfiguration {
+    private decorateCredentialConfiguration(credentialId:string, overriddenConfiguration:ExtendableCredentialConfiguration):CredentialConfiguration {
         const store = getCredentialConfigurationStore();
-        let overriddenConfiguration:ExtendableCredentialConfiguration;
-        if (!configuration) {
-            overriddenConfiguration = this.metadata?.credential_configurations_supported[credentialId] ?? {}
-        }
-        else {
-            overriddenConfiguration = configuration;
-        }
 
         // allow the override configuration to specify which credential id it is explicitely overriding
         if (overriddenConfiguration.extends) {
             credentialId = overriddenConfiguration.extends as string;
         }
 
-        var decoratedCredential:CredentialConfiguration = Object.assign(
+        const decoratedCredential:ExtendableCredentialConfiguration = Object.assign(
             {},
             store[credentialId] ?? {},
-            overriddenConfiguration) as CredentialConfiguration;
+            overriddenConfiguration);
 
         // remove extension mechanism from ExtendableCredentialConfiguration
         if ((decoratedCredential as ExtendableCredentialConfiguration).extends) {
             delete (decoratedCredential as ExtendableCredentialConfiguration).extends;
         }
 
-        if (decoratedCredential.format == 'vc+sd-jwt') {
-            decoratedCredential = this.convertToSdCredential(credentialId, decoratedCredential as CredentialConfigurationJwtVC);
-        }
-        // vc+jwt is not a valid OpenID4VCI format
-        else if (decoratedCredential.format == 'vc+jwt') {
-            decoratedCredential.format = 'jwt_vc_json';
+        let resultCredential:CredentialConfiguration;
+        switch (decoratedCredential.format) {
+            default:
+            case 'jwt_vc_json':
+            case 'vc+jwt':
+            case 'jwt_vc_json-ld':
+            case 'ldp_vc':
+                resultCredential = convertConfigToVCDM(credentialId, decoratedCredential);
+                break;
+            case 'vc+sd-jwt':
+            case 'dc+sd-jwt':
+                resultCredential = convertConfigToSDJWT(credentialId, decoratedCredential);
+                break;
         }
 
-        // set the algorithms according to what we support
-        decoratedCredential.credential_signing_alg_values_supported = [this.algorithm()];
-        decoratedCredential.cryptographic_binding_methods_supported = ['did:jwk', 'did:key'];
-        decoratedCredential.proof_types_supported = {
+        // set the algorithms according to what we support as issuer
+        resultCredential.credential_signing_alg_values_supported = [this.algorithm()];
+        resultCredential.cryptographic_binding_methods_supported = ['did:jwk', 'did:key'];
+        resultCredential.proof_types_supported = {
             "jwt": {
                 "proof_signing_alg_values_supported": ["ES256", "ES256K", "EdDSA", "RS256"]
             }
         };
 
-        return decoratedCredential as CredentialConfiguration;
+        return resultCredential;
     }
 
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
@@ -494,7 +469,7 @@ export class Issuer
 
     public usesAuthorisedCodeFlow()
     {
-        return this.metadata.authorization_servers && this.metadata.authorization_servers.length;
+        return this.options.authorizationEndpoint && this.options.authorizationEndpoint.length;
     }
 
     public async exportJWK()

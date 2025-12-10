@@ -11,9 +11,9 @@ export function getDidSpec(issuer:Issuer) {
 }
 
 export function getDidWebSpec(router:Router, value:DIDStoreValue) {
-    router!.get(value.path!, async (req: Request, res) => {
+    router!.get(value.identifier.path!, async (req: Request, res) => {
          // Sphereon requires the deprecated JsonWebKey2020 verification-method instead of the default JsonWebKey
-        const didDoc = await Factory.toDIDDocument(value.key, value.identifier.did, value.service, 'JsonWebKey2020');
+        const didDoc = await Factory.toDIDDocument(value.key, value.identifier.did, value.identifier.services ? JSON.parse(value.identifier.services) : null, 'JsonWebKey2020');
         return res.json(didDoc);
     });
 }

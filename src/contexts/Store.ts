@@ -10,6 +10,7 @@ import { getBaseUrl } from "#root/utils/getBaseUrl";
 import fs from 'fs';
 import { getDbConnection } from '#root/database/databaseService';
 import { ContextDocument } from '#root/packages/datastore/entities/ContextDocument';
+import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface ContextConfiguration {
     basePath: string;
@@ -45,7 +46,7 @@ class ContextConfigurationStore {
       }
     };
 
-    public async init()
+    private async readFromDB()
     {
         try {
             const dbConnection = await getDbConnection();
@@ -55,33 +56,62 @@ class ContextConfigurationStore {
                 const fullPath = getBaseUrl() + obj.path;
                 this.add(fullPath, JSON.parse(obj.document), obj.path);
             }
-
-            debug('Loading context configurations, path: ' + CONTEXT_CONFIGURATION_PATH);
-            try {
-                const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
-                for (const key of Object.keys(configurations.asObject)) {
-                    const cfg = configurations.asObject[key];
-                    cfg.fullPath = getBaseUrl() + cfg.basePath;
-
-                    if (!this.configuration[cfg.fullPath]) {
-                        debug("context full path is ", cfg.fullPath);
-                        this.add(cfg.fullPath, cfg.document, cfg.basePath);
-
-                        const cDoc = new ContextDocument();
-                        cDoc.name = key;
-                        cDoc.path = cfg.basePath;
-                        cDoc.document = JSON.stringify(cfg.document);
-                        await repo.save(cDoc);
-                    }
-                }
-            }
-            catch (e) {
-                debug("Missing configuration path");
-            }
         }
         catch (e) {
             console.error(e);
         }
+    }
+
+    private async clearDB()
+    {
+        try {
+            const dbConnection = await getDbConnection();
+            const repo = dbConnection.getRepository(ContextDocument);
+            await repo.clear();
+        }
+        catch (e) {
+            console.error(e);
+        }
+    }
+
+    private async readFromFile()
+    {
+        try {
+            debug('Loading context configurations, path: ' + CONTEXT_CONFIGURATION_PATH);
+            const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
+            const dbConnection = await getDbConnection();
+            const repo = dbConnection.getRepository(ContextDocument);
+
+            for (const key of Object.keys(configurations.asObject)) {
+                const cfg = configurations.asObject[key];
+                cfg.fullPath = getBaseUrl() + cfg.basePath;
+
+                if (!this.configuration[cfg.fullPath]) {
+                    debug("context full path is ", cfg.fullPath);
+                    this.add(cfg.fullPath, cfg.document, cfg.basePath);
+
+                    const cDoc = new ContextDocument();
+                    cDoc.name = key;
+                    cDoc.path = cfg.basePath;
+                    cDoc.document = JSON.stringify(cfg.document);
+                    await repo.save(cDoc);
+                }
+            }
+        }
+        catch (e) {
+            debug("Missing configuration path");
+        }
+    }
+
+    public async init()
+    {
+        if (hasAdminBearerToken()) {
+            await this.readFromDB();
+        }
+        else {
+            await this.clearDB();
+        }
+        await this.readFromFile();
     }
 
     public add(url:string, doc:any, bp?:string)

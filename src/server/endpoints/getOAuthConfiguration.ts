@@ -1,11 +1,19 @@
-import { Request, Response } from 'express'
+import { getBasePath } from '#root/utils/getBasePath';
+import { Request, Response, Router } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
 
-export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined) {
+export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined, wellKnownRouter:Router) {
     const path = `/.well-known/oauth-authorization-server`
-    issuer.router!.get(path, (request: Request, response: Response) => {
-        var data:any = {
-            "issuer": issuer.metadata.credential_issuer
+    issuer.router!.get(path, getOAuthConfig(issuer, tokenpath));
+
+    const tenanturl = getBasePath(issuer.options.baseUrl);
+    wellKnownRouter.get('/oauth-authorization-server' + tenanturl, getOAuthConfig(issuer, tokenpath));
+}
+
+function getOAuthConfig(issuer:Issuer, tokenpath: string|undefined) {
+    return (request: Request, response: Response) => {
+        const data:any = {
+            "issuer": issuer.options.baseUrl
         };
 
         if (issuer.options.authorizationEndpoint) {
@@ -20,5 +28,5 @@ export function getOAuthConfiguration(issuer:Issuer, tokenpath: string|undefined
         data.response_types_supported = ["token"];
 
         return response.json(data)
-    })
+    };
 }
