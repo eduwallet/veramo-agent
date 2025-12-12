@@ -14,3 +14,18 @@ export async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|nu
     }
     return ckey;
 }
+
+export function getHolderKeyFromProofJwt(jwt:JWT, did:string): any
+{
+    if (jwt.header.kid) {
+        // the kid must be an absolute key, so including the did and the reference
+        return {type: "kid", data: jwt.header.kid, did};
+    }
+    if (jwt.header.jwk) {
+        return {type: "jwk", data: jwt.header.jwk, did};
+    }
+    if (jwt.header.x5c) {
+        return {type: "x5c", data: jwt.header.x5c};
+    }
+    return null;
+}

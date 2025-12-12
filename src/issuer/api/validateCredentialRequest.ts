@@ -7,7 +7,7 @@ import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 import { ApiState } from '#root/types/internal';
 import { CredentialRequest } from '#root/types/specification/credential_request';
 import { JWT } from '#root/jwt/JWT';
-import { getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
+import { getHolderKeyFromProofJwt, getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Factory } from '@muisit/cryptokey';
 import { Session } from '#root/packages/datastore/entities/Session';
 import moment from 'moment';
@@ -88,8 +88,9 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     // spec ID-1: 8.2: credential_configuration_id: REQUIRED if a credential_identifiers
     // parameter was not returned from the Token Response as part of the authorization_details parameter.
     // As we return authorization_details, this should never happen for proper wallets
+    // However, for authorization_code flow, we do not control the token endpoint, so we do not know what
+    // the wallet ay decide.
     else if(request.body.credential_configuration_id) {
-        debug("determining credential data set based on configuration id, which is not supported");
         credentialDataSet = session.data?.credentialDataSets[request.body.credential_configuration_id];
     }
 
@@ -129,7 +130,6 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     const proofResults = await validateCredentialRequestProofs(issuer, session, request.body);
     // if we get a single ApiState back, it is the error on the proof that fails
     if (!Array.isArray(proofResults.data) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
-        debug("invalid proof");
         return error;
     }
     session.data.proofs = proofResults.data;
@@ -160,7 +160,7 @@ async function validateCredentialRequestProofs(issuer:Issuer, session:Session, c
     }
 
     for(const proof of proofs) {
-        let proofError = await validateCredentialRequestProof(issuer, session, proof);
+        const proofError = await validateCredentialRequestProof(issuer, session, proof);
 
         if (proofError.error != ErrorCodes.NO_ERROR) {
             return proofError;
@@ -169,13 +169,12 @@ async function validateCredentialRequestProofs(issuer:Issuer, session:Session, c
     }
 
     // return the did of the proof, this is the holder key
-    debug("Proof is valid", proofResults);
     return { error: ErrorCodes.NO_ERROR, description: '', data: proofResults};
 }
 
 async function validateCredentialRequestProof(issuer:Issuer, session:Session, proof:string):Promise<ApiState>
 {
-    let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
+    const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     
     if (!proof || !proof.length) {
         debug("Proof is invalid because it is missing", proof);
@@ -308,7 +307,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     }
 
     // return the did of the proof, this is the holder key
-    error.data = {did, nonce, key: ckey};
+    error.data = {did, nonce, key: ckey, holder: getHolderKeyFromProofJwt(jwt, did)};
     return error;
 }
 

@@ -4,6 +4,7 @@ import { CredentialConfiguration } from "#root/types/specification/metadata";
 import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
 import { StatusList } from "#root/types/internal/statuslists";
+import { HolderData } from "#root/types/internal";
 
 export interface LanguageLabel
 {
@@ -26,7 +27,7 @@ export class Credential
     public principalId?:string; // a globally unique identifier for this type and issuer
     public type:string = 'GenericCredential';
     public format:string = 'jwt_vc_json';
-    public holder?:string;
+    public holder?:HolderData;
     public configuration?:CredentialConfiguration;
     public credential:any; // basic readable data
     public output:any; // signed, proofed data, possibly encoded

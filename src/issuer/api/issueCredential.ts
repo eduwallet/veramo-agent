@@ -45,7 +45,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         credential.presetCredential = proofData.credentialDataSet.credential ?? null;
         credential.callback = proofData.credentialDataSet.callback ?? null;
         credential.metaData = session.data.metaData;
-        credential.holder = proof.did;
+        credential.holder = proof.holder;
 
         if (!await CredentialFactory.resolve(credential, session)) {
             debug("error creating actual credential");

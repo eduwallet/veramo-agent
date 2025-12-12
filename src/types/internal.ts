@@ -58,10 +58,17 @@ export interface CredentialDataSet {
     callback?:string|null;
 }
 
+export interface HolderData {
+    type: string;
+    did?: string;
+    data: any;
+}
+
 export interface SingleProofData {
     nonce:string;
     key: any;
     did: string;
+    holder: HolderData;
 }
 
 export interface CredentialProofData {

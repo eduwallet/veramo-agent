@@ -1,7 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
+import { VCDM as VCDMType, W3CJWT} from '#root/credentials/formats/VCDMTypes';
 import { Credential } from '#root/credentials/Credential';
 import jsigs from 'jsonld-signatures';
 import { getContextConfigurationStore } from '#root/contexts/Store';
@@ -11,7 +11,7 @@ import { JwsLinkedDataSignature } from '#root/crypto/JwsLinkedDataSignature';
 
 export class JSONLD
 {
-    public static async sign(credential:Credential, output: VCDMType, date?:string)
+    public static async sign(credential:Credential, output: VCDMType|W3CJWT, date?:string)
     {
         debug("signing VCDM using JSONLD");
         date = moment(date).toISOString();

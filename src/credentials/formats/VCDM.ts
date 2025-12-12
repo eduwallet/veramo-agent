@@ -4,6 +4,7 @@ const debug = Debug('issuer:vcdm');
 import { LanguageObject, VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
+import { HolderData } from '#root/types/internal';
 
 export class VCDM
 {
@@ -14,12 +15,12 @@ export class VCDM
         this.credential = credential;
     }
 
-    public build():VCDMType
+    public async build():Promise<VCDMType>
     {
         debug("creating VCDM");
         const issuerName = this.createLanguageObject('issuer_name');
         const issuerDescription = this.createLanguageObject('issuer_description');
-        let baseCredential:VCDMType = {
+        const baseCredential:VCDMType = {
             "@context": ["https://www.w3.org/ns/credentials/v2", ...this.credential.contexts],
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
@@ -42,7 +43,7 @@ export class VCDM
 
         // Each object MAY also contain an id property to identify the subject, as described in Section 4.4 Identifiers.
         if (this.credential.automaticallyBindHolder && !baseCredential.credentialSubject.id && this.credential.holder) {
-            baseCredential.credentialSubject.id = this.credential.holder;
+            baseCredential.credentialSubject.id = await this.convertHolderToDid(this.credential.holder);
         }
 
         if (this.credential.metaData.issuanceDate) {
@@ -59,6 +60,14 @@ export class VCDM
         this.addEvidenceData(baseCredential);
         this.addOtherMetadata(baseCredential);
         return baseCredential;
+    }
+
+    private async convertHolderToDid(holder:HolderData):Promise<string>
+    {
+        if ((holder.type == "kid" || holder.type == "jwk") && holder.did && holder.did.length) {
+            return holder.did;
+        }
+        throw new Error("VCDM not applicable for non-did holding JWT proofs");
     }
 
     private createLanguageObject(value:string)

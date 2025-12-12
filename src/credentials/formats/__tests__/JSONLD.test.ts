@@ -35,7 +35,7 @@ test('JSONLD conversion', async () => {
     credential.issuer = issuer;
     credential.type = 'CredentialTest';
     credential.data = {"@context": ["http://example.net"], given:'Test'};
-    credential.holder = 'did:test:holder';
+    credential.holder = {type:'kid', did:'did:test:holder', data: 'did:test:holder#0'};
     credential.metaData.issuanceDate = '2025-01-01 01:01:01';
     credential.contexts.push("http://example.net");
     credential.output = (new VCDM(credential)).build();

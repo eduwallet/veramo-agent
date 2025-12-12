@@ -26,14 +26,25 @@ export class SDJWT
         debug("signing SD JWT");
         const vct = getVctForCredentialType(this.credential.type!);
 
-        let baseCredential:SdJwtVcPayload = {
+        const baseCredential:SdJwtVcPayload = {
             iss: this.credential.issuer!.did!.did,
             vct: vct!.vct!,
             iat: moment().unix()
         };
         if (this.credential.automaticallyBindHolder && this.credential.holder) {
             // https://www.rfc-editor.org/rfc/rfc7800.html
-            baseCredential.cnf = {kid: this.credential.holder};
+            if (this.credential.holder.type == "kid") {
+                baseCredential.cnf = {kid: this.credential.holder.data};
+            }
+            else if (this.credential.holder.type == "jwk") {
+                baseCredential.cnf = {jwk: this.credential.holder.data};
+            }
+            else if (this.credential.holder.type == "x5c") {
+                baseCredential.cnf = {x5c: this.credential.holder.data};
+            }
+            else {
+                throw new Error("Cannot create confirm cnf claim for holder binding for non supported proof type " + this.credential.holder.type);
+            }
         }
 
         // if we have a credentialSubject, convert it to claims
@@ -62,7 +73,7 @@ export class SDJWT
           hashAlg: 'sha-256',
         });
     
-        let disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(vct);
+        const disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(vct);
         const sdcredential = await sdjwt.issue(baseCredential, disclosureFrame, {
           header: {
             typ: this.type,

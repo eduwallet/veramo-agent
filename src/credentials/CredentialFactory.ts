@@ -12,6 +12,7 @@ import { VCDM } from "./formats/VCDM.js";
 import { EduID } from "./types/EduID.js";
 import { Session } from "#root/packages/datastore/index";
 import { EduIDEntitlement } from "./types/EduIDEntitlement.js";
+import { W3C } from "./formats/W3C.js";
 
 export class CredentialFactory
 {
@@ -63,19 +64,39 @@ export class CredentialFactory
         switch ((credential.format || '') as string) {
             case 'dc+sd-jwt':
             case 'vc+sd-jwt':
-                const sdjwt = new SDJWT(credential, credential.format);
-                await sdjwt.sign();
-                break;
+                // TODO: vc+sd-jwt is a VCDM 2 credential encoded as SD-JWT
+                {
+                    const sdjwt = new SDJWT(credential, credential.format);
+                    await sdjwt.sign();
+                    break;
+                }
             case 'jwt_vc_json':
             case 'jwt_vc_json-ld':
+                // this is a VCDM1.1 credential as a JWT format, with or without LDP
+                {
+                    const cred = new W3C(credential);
+                    const baseCredential = await cred.build();
+                    const jose = new JOSE(credential, baseCredential, credential.format);
+                    await jose.sign();
+                    break;
+                }
             case 'vc+jwt':
-                const jose = new JOSE(credential, credential.format);
-                await jose.sign();
-                break;
+                // this is a VCDM2.0 credential as a JWT format
+                {
+                    const cred = new VCDM(credential);
+                    const baseCredential = await cred.build();
+                    const jose = new JOSE(credential, baseCredential, credential.format);
+                    await jose.sign();
+                    break;
+                }
             case 'ldp_vc':
-                const vcdm = new VCDM(credential);
-                const ld = await JSONLD.sign(credential, vcdm.build());
-                credential.output = ld;
+                // this is a non-jwt encoded VCDM 1.1 credential with LDP
+                {
+                    const vcdm = new W3C(credential);
+                    const ld = await JSONLD.sign(credential, await vcdm.build());
+                    credential.output = ld;
+                    break;
+                }
         }
         return true;
     }

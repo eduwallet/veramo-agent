@@ -4,6 +4,7 @@ const debug = Debug('issuer:vcdm');
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { W3CJWT, W3C as W3CType } from '#root/credentials/formats/VCDMTypes';
+import { HolderData } from '#root/types/internal';
 
 // https://www.w3.org/TR/vc-data-model/
 
@@ -16,13 +17,13 @@ export class W3C
         this.credential = credential;
     }
 
-    public build():W3CJWT
+    public async build():Promise<W3CJWT>
     {
         debug("creating W3C");
 
         const issuerName = this.getString('issuer_name');
         const issuerDescription = this.getString('issuer_description');
-        let baseCredential:W3CType = {
+        const baseCredential:W3CType = {
             // The value of the @context property MUST be an ordered set where the first item is a URI with the value https://www.w3.org/2018/credentials/v1.
             "@context": ["https://www.w3.org/2018/credentials/v1", ...this.credential.contexts],
             type: ["VerifiableCredential", this.credential.type],
@@ -39,7 +40,7 @@ export class W3C
 
         // Each object MAY also contain an id property to identify the subject, as described in Section 4.2 Identifiers.
         if (this.credential.automaticallyBindHolder && !baseCredential.credentialSubject.id && this.credential.holder) {
-            baseCredential.credentialSubject.id = this.credential.holder;
+            baseCredential.credentialSubject.id = await this.convertHolderToDid(this.credential.holder);
         }
 
         if (this.credential.dictionary['name']) {
@@ -63,6 +64,14 @@ export class W3C
         this.addEvidenceData(baseCredential);
 
         return { vc: baseCredential };
+    }
+
+    private async convertHolderToDid(holder:HolderData):Promise<string>
+    {
+        if ((holder.type == "kid" || holder.type == "jwk") && holder.did && holder.did.length) {
+            return holder.did;
+        }
+        throw new Error("VCDM not applicable for non-did holding JWT proofs");
     }
 
     private getString(value:string)

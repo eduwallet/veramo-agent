@@ -48,7 +48,7 @@ export class COSE
         if (baseCredential.id) {
             baseCredential.jti = baseCredential.id;
         }
-        if (baseCredential.credentialSubject.id) {
+        if (baseCredential.credentialSubject?.id) {
             baseCredential.sub = baseCredential.credentialSubject.id;
         }
 

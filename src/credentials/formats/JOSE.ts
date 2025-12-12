@@ -1,9 +1,7 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType, W3CJWT as W3CType} from '#root/credentials/formats/VCDMTypes';
-import { VCDM } from "#root/credentials/formats/VCDM";
-import { W3C } from "#root/credentials/formats/W3C"
+import { VCDM as VCDMType, W3CJWT, W3CJWT as W3CType} from '#root/credentials/formats/VCDMTypes';
 import { JSONLD } from '#root/credentials/formats/JSONLD';
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
@@ -12,35 +10,28 @@ import { JWT } from '#root/jwt/JWT';
 export class JOSE
 {
     private credential:Credential;
+    private baseCredential:VCDMType|W3CJWT;
     private type:string = 'vc+jwt';
     private date:string;
 
-    public constructor(credential:Credential, type:string = 'vc+jwt', date?:string)
+    public constructor(credential:Credential, baseCredential:VCDMType|W3CJWT, type:string = 'vc+jwt', date?:string)
     {
         this.credential = credential;
         this.type = type;
         this.date = moment(date).toISOString();
+        this.baseCredential = baseCredential;
     }
 
     public async sign()
     {
         debug("signing VCDM using JOSE");
-        let vcdm:any;
-        if (this.type == 'vc+jwt') {
-            vcdm = new VCDM(this.credential);
-        }
-        else {
-            vcdm = new W3C(this.credential);
-        }
-        let baseCredential = vcdm.build();
-
         // apply filters to add proofs
         if (this.type == 'jwt_vc_json-ld') {
-            baseCredential = JSONLD.sign(this.credential, baseCredential);
+            this.baseCredential = await JSONLD.sign(this.credential, this.baseCredential);
         }
 
         // pack and sign the credential
-        this.credential.output = await this.packCredential(baseCredential);
+        this.credential.output = await this.packCredential(this.baseCredential);
     }
 
     private async packCredential(baseCredential:VCDMType|W3CType)
