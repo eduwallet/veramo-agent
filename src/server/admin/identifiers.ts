@@ -61,8 +61,8 @@ async function setIdentifierData(data:StoreIdentifierRequest, identifier:Identif
 {
     identifier.alias = data.alias;
     identifier.provider = data.provider;
-    identifier.path = (data.path && data.path.length) ? path : undefined;
-    identifier.services = (data.services && data.services.length) ? services : undefined;
+    identifier.path = (data.path && data.path.length) ? data.path : undefined;
+    identifier.services = (data.services && data.services.length) ? data.services : undefined;
 
     switch (identifier.provider) {
         case 'did:web':
