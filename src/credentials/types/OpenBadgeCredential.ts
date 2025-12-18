@@ -31,9 +31,11 @@ export class OpenBadgeCredential extends CredentialType {
                 credential.addDictionaryValue(key, credential.presetCredential[key], 'en_US');
                 break;
               case 'validFrom':
+              case 'issuanceDate':
                 credential.metaData.issuanceDate = credential.presetCredential[key];
                 break;
               case 'validUntil':
+              case 'expirationDate':
                 credential.metaData.expirationDate = credential.presetCredential[key];
                 break;
               default:
