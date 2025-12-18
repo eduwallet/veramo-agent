@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credential');
+
 import moment from "moment";
 import { StringKeyedObject } from "#root/types/index";
 import { CredentialConfiguration } from "#root/types/specification/metadata";
@@ -44,6 +47,7 @@ export class Credential
 
     public async resolve()
     {
+        debug('resolving credential data');
         if (this.data?._exp) {
             this.handleExpirationDate(this.data._exp);
             delete this.data._exp;
@@ -55,12 +59,14 @@ export class Credential
         if (this.metaData?.expiration) {
             this.handleExpirationDate(this.metaData.expiration);
         }
+        debug('setting issuanceDate to now');
         this.metaData.issuanceDate = moment().toISOString();
 
         const enableLists = (typeof this.metaData?.enableStatusLists === 'undefined') || (this.metaData?.enableStatusLists === true);
         if (this.issuer!.options.statusLists && enableLists) {
             await this.handleStatusLists();
         }
+        debug('end of credential data resolving');
         return true;
     }
 

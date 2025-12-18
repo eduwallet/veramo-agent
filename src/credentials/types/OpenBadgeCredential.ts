@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('issuer:obc');
+
 import { CredentialType } from "#root/credentials/types/CredentialType";
 import { Credential } from '#root/credentials/Credential';
 import { createUniqueId } from '#root/utils/createUniqueId';
@@ -12,11 +15,13 @@ export class OpenBadgeCredential extends CredentialType {
     }
 
     public async resolve(credential:Credential, session:Session) {
+        debug('resolving OBC credential instance');
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
         credential.type = "OpenBadgeCredential";
 
         if (credential.presetCredential) {
+          debug("preset credential detected", credential.presetCredential);
           credential.contexts.push("https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.2.json");
           for (const key of Object.keys(credential.presetCredential)) {
             switch (key) {
@@ -32,6 +37,7 @@ export class OpenBadgeCredential extends CredentialType {
                 break;
               case 'validFrom':
               case 'issuanceDate':
+                debug("matching issuanceDate to metadata");
                 credential.metaData.issuanceDate = credential.presetCredential[key];
                 break;
               case 'validUntil':
@@ -45,6 +51,7 @@ export class OpenBadgeCredential extends CredentialType {
           }
         }
         else {
+          debug('creating credential based on credential data from offer');
           const achievement = credential.data?.achievement ?? {};
           const result = credential.data?.result ?? null; 
           const validFrom: string = credential.data?.validFrom;

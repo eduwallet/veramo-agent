@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credential');
+
 import { Credential } from "#root/credentials/Credential";
 import { CredentialType } from "#root/credentials/types/CredentialType";
 import { AcademicBaseCredential } from "#root/credentials/types/AcademicBaseCredential";
@@ -49,13 +52,18 @@ export class CredentialFactory
 
     public static async resolve(credential:Credential, session:Session)
     {
+        debug('resolving constitution of credential');
         await credential.resolve();
+        debug('creating instance of credential', credential.type);
         const instance = this.createInstance(credential);
 
         if (instance && (credential.data || credential.presetCredential || credential.callback) && credential.issuer) {
+            debug('retrieving external credential if callback is available');
             await instance.retrieveExternalCredential(credential, session);
+            debug('resolving credential instance');
             await instance.resolve(credential, session);
         }
+        debug('end of credential resolving');
         return true;
     }
 
