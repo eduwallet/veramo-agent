@@ -51,9 +51,11 @@ export class W3C
         }
 
         if (this.credential.metaData.issuanceDate) {
+            debug('issuanceDate is set to ', this.credential.metaData.issuanceDate);
             baseCredential.issuanceDate = moment(this.credential.metaData.issuanceDate).format('YYYY-MM-DDTHH:mm:ssZ');
         }
         else {
+            debug('no issuance date set, setting to now', this.credential.metaData);
             baseCredential.issuanceDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
         }
         if (this.credential.metaData.expirationDate) {

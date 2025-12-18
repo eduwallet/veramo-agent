@@ -62,7 +62,13 @@ export class JOSE
         // represent the issuance and expiration time of the signature, respectively.
         jwt.payload.iat = moment(this.date).unix();
         // if nbf is present, it MUST represent the issuance date (VCDM 1.1)
-        jwt.payload.nbf = jwt.payload.iat; // Sphereon requires this claim
+        if (this.credential.metaData.issuanceDate) {
+            // signature at least expires at the expiration date of the credential itself
+            jwt.payload.nbf = moment(this.credential.metaData.issuanceDate).unix();
+        }
+        else {
+            jwt.payload.nbf = jwt.payload.iat;
+        }
         if (this.credential.metaData.expirationDate) {
             // signature at least expires at the expiration date of the credential itself
             jwt.payload.exp = moment(this.credential.metaData.expirationDate).unix();
