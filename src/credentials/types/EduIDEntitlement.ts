@@ -24,19 +24,28 @@ export class EduIDEntitlement extends CredentialType
 
     public check(credential:Credential)
     {
+        const entitlementToLookFor = credential.data.entitlements;
+        if (!Array.isArray(entitlementToLookFor) || entitlementToLookFor.length == 0) {
+            return false;
+        }
         return true;
     }
 
     private convertDataToClaims(credential:Credential, session:Session):any {
         var retval:any = {};
-        const entitlementToLookFor = credential.data.entitlement; // this is set when the offer is created: create an entitlement for ...
+        // this is set when the offer is created: create an entitlement for ...
+        // entitlements is a list of entitlements to look for, containing at least one item
+        const entitlementToLookFor = credential.data.entitlements;
+
         if (session.data.accessData.isMemberOf) {
             const memberOf = session.data.accessData.isMemberOf;
             const lst = Array.isArray(memberOf) ? memberOf : memberOf.split(' ');
 
-            // actual check if the authenticated user has the indicated entitlement
-            if (lst.includes(entitlementToLookFor)) {
-                retval['entitlement'] = entitlementToLookFor;
+            for (const entitlement of entitlementToLookFor) {
+                // actual check if the authenticated user has the indicated entitlement
+                if (lst.includes(entitlement)) {
+                    retval['entitlement'] = entitlement;
+                }
             }
         }
 
