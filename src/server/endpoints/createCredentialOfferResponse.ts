@@ -21,6 +21,7 @@ export function createCredentialOfferResponse(issuer: Issuer, createOfferPath: s
             await issuer.storeRequestResponseData(credentialOfferData.id, 'create_offer-request', request.body);
 
             const resultResponse: CreateCredentialOfferResponse = {
+                // the uri is an external URI, so preprend it with the baseUrl of the issuer
                 uri: 'openid-credential-offer://?credential_offer_uri=' + issuer.options.baseUrl + offerPath + '/' + credentialOfferData.id,
                 txCode: credentialOfferData.pinCode,
                 id: credentialOfferData.id
