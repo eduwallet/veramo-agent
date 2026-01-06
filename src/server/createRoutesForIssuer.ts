@@ -30,7 +30,14 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
      */
     debug("initializing rest api using ", issuer.options);
     issuer.router = express.Router();
-    app.use(getBasePath(issuer.options.baseUrl), issuer.router);
+
+    // to support internal redirections, we set up the routes on <base-url>/<tenant>/...
+    // but use the issuer.options.baseUrl to point to the external endpoint (e.g.: <tenant>.<base-url>/...)
+    // The following statement makes it possible to set issuer.options.baseUrl == <app-baseUrl>/<tenant>
+    // and not use the redirections.
+    // However, for this to work, the name and the baseUrl should match in the configuration
+    const basePath = '/' + issuer.name;
+    app.use(basePath, issuer.router);
 
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
     debug("adding token path");
@@ -42,7 +49,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     }
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
-    getMetadata(issuer, wellKnownRouter)
+    getMetadata(issuer, basePath, wellKnownRouter)
   
     if (issuer.did?.provider == 'did:web') {
         // This endpoint serves the /.well-known/did.json document
@@ -52,8 +59,8 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // This endpoint serves the /.well-known/openid-configuration document
     // only required if we act as AS
     if (!issuer.usesAuthorisedCodeFlow()) {
-        getOpenidConfiguration(issuer, issuer.options.baseUrl + tokenPath, wellKnownRouter);
-        getOAuthConfiguration(issuer, issuer.options.baseUrl + tokenPath, wellKnownRouter);
+        getOpenidConfiguration(issuer, basePath, basePath + tokenPath, wellKnownRouter);
+        getOAuthConfiguration(issuer, basePath, basePath + tokenPath, wellKnownRouter);
     }
   
     // this is hard coded in the Issuer when metadata is generated
