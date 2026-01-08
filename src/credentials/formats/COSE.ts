@@ -7,6 +7,7 @@ import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import * as cbor from 'cbor2';
 import { toString } from 'uint8arrays';
+import { Factory } from '@muisit/cryptokey';
 
 export class COSE
 {
@@ -65,7 +66,7 @@ export class COSE
         const unprotectedHeader = {
             typ: 'application/vc+cose',
             cty: 'application/vc',
-            kid: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
+            kid: '#' + Factory.getKeyReference(this.credential.issuer!.did!.did),
             iss: this.credential.issuer!.did!.did
         };
 

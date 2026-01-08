@@ -35,7 +35,6 @@ export class Issuer
     public options:IssuerConfiguration;
     public did:IdentifierEntity|null = null;
     public key:CryptoKey|null;
-    public keyRef:string;
     public router:Router|undefined;
     public sessionData:SessionStateManager;
     public nonceStates:NonceManager;
@@ -47,7 +46,6 @@ export class Issuer
         this.options = _options;
         this.metadata = _metadata;
         this.key = null;
-        this.keyRef = _options.key ?? '';
         this.id = _options.id;
         this.name = _options.name;
         this.sessionData = new SessionStateManager(this.name);
@@ -211,7 +209,7 @@ export class Issuer
         else {
             dbCred.expirationDate = undefined;
         }
-        dbCred.holder = credential.holder || '';
+        dbCred.holder = credential.holder?.did || '';
         dbCred.credpid = credential.principalId || '';
         dbCred.issuer = this.name;
         dbCred.metadata = this.getCredentialConfiguration(credential.type) as StringKeyedObject;
