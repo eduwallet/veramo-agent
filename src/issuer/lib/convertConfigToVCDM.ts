@@ -60,8 +60,9 @@ function prependAllClaimPaths(claims:CredentialConfigurationClaimData[], key:str
 {
     let retval:CredentialConfigurationClaimData[] = [];
     for (const clm of claims) {
-        clm.path.unshift(key);
-        retval.push(clm);
+        const claim = JSON.parse(JSON.stringify(clm)); // clone the data
+        claim.path.unshift(key);
+        retval.push(claim);
     }
     return retval;
 }
