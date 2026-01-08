@@ -134,6 +134,37 @@ The metadata is configured separately from the issuer configuration for historic
 
 To allow credential configuration reuse, the metadata configuration `credential_configurations_supported` attribute is parsed when the metadata is loaded. Each credential defined there is extended with any credential data defined for the same identifier in the `conf/credentials/` configuration. In that way, the basic credential display information can be centralized, but branding information can be specified in the issuer metadata configuration.
 
+The credential claim data is located in the `credential_definition` attribute. It can either be specified using the older type of `credentialSubject` or the new `claims` attribute. The following example specifies both, but if both exist, the `credentialSubject` elements are added at the end of the existing `claims` elements. The code automatically converts the data to the required output, depending on the type of the resulting credential ('w3c', 'vcdm' or 'sd-jwt').
+
+```json
+    "GenericCredential": {
+        "format": "credential format, like jwt_vc_json",
+        "scope": "optional scope attribute",
+        "display": <display object for the entire credential>,
+        "credential_definition": {
+            "type": ["VerifiableCredential", "another type name"],
+            "credentialSubject": {
+                "key1": {
+                    "mandatory": <optional boolean>,
+                    "value_type": "unused optional type indication",
+                    "display": <display object with attribute names>
+                },
+                ...
+            },
+            "claims": [
+                {
+                    "path": ["list of path elements"],
+                    "mandatory": "optional boolean",
+                    "display": <display object with attribute names>
+                },
+                ...
+            ]
+        }
+    }
+```
+
+Please note: for the 'w3c' type, the `vc` prefix is automatically prepended to the path specifiers, it should not be added explicitely in this claims definition.
+
 Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` or `dc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
 
 ```json
@@ -429,6 +460,7 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|         |         | 2026-01-08 | Allowing the `claims` attribute in `credentialSubject` to directly set the 'new' `claims` data for metadata |
 |         | 613e66c | 2025-12-02 | Implementation of the `credential_callback` url allowing EduBadges to match a credential after authorization |
 |         | 441aa60 | 2025-11-25 | Added `/api/version` endpoint that returns commit, tag, node version and package version information |
 |         | 13f5167 | 2025-11-19 | Empty BEARER_TOKEN forces `truncate` on vct, context, credential and issuer tables (not identifiers and keys). This ensures a file based configuration and a proper reinitialisation based on (changed) files at restart |

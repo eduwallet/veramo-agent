@@ -1,4 +1,4 @@
-import { CredentialFormat, Metadata, SupportedProofTypes } from "#root/types/specification/metadata";
+import { CredentialConfigurationClaimData, CredentialFormat, Metadata, SupportedProofTypes } from "#root/types/specification/metadata";
 
 export interface MetadataConfiguration extends Omit<Metadata, 'credential_configurations_supported'> {
     "@context"?: string[];
@@ -22,12 +22,12 @@ export interface CredentialConfigurationJwtVC {
     proof_types_supported?:SupportedProofTypes;
     display?:CredentialDisplay[];                      // array of display properties for this credential
     credential_definition: CredentialDefinition;
-    order?:string[];
 }
 
 export interface CredentialDefinition {
     type:string[];
     credentialSubject?:CredentialSubjects;
+    claims?:CredentialConfigurationClaimData[]; // new style definitions
 }
 
 // TODO: support nested claims... or move to path descriptions

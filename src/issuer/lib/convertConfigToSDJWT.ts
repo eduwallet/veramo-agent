@@ -14,7 +14,7 @@ export function convertConfigToSDJWT(credentialId:string, config:ExtendableCrede
         ...(config.scope && {scope: config.scope}),
         credential_metadata: {
             ...(config.display && {display: config.display}),
-            claims: []
+            claims: config?.credential_definition.claims ?? []
         }
     }
 
