@@ -36,8 +36,10 @@ export class EduIDEntitlement extends CredentialType
         // this is set when the offer is created: create an entitlement for ...
         // entitlements is a list of entitlements to look for, containing at least one item
         const entitlementToLookFor = credential.data.entitlements;
+        debug("looking for entitlements from offer", entitlementToLookFor);
         const entitlementsFound = new Set<string>();
 
+        debug("accessData is ", session.data.accessData);
         if (session.data.accessData.isMemberOf) {
             const memberOf = session.data.accessData.isMemberOf;
             const lst = Array.isArray(memberOf) ? memberOf : memberOf.split(' ');
@@ -46,6 +48,7 @@ export class EduIDEntitlement extends CredentialType
                 // filter all entitlements that startWith the entitlementToLookFor
                 const entitlements:string[] = lst.filter((i:string) => i.startsWith(entitlement));
                 if (entitlements.length) {
+                    debug("for ", entitlement,"found",entitlementsFound);
                     entitlements.forEach((i:string) => entitlementsFound.add(i));
                 }
             }
@@ -53,6 +56,7 @@ export class EduIDEntitlement extends CredentialType
 
         // no entitlement, no credential
         if (entitlementsFound.size == 0) {
+            debug("no entitlements found in accessData");
             throw new Error("No entitlement found");
         }
         else {
