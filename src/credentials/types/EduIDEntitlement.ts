@@ -32,26 +32,31 @@ export class EduIDEntitlement extends CredentialType
     }
 
     private convertDataToClaims(credential:Credential, session:Session):any {
-        var retval:any = {};
+        const retval:any = {entitlement:[]};
         // this is set when the offer is created: create an entitlement for ...
         // entitlements is a list of entitlements to look for, containing at least one item
         const entitlementToLookFor = credential.data.entitlements;
+        const entitlementsFound = new Set<string>();
 
         if (session.data.accessData.isMemberOf) {
             const memberOf = session.data.accessData.isMemberOf;
             const lst = Array.isArray(memberOf) ? memberOf : memberOf.split(' ');
 
             for (const entitlement of entitlementToLookFor) {
-                // actual check if the authenticated user has the indicated entitlement
-                if (lst.includes(entitlement)) {
-                    retval['entitlement'] = entitlement;
+                // filter all entitlements that startWith the entitlementToLookFor
+                const entitlements:string[] = lst.filter((i:string) => i.startsWith(entitlement));
+                if (entitlements.length) {
+                    entitlements.forEach((i:string) => entitlementsFound.add(i));
                 }
             }
         }
 
         // no entitlement, no credential
-        if (Object.keys(retval).length == 0) {
+        if (entitlementsFound.size == 0) {
             throw new Error("No entitlement found");
+        }
+        else {
+            retval.entitlement = entitlementsFound.keys();
         }
 
         // enrich the credential with the 'sub' identifier claim
