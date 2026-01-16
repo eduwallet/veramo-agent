@@ -73,7 +73,8 @@ export class Issuer
 
     public async retrieveASServerKeys()
     {
-        if (this.options.authorizationEndpoint) {
+        if (this.options.authorizationEndpoint && (this.serverKeys.length == 0 || !this.serverMetadata)) {
+            debug("retrieving AS server keys and metadata");
             const keys = await retrieveASServerKey(this.options.authorizationEndpoint);
             if (keys !== null && keys.length) {
                 for (const key of keys) {
@@ -82,12 +83,16 @@ export class Issuer
             }
 
             this.serverMetadata = await retrieveServerMetadata(this.options.authorizationEndpoint);
+            if (!this.serverMetadata) {
+                debug("Could not contact server ", this.options.authorizationEndpoint);
+            }
         }
     }
 
     public async retrieveASUserInfo(token:string)
     {
-        const endpoint = this.serverMetadata.userinfo_endpoint;
+        this.retrieveASServerKeys();
+        const endpoint = this.serverMetadata?.userinfo_endpoint;
         try {
             const json = await fetch(endpoint, {
                 headers: {
@@ -104,7 +109,8 @@ export class Issuer
 
     public async retrieveASIssuerIntrospection(token:string)
     {
-        const endpoint = this.serverMetadata.authorization_introspection_endpoint;
+        this.retrieveASServerKeys();
+        const endpoint = this.serverMetadata?.authorization_introspection_endpoint;
         try {
             // the client secret contains the clientId + ':' + clientSecret, allowing us to use the clientId as the id sent to the wallet for use
             // use the Buffer route here instead of toString(fromString(x,'utf-8'),'base64') because that results in missing padding
