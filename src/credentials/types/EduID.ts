@@ -201,7 +201,7 @@ export class EduID extends CredentialType
     {
         for (const nm of this.acceptedClaims) {
             const v1 = credential.data[nm] ? toStringByJoin(credential.data[nm]) : null;
-            const v2 = db.claims[nm] ?? null;
+            const v2 = db.claims[nm] ? toStringByJoin(db.claims[nm]) : null;
 
             if (!  (  (v1 === null && v2 === null)
                    || (typeof(v1) === typeof(v2)
