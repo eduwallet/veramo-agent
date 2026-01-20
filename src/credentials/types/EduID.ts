@@ -103,25 +103,35 @@ export class EduID extends CredentialType
         // Or UNLESS the previous EduID has expired. We should clear out expired credentials
         // automatically.
         const uid = credential.principalId;
+        debug('checking holder key reuse for eduID', uid);
         if (!uid || uid.length == 0) {
-            debug('uid is ', uid);
+            debug("invalid eduID", uid);
             throw new Error("Invalid uid detected, not issuing credential");
         }
         const holderKey = credential.holder;
-        if (!holderKey || holderKey.length == 0) {
+        if (!holderKey || !holderKey.did || holderKey.did.length == 0) {
+            debug("invalid holder key, missing did", holderKey);
             throw new Error("Invalid holder key detected");
         }
 
-        let obj =  await this.getCredentialForHolderAndId(holderKey, uid);
+        // loop over all credentials issued for this holder and eduID
+        // They are either expired, in which case we can remove them, or
+        // they cause an error. If we have removed all expired credentials
+        // and nothing remains, we can issue a new credential
+        debug("looking for credentials for this holder and id");
+        let obj =  await this.getCredentialForHolderAndId(holderKey.did, uid);
         while (obj) {
+            debug("found record", obj);
             // if this holder has an expired credential, we can forget about it.
             // It is allowed to load someone else's eduID if your eduID has expired
             if (this.credentialHasExpired(obj)) {
+                debug("previous eduID has expired, removing and looking for the next");
                 await this.deleteCredential(obj);
-                obj = await this.getCredentialForHolderAndId(holderKey, uid);
+                obj = await this.getCredentialForHolderAndId(holderKey.did, uid);
             }
             else {
                 // we found a non-expired eduID for this holder and a different uid
+                debug("this holder key already has an eduID issued", holderKey.did, uid);
                 throw new Error("Holder already has a different eduID assigned");
             }
         }
@@ -155,14 +165,16 @@ export class EduID extends CredentialType
 
     private async revokePreviousCredentials(credential:Credential)
     {
+        debug("revoking previous eduID credential");
         const uid = credential.principalId;
         if (!uid || uid.length == 0) {
             throw new Error("Invalid uid detected, not issuing credential");
         }
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(DBCredential);
-        const objs =  await repo.createQueryBuilder('credential').where('credpid=:id and "credentialId"=\'eduID\'', {id:uid}).getMany();
+        const objs = await repo.createQueryBuilder('credential').where('credpid=:id and "credentialId"=\'eduID\'', {id:uid}).getMany();
         if (objs) {
+            debug("found credentials", objs.length);
             for(const obj of objs) {
                 // revoke it if the credential has changed (so we apparently have a new eduID, which makes all other eduIDs with a different
                 // content invalid), or if we issue another eduID to the same holder (in which case it is either different or the same,
@@ -171,9 +183,14 @@ export class EduID extends CredentialType
                 // comparing credentials, wallets will happily accept issuing several identical eduIDs for the same holder and display
                 // all of them in the interface, causing multiple cards to exist (confusing for the user, but he should not have tried
                 // receiving another eduID if he already has one).
-                if (!this.storedCredentialEqualsNewCredential(credential, obj) || obj.holder == credential.holder) {
+                debug("checking holder keys", obj.holder, credential.holder?.did);
+                if (!this.storedCredentialEqualsNewCredential(credential, obj) || obj.holder == credential.holder?.did) {
                     if (obj.status != StatusListRevocationState.REVOKED) {
+                        debug("revoking previously unrevoked eduID credential");
                         await this.revokeCredential(credential, obj);
+                    }
+                    else {
+                        debug("previous eduID was already revoked");
                     }
                 }
             }
@@ -194,9 +211,11 @@ export class EduID extends CredentialType
                 )
             {
                 // claims do not match
+                debug("new eduID does not match previous eduID claim, values:", nm, v1, v2);
                 return false;
             }
         }
+        debug("new eduID matches previous eduID exactly");
         return true;
     }
 

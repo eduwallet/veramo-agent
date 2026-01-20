@@ -4,6 +4,7 @@ import { StatusListsOption } from '#root/types/internal/statuslists';
 import { CredentialOffer } from '#root/types/specification/credential_offer';
 import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
 import { Session } from '#root/packages/datastore/entities/Session';
+import { CryptoKey } from '@muisit/cryptokey';
 
 // Session state as maintained by the Issuer in the whole process of creating an offer up
 // to receiving notifications
@@ -62,12 +63,11 @@ export interface HolderData {
     type: string;
     did?: string;
     data: any;
+    ckey?:CryptoKey;
 }
 
 export interface SingleProofData {
     nonce:string;
-    key: any;
-    did: string;
     holder: HolderData;
 }
 

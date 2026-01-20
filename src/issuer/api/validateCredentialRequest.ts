@@ -191,14 +191,14 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
         return error;
     }
 
-    const ckey = await getSignatureKeyFromProofJwt(jwt);
-    if (!ckey) {
+    const holderData = await getHolderKeyFromProofJwt(jwt);
+    if (!holderData || !holderData.ckey) {
         debug("Proof is invalid because the issuer key cannot be resolved");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid proof of possession";
         return error;
     }
-    const verificationResult = await jwt.verify(ckey);
+    const verificationResult = await jwt.verify(holderData.ckey);
 
     if (!verificationResult) {
         debug("Proof is invalid because the token could not be verified", verificationResult);
@@ -232,21 +232,6 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid proof type";
         return error;
-    }
-
-    // kid: optional. If present it must be a did
-    // jwk: optional, used instead of kid. 
-    // x5c: optional, used instead of kid. not supported at the moment
-    // trust_chain: optional, OIDFed information
-    let did = header.kid;
-    if (did && did.indexOf('#') > 0) {
-        did = did.substring(0, did.indexOf('#'));
-    }
-    else {
-        // create a did from the key material so we can use it as credentialSubject id
-        // this is a special case for wwwallet, which uses a jwk in the proof and hence
-        // does not have a regular did
-        did = await Factory.toDIDJWK(ckey);
     }
 
     const payload = jwt.payload;
@@ -299,7 +284,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
         }
     }
 
-    if (!did) {
+    if (!holderData?.did) {
         debug("Proof is invalid because we could not find a did");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "No did found";
@@ -307,7 +292,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     }
 
     // return the did of the proof, this is the holder key
-    error.data = {did, nonce, key: ckey, holder: getHolderKeyFromProofJwt(jwt, did)};
+    error.data = {nonce, holder: holderData};
     return error;
 }
 

@@ -1,7 +1,8 @@
 import { JWT } from "#root/jwt/JWT";
+import { HolderData } from "#root/types/internal";
 import { CryptoKey, Factory } from "@muisit/cryptokey";
 
-export async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|null>
+async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|null>
 {
     let ckey:CryptoKey|null = null;
     if (jwt.header.kid) {
@@ -15,17 +16,32 @@ export async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|nu
     return ckey;
 }
 
-export function getHolderKeyFromProofJwt(jwt:JWT, did:string): any
+export async function getHolderKeyFromProofJwt(jwt:JWT): Promise<HolderData|null>
 {
+    const ckey = await getSignatureKeyFromProofJwt(jwt);
+    const did = ckey ? await Factory.toDIDJWK(ckey) : null;
     if (jwt.header.kid) {
         // the kid must be an absolute key, so including the did and the reference
-        return {type: "kid", data: jwt.header.kid, did};
+        return {
+            type: "kid",
+            data: jwt.header.kid,
+            ...(did && {did}),
+            ...(ckey && {ckey})
+        };
     }
     if (jwt.header.jwk) {
-        return {type: "jwk", data: jwt.header.jwk, did};
+        return {
+            type: "jwk",
+            data: jwt.header.jwk,
+            ...(did && {did}),
+            ...(ckey && {ckey})
+        };
     }
     if (jwt.header.x5c) {
-        return {type: "x5c", data: jwt.header.x5c};
+        return {
+            type: "jwk",
+            data: jwt.header.jwk
+        };
     }
     return null;
 }
