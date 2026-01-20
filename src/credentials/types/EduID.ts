@@ -172,7 +172,7 @@ export class EduID extends CredentialType
         }
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(DBCredential);
-        const objs = await repo.createQueryBuilder('credential').where('credpid=:id and "credentialId"=\'eduID\'', {id:uid}).getMany();
+        const objs = await repo.createQueryBuilder('credential').where('status=\'ISSUED\' and credpid=:id and "credentialId"=\'eduID\'', {id:uid}).getMany();
         if (objs) {
             debug("found credentials", objs.length);
             for(const obj of objs) {
