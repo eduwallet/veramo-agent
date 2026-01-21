@@ -8,6 +8,7 @@ import { DIDPath1760691999150 } from './7.DIDPath.js';
 import { CredStatus1761663603150 } from './8.CredStatus.js';
 import { ClientSecret1764064638150 } from './9.ClientSecret.js';
 import { EncKey1762521078111 } from './8. EncKey.js';
+import { OriginalHolder1769001656333 } from './10.OriginalHolder.js';
 
 export * from './migration-functions.js'
 
@@ -21,5 +22,6 @@ export const migrations = [
   DIDPath1760691999150,
   CredStatus1761663603150,
   ClientSecret1764064638150,
-  EncKey1762521078111
+  EncKey1762521078111,
+  OriginalHolder1769001656333
 ]
