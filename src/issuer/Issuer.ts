@@ -215,6 +215,15 @@ export class Issuer
             dbCred.expirationDate = undefined;
         }
         dbCred.holder = credential.holder?.did || '';
+        if (credential.holder?.type == 'kid') {
+            dbCred.original_holder = credential.holder?.data || '';
+        }
+        else if(credential.holder?.type == 'jwk') {
+            dbCred.original_holder = JSON.stringify(credential.holder?.data || {});
+        }
+        else if(credential.holder?.type == 'x5c') {
+            dbCred.original_holder = credential.holder?.data || '';
+        }
         dbCred.credpid = credential.principalId || '';
         dbCred.issuer = this.name;
         dbCred.metadata = this.getCredentialConfiguration(credential.type) as StringKeyedObject;

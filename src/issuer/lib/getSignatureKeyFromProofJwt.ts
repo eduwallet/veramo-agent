@@ -2,7 +2,7 @@ import { JWT } from "#root/jwt/JWT";
 import { HolderData } from "#root/types/internal";
 import { CryptoKey, Factory } from "@muisit/cryptokey";
 
-async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|null>
+export async function getHolderKeyFromProofJwt(jwt:JWT): Promise<HolderData|null>
 {
     let ckey:CryptoKey|null = null;
     if (jwt.header.kid) {
@@ -13,34 +13,34 @@ async function getSignatureKeyFromProofJwt(jwt:JWT): Promise<CryptoKey|null>
     else if(jwt.header.jwk) {
         ckey = await Factory.createFromJWK(jwt.header.jwk);
     }
-    return ckey;
-}
 
-export async function getHolderKeyFromProofJwt(jwt:JWT): Promise<HolderData|null>
-{
-    const ckey = await getSignatureKeyFromProofJwt(jwt);
-    const did = ckey ? await Factory.toDIDJWK(ckey) : null;
     if (jwt.header.kid) {
         // the kid must be an absolute key, so including the did and the reference
+        const kid = jwt.header.kid.split('#')[0].trim('=');
+        const ckey = await Factory.resolve(kid);
+        const did = ckey ? (ckey.keyType + ':' + ckey.exportPublicKey()) : null;
         return {
             type: "kid",
-            data: jwt.header.kid,
+            data: kid,
             ...(did && {did}),
             ...(ckey && {ckey})
         };
     }
     if (jwt.header.jwk) {
+        const kid = jwt.header.jwk;
+        const ckey = await Factory.createFromJWK(kid);
+        const did = ckey ? (ckey.keyType + ':' + ckey.exportPublicKey()) : null;
         return {
             type: "jwk",
-            data: jwt.header.jwk,
+            data: kid,
             ...(did && {did}),
             ...(ckey && {ckey})
         };
     }
     if (jwt.header.x5c) {
         return {
-            type: "jwk",
-            data: jwt.header.jwk
+            type: "x5c",
+            data: jwt.header.x5c
         };
     }
     return null;

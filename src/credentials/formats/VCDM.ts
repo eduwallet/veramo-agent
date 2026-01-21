@@ -64,10 +64,10 @@ export class VCDM
 
     private async convertHolderToDid(holder:HolderData):Promise<string>
     {
-        if ((holder.type == "kid" || holder.type == "jwk") && holder.did && holder.did.length) {
-            return holder.did;
+        if ((holder.type == "kid" || holder.type == "jwk") && holder.data) {
+            return holder.data;
         }
-        throw new Error("VCDM not applicable for non-did holding JWT proofs");
+        throw new Error("VCDM not supported for x5c JWT proofs");
     }
 
     private createLanguageObject(value:string)

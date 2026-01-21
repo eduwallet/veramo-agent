@@ -70,10 +70,10 @@ export class W3C
 
     private async convertHolderToDid(holder:HolderData):Promise<string>
     {
-        if ((holder.type == "kid" || holder.type == "jwk") && holder.did && holder.did.length) {
-            return holder.did;
+        if ((holder.type == "kid" || holder.type == "jwk") && holder.data) {
+            return holder.data;
         }
-        throw new Error("VCDM not applicable for non-did holding JWT proofs");
+        throw new Error("W3C not applicable for x5c holding JWT proofs");
     }
 
     private getString(value:string)

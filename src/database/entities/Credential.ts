@@ -40,6 +40,11 @@ export class Credential extends BaseEntity {
 
     @Column('varchar')
     //@ts-ignore
+    // representation of holder key as defined by the wallet
+    original_holder: string
+
+    @Column('varchar')
+    //@ts-ignore
     // configured name of the issuer
     issuer: string
 
