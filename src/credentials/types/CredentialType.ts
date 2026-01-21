@@ -1,6 +1,4 @@
-import { Session } from "#root/packages/datastore/index";
-import { CredentialProofData } from "#root/types/internal";
-import { CredentialDisplay } from "#root/types/specification/metadata";
+import { Session } from "#root/database/entities/index";
 import { Credential } from "../Credential.js";
 
 export interface ClaimList {
@@ -29,8 +27,8 @@ export abstract class CredentialType
 
     protected setCredentialDisplay(credential:Credential)
     {
-        if (credential.configuration?.display) {
-            for (const display of credential.configuration.display) {
+        if (credential.configuration?.credential_metadata?.display) {
+            for (const display of credential.configuration.credential_metadata.display) {
                 if (display.name) {
                     credential.addDictionaryValue('name', display.name, display.locale ?? 'en_US');
                 }

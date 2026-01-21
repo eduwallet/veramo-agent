@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('issuer:api');
 
 import { getDbConnection } from '#root/database/databaseService';
-import { Identifier, Key, PrivateKey } from "#root/packages/datastore/index";
+import { Identifier, Key, PrivateKey } from "#root/database/entities/index";
 import { Request, Response } from 'express'
 import { DataList, identifierToScheme } from './types.js';
 import { CryptoKey, Factory } from '@muisit/cryptokey';

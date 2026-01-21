@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('server:api');
 
 import { getDbConnection } from '#root/database/databaseService';
-import { ContextDocument, CredentialType } from "#root/packages/datastore/index";
+import { ContextDocument, CredentialType } from "#root/database/entities/index";
 import { Request, Response } from 'express'
 import { DataList, contextToScheme } from './types.js';
 

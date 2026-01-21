@@ -1,5 +1,5 @@
 import { getDbConnection } from "#root/database/databaseService";
-import { ContextDocument, CredentialType, Identifier, Issuer, Key, VCTDocument } from "#root/packages/datastore/index";
+import { ContextDocument, CredentialType, Identifier, Issuer, Key, VCTDocument } from "#root/database/entities/index";
 import moment from "moment";
 
 export interface DataList {

@@ -7,9 +7,8 @@ import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 import { ApiState } from '#root/types/internal';
 import { CredentialRequest } from '#root/types/specification/credential_request';
 import { JWT } from '#root/jwt/JWT';
-import { getHolderKeyFromProofJwt, getSignatureKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
-import { Factory } from '@muisit/cryptokey';
-import { Session } from '#root/packages/datastore/entities/Session';
+import { getHolderKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
+import { Session } from '#root/database/entities/index';
 import moment from 'moment';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)

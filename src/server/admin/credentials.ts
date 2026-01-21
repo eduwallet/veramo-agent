@@ -2,10 +2,9 @@ import Debug from 'debug';
 const debug = Debug('server:api');
 
 import { getDbConnection } from '#root/database/databaseService';
-import { CredentialType, Identifier, Key, PrivateKey } from "#root/packages/datastore/index";
+import { CredentialType } from "#root/database/entities/index";
 import { Request, Response } from 'express'
 import { DataList, credentialToScheme } from './types.js';
-import { CryptoKey, Factory } from '@muisit/cryptokey';
 
 export async function listCredentials(request: Request, response: Response) {
     try {

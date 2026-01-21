@@ -1,20 +1,13 @@
-
 import Debug from 'debug';
 const debug = Debug('issuer:eduid');
+
 import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { Credential } from '#root/credentials/Credential';
 import { CredentialType } from "#root/credentials/types/CredentialType";
-import { Session, Credential as DBCredential } from "#root/packages/datastore/index";
-import { getDbConnection } from "#root/database/databaseService";
-import { StatusListRevocationState } from "#root/types/api";
-import moment from "moment";
+import { Session, Credential as DBCredential } from "#root/database/entities/index";
 
 export class EduIDEntitlement extends CredentialType
 {
-    private acceptedClaims:string[] = [
-            "IsMemberOf"
-    ];
-
     public async resolve(credential:Credential, session:Session) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);

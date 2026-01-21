@@ -3,7 +3,7 @@ import { StringKeyedObject } from '#root/types/index';
 import { StatusListsOption } from '#root/types/internal/statuslists';
 import { CredentialOffer } from '#root/types/specification/credential_offer';
 import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
-import { Session } from '#root/packages/datastore/entities/Session';
+import { Session } from '#root/database/entities/index';
 import { CryptoKey } from '@muisit/cryptokey';
 
 // Session state as maintained by the Issuer in the whole process of creating an offer up

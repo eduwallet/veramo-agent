@@ -13,7 +13,7 @@ import { JOSE } from "#root/credentials/formats/JOSE";
 import { JSONLD } from "./formats/JSONLD.js";
 import { VCDM } from "./formats/VCDM.js";
 import { EduID } from "./types/EduID.js";
-import { Session } from "#root/packages/datastore/index";
+import { Session } from "#root/database/entities/index";
 import { EduIDEntitlement } from "./types/EduIDEntitlement.js";
 import { W3C } from "./formats/W3C.js";
 

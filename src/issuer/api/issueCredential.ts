@@ -6,7 +6,7 @@ import { CredentialOfferStatus } from "#root/types/api";
 import { CredentialProofData } from "#root/types/internal";
 import { CredentialResponse } from "#root/types/specification/credential_response";
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
-import { Nonce } from '#root/packages/datastore/index';
+import { Nonce } from '#root/database/entities/index';
 
 export async function issueCredential(issuer:Issuer, proofData:CredentialProofData): Promise<CredentialResponse>
 {

@@ -6,7 +6,7 @@ const debug = Debug('issuer:did');
 
 import { DID_OPTIONS_PATH } from "#root/environment";
 import { loadJsonFiles } from "#root/utils/generic";
-import { Identifier, Key, PrivateKey } from "#root/packages/datastore/index";
+import { Identifier, Key, PrivateKey } from "#root/database/entities/index";
 import { CryptoKey, Factory } from '@muisit/cryptokey';
 import { getDbConnection } from '#root/database/databaseService';
 

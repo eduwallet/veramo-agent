@@ -11,7 +11,7 @@ import { Issuer } from "./Issuer.js";
 import { IssuerConfiguration } from "types/internal.js";
 import { MetadataConfiguration } from "types/api/metadata.js";
 import { getDbConnection } from '#root/database/databaseService';
-import { Issuer as IssuerEntity } from '#root/packages/datastore/index';
+import { Issuer as IssuerEntity } from '#root/database/entities/index';
 import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface IssuerStore {

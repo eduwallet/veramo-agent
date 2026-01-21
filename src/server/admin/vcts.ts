@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('server:api');
 
 import { getDbConnection } from '#root/database/databaseService';
-import { VCTDocument } from "#root/packages/datastore/index";
+import { VCTDocument } from "#root/database/entities/index";
 import { Request, Response } from 'express'
 import { DataList, vctToScheme } from './types.js';
 

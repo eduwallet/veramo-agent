@@ -7,7 +7,6 @@ import {
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm'
-import { Key } from '#root/packages/datastore/index'
 
 @Entity('issuer')
 @Index(['did'], { unique: true })

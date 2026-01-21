@@ -1,5 +1,5 @@
 import { JWK } from 'jose'
-import { ClaimsList, NameSpacedClaimsList } from '#root/types/specification/metadata';
+import { CredentialConfigurationClaimData, NameSpacedCredentialConfigurationMetadata } from '#root/types/specification/metadata';
 
 // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-ID1.html#name-credential-request
 export type CredentialRequest = CredentialRequestBase &
@@ -46,12 +46,12 @@ export interface CredentialRequestCredentialDefinitionWithContext {
 
 export interface CredentialRequestIsoMdl {
     doctype?:string;
-    claims: NameSpacedClaimsList;
+    claims: NameSpacedCredentialConfigurationMetadata;
 }
 
 export interface CredentialRequestSdJwt {
     vct?:string;
-    claims: ClaimsList;
+    claims: CredentialConfigurationClaimData;
 }
 
 export interface CredentialResponseEncryption {

@@ -1,7 +1,7 @@
 import moment from 'moment';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { getDbConnection } from '#root/database/databaseService';
-import { Nonce } from '#root/packages/datastore/entities/Nonce';
+import { Nonce } from '#root/database/entities/index';
 import { LessThan } from 'typeorm';
 
 export class NonceManager {

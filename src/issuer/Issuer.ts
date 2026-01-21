@@ -11,7 +11,7 @@ import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/
 import { CredentialConfiguration, CredentialConfigurations,  Metadata } from '#root/types/specification/metadata';
 import { getCredentialConfigurationStore } from "#root/credentials/Store";
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential as CredentialEntity, Identifier as IdentifierEntity} from "#root/packages/datastore/index";
+import { Credential as CredentialEntity, Identifier as IdentifierEntity, Session} from "#root/database/entities/index";
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import { Credential } from "#root/credentials/Credential";
 import { SessionStateManager } from '#root/utils/SessionStateManager';
@@ -20,7 +20,6 @@ import { retrieveASServerKey } from '#root/issuer/lib/retrieveASServerKey';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
-import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
@@ -338,10 +337,6 @@ export class Issuer
         }
         else if(metadata.authorization_servers) {
             delete metadata.authorization_servers;
-        }
-        // left-overs from backwards compatible metadata
-        if(metadata.authorization_server) {
-            delete metadata.authorization_server;
         }
 
         return metadata;

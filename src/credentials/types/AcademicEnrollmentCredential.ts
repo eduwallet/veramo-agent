@@ -2,7 +2,7 @@ import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { CredentialType } from '#root/credentials/types/CredentialType';
 import { Credential } from '#root/credentials/Credential';
 import { createUniqueId } from "#root/utils/createUniqueId";
-import { Session } from "#root/packages/datastore/index";
+import { Session } from "#root/database/entities/index";
 
 export class AcademicEnrollmentCredential extends CredentialType
 {

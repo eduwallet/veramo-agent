@@ -3,7 +3,7 @@ import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { Credential } from '#root/credentials/Credential';
 import { CredentialType } from "#root/credentials/types/CredentialType";
 import moment from "moment";
-import { Session } from "#root/packages/datastore/index";
+import { Session } from "#root/database/entities/index";
 
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
