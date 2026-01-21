@@ -4,20 +4,12 @@ import { CryptoKey, Factory } from "@muisit/cryptokey";
 
 export async function getHolderKeyFromProofJwt(jwt:JWT): Promise<HolderData|null>
 {
-    let ckey:CryptoKey|null = null;
-    if (jwt.header.kid) {
-        // do some cleanup. The trim is only needed because we have a deviant test vector
-        const kid = jwt.header.kid.split('#')[0].trim('=');
-        ckey = await Factory.resolve(kid);
-    }
-    else if(jwt.header.jwk) {
-        ckey = await Factory.createFromJWK(jwt.header.jwk);
-    }
-
     if (jwt.header.kid) {
         // the kid must be an absolute key, so including the did and the reference
-        const kid = jwt.header.kid.split('#')[0].trim('=');
-        const ckey = await Factory.resolve(kid);
+        const kid = jwt.header.kid;
+        // the split is needed because resolve does not take a reference (though it should)
+        // the trim is needed due to a deviant test vector
+        const ckey = await Factory.resolve(kid.split('#')[0].trim('='));
         const did = ckey ? (ckey.keyType + ':' + ckey.exportPublicKey()) : null;
         return {
             type: "kid",
