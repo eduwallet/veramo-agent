@@ -109,6 +109,9 @@ export class EduID extends CredentialType
             throw new Error("Invalid uid detected, not issuing credential");
         }
         const holderKey = credential.holder;
+
+        // the holderKey.did value is a reinterpretation of the key material as keytype : public-key-hex
+        // This allows us to find previous keys no matter if their representation has changed
         if (!holderKey || !holderKey.did || holderKey.did.length == 0) {
             debug("invalid holder key, missing did", holderKey);
             throw new Error("Invalid holder key detected");
