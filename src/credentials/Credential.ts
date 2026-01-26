@@ -56,8 +56,11 @@ export class Credential
             this.handleExpirationDate(this.data._ttl);
             delete this.data._ttl;
         }
-        if (this.metaData?.expiration) {
+        if (this.metaData.expiration) {
             this.handleExpirationDate(this.metaData.expiration);
+        }
+        if (process.env.EXPIRATION_DATE) {
+            this.handleExpirationDate(process.env.EXPIRATION_DATE);
         }
         debug('setting issuanceDate to now');
         this.metaData.issuanceDate = moment().toISOString();
@@ -122,10 +125,23 @@ export class Credential
         }
     }
 
-    private handleExpirationDate(date:string)
+    private handleExpirationDate(date?:string)
     {
-        if (date && date.toString().length) {
-            this.metaData.expirationDate = moment().add(parseInt(date.toString()), 's').toISOString();
+        let currentDate = this.metaData.expirationDate ? moment(this.metaData.expirationDate) : null;
+        let expDate = null;
+        if (date && typeof(date) == 'string' && date.indexOf('-') > 0) {
+            expDate = moment(date);
+        }
+        else if (date) {
+            expDate = moment().add(parseInt(date.toString()), 's');
+        }
+
+        if (expDate) {
+            debug('current expiry is ', currentDate, 'vs',expDate);
+            if (!currentDate || currentDate.isAfter(expDate)) {
+                currentDate = expDate;
+            }
+            this.metaData.expirationDate = currentDate.toISOString();
         }
     }
 
