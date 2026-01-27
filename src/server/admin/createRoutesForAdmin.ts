@@ -7,10 +7,8 @@ import { createCredential, deleteCredential, listCredentials, storeCredential } 
 import { createContextDocument, deleteContextDocument, listContextDocuments, storeContextDocument } from './contexts.js';
 import { createVCTDocument, deleteVCTDocument, listVCTs, storeVCTDocument } from './vcts.js';
 import { adminBearerToken, hasAdminBearerToken } from '#root/utils/adminBearerToken';
-import { getBuildInfo } from '#root/utils/getBuildInfo';
-import { sendErrorResponse } from '../sendErrorResponse.js';
-import { ErrorCodes } from '#root/types/api';
 import { getVersion } from './getVersion.js';
+import { exportConfig } from './exportConfig.js';
 
 function bearerAdminForAPI() {
     passport.use('admin-api', new Strategy(
@@ -40,6 +38,10 @@ export async function createRoutesForAdmin(app:Express) {
         () => {
             setTimeout(() => { process.exit(0)}, 2000);
         }
+    );
+    router.get('/export',
+        passport.authenticate('admin-api', { session: false }),
+        exportConfig
     )
 
     router.get('/identifiers', 
