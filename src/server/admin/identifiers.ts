@@ -100,7 +100,7 @@ export async function storeIdentifier(request: Request<StoreIdentifierRequest>, 
         const dbKey = identifier.keys[0];
         const pkeys = dbConnection.getRepository(PrivateKey);
         const pkey = await pkeys.findOneBy({alias:dbKey.kid});
-        const ckey = await Factory.createFromType(dbKey.type, pkey?.privateKeyHex);
+        const ckey = await Factory.createFromType(dbKey.type, await pkey?.decodeKey());
 
         await setIdentifierData(request.body, identifier, ckey);
 
