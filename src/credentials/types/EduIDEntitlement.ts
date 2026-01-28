@@ -54,7 +54,7 @@ export class EduIDEntitlement extends CredentialType
             throw new Error("No entitlement found");
         }
         else {
-            retval.entitlement = entitlementsFound.keys();
+            retval.entitlement = Array.from(entitlementsFound.keys());
         }
 
         // enrich the credential with the 'sub' identifier claim
