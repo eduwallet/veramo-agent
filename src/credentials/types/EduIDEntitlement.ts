@@ -33,10 +33,11 @@ export class EduIDEntitlement extends CredentialType
         const entitlementsFound = new Set<string>();
 
         debug("accessData is ", session.data.accessData);
-        if (session.data.accessData.isMemberOf) {
-            const memberOf = session.data.accessData.isMemberOf;
+        if (session.data.accessData.edumember_is_member_of) {
+            const memberOf = session.data.accessData.edumember_is_member_of;
             const lst = Array.isArray(memberOf) ? memberOf : memberOf.split(' ');
 
+            debug("looking for entitlements in ", lst, "using", entitlementToLookFor);
             for (const entitlement of entitlementToLookFor) {
                 // filter all entitlements that startWith the entitlementToLookFor
                 const entitlements:string[] = lst.filter((i:string) => i.startsWith(entitlement));
