@@ -1,5 +1,5 @@
 import { getDbConnection } from '#root/database/databaseService';
-import { ContextDocument, CredentialType, Identifier, Issuer, VCTDocument } from '#root/packages/datastore/index';
+import { ContextDocument, CredentialType, Identifier, Issuer, VCTDocument } from '#root/database/entities/index';
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { ErrorCodes } from '#root/types/api';
 import { ArchiveFile, exportConfigAsZip } from '#root/utils/exportConfigAsZip';
