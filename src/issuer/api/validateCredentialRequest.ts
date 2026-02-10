@@ -125,7 +125,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     // if we get a single ApiState back, it is the error on the proof that fails
     if (!Array.isArray(proofResults.data) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
         debug("invalid proof");
-        return error;
+        return proofResults;
     }
     session.data.proofs = proofResults.data;
     await issuer.storeSession(session);
