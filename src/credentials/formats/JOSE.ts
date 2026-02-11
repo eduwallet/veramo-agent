@@ -8,6 +8,7 @@ import { JSONLD } from '#root/credentials/formats/JSONLD';
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { JWT } from '#root/jwt/JWT';
+import { Factory } from '@muisit/cryptokey';
 
 export class JOSE
 {
@@ -55,7 +56,7 @@ export class JOSE
         // these headers, but they are not explicitely disallowed either
         jwt.header = {
             alg: this.credential.issuer!.algorithm(),
-            kid: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
+            kid: '#' + Factory.getKeyReference(this.credential.issuer!.did!.did),
             // VCDM 1.1: if typ is present, it must be JWT
             typ: this.type == 'vc+jwt' ? this.type : 'JWT',
             cty: 'vc'

@@ -23,7 +23,13 @@ export class OpenBadgeCredential extends CredentialType {
                 credential.contexts = credential.presetCredential[key];
                 break;
               case 'credentialSubject':
-                credential.data = credential.presetCredential[key];
+                const data = Object.assign({}, credential.presetCredential[key]);
+                // if the preset credential has an id in the credentialSubject, remove it. We need this to
+                // bind our key
+                if (data.id) {
+                  delete data.id;
+                }
+                credential.data = data;
                 break;
               case 'name':
               case 'description':
