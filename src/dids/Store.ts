@@ -44,7 +44,7 @@ class DIDConfigurationStore {
             }
         }
         catch (e) {
-            debug("Missing conf path for DIDs");
+            debug("Missing conf path for DIDs", e);
         }
     }
 
@@ -127,13 +127,23 @@ class DIDConfigurationStore {
         const krepo = dbConnection.getRepository(Key);
         await krepo.save(dbKey);
 
-        const pKey = new PrivateKey();
-        pKey.alias = dbKey.kid;
-        pKey.type = dbKey.type;
-        pKey.setSeed();
-        await pKey.encodeKey(ckey.exportPrivateKey());
-        const prepo = dbConnection.getRepository(PrivateKey);
-        await prepo.save(pKey);
+        try {
+            debug("storing private key");
+            const pKey = new PrivateKey();
+            pKey.alias = dbKey.kid;
+            pKey.type = dbKey.type;
+            debug("setting seed");
+            pKey.setSeed();
+            debug("encoding private key using seed and passphrase");
+            await pKey.encodeKey(ckey.exportPrivateKey());
+            debug("storing actual entity in repository");
+            const prepo = dbConnection.getRepository(PrivateKey);
+            await prepo.save(pKey);
+            debug("save successful");
+        }
+        catch (e) {
+            debug ("Caught exception storing private key", e);
+        }
 
         return {
             identifier,
