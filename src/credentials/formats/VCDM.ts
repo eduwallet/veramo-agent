@@ -124,6 +124,13 @@ export class VCDM
                 case 'expirationDate':
                     // pass
                     break;
+                case 'issuer':
+                    baseCredential.issuer = this.credential.metaData[key];
+                    // make sure our issuer.id is set correctly though
+                    if (typeof(baseCredential.issuer) == 'object') {
+                        baseCredential.issuer.id = this.credential.issuer!.did!.did;
+                    }
+                    break;
                 default:
                     baseCredential[key] = this.credential.metaData[key];
                     break;
