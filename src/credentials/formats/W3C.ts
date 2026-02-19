@@ -22,9 +22,13 @@ export class W3C
 
         const issuerName = this.getString('issuer_name');
         const issuerDescription = this.getString('issuer_description');
+        let context = (this.credential.contexts ?? []).slice();
+        if (!context.includes('https://www.w3.org/2018/credentials/v1')) {
+            context.unshift('https://www.w3.org/2018/credentials/v1');
+        }
         let baseCredential:W3CType = {
             // The value of the @context property MUST be an ordered set where the first item is a URI with the value https://www.w3.org/2018/credentials/v1.
-            "@context": ["https://www.w3.org/2018/credentials/v1", ...this.credential.contexts],
+            "@context": context,
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
             issuer: {

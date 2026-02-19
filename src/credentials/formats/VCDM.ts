@@ -19,8 +19,12 @@ export class VCDM
         debug("creating VCDM");
         const issuerName = this.createLanguageObject('issuer_name');
         const issuerDescription = this.createLanguageObject('issuer_description');
+        let context = (this.credential.contexts ?? []).slice();
+        if (!context.includes('https://www.w3.org/ns/credentials/v2')) {
+            context.unshift('https://www.w3.org/ns/credentials/v2');
+        }
         let baseCredential:VCDMType = {
-            "@context": ["https://www.w3.org/ns/credentials/v2", ...this.credential.contexts],
+            "@context": context,
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
             issuer: {
