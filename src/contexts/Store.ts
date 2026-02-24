@@ -26,22 +26,22 @@ class ContextConfigurationStore {
     private configuration:ContextConfigurations = {
       'https://www.w3.org/ns/credentials/v2': {
           fullPath: 'https://www.w3.org/ns/credentials/v2',
-          basePath: "./src/contexts/defaults/www.w3.org:ns:credentials:v2",
+          basePath: "./src/contexts/defaults/www.w3.org-ns-credentials-v2",
           document: null
       },
       'https://w3id.org/security/v1': {
         fullPath: 'https://w3id.org/security/v1',
-        basePath: "./src/contexts/defaults/w3id.org:security:v1",
+        basePath: "./src/contexts/defaults/w3id.org-security-v1",
         document: null
       },
       'https://w3id.org/security/v2': {
         fullPath: 'https://w3id.org/security/v2',
-        basePath: "./src/contexts/defaults/w3id.org:security:v2",
+        basePath: "./src/contexts/defaults/w3id.org-security-v2",
         document: null
       },
       'https://w3id.org/security/suites/jws-2020/v1': {
         fullPath: "https://w3id.org/security/suites/jws-2020/v1",
-        basePath: "./src/contexts/defaults/w3id.org:security:suites:jws-2020:v1",
+        basePath: "./src/contexts/defaults/w3id.org-security-suites-jws-2020-v1",
         document: null
       }
     };
