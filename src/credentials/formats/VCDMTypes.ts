@@ -60,6 +60,7 @@ export interface VCDM {
     refreshService?:ExternalService|ExternalService[]; // https://www.w3.org/TR/vc-data-model-2.0/#refreshing
     termsOfUse?:ExternalService|ExternalService[]; // https://www.w3.org/TR/vc-data-model-2.0/#terms-of-use
     evidence?:ExternalService|ExternalService[]; // https://www.w3.org/TR/vc-data-model-2.0/#evidence
+    [x:string]:any;
 }
 
 export interface W3CJWT {

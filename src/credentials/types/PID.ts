@@ -3,12 +3,13 @@ import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { Credential } from '#root/credentials/Credential';
 import { CredentialType } from "#root/credentials/types/CredentialType";
 import moment from "moment";
+import { Session } from "#root/database/entities/index";
 
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
 export class PID extends CredentialType
 {
-    public async resolve(credential:Credential) {
+    public async resolve(credential:Credential, session:Session) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
         credential.data = this.convertDataToClaims(credential.data);

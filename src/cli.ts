@@ -4,7 +4,7 @@ debug('start of cli.ts');
 import { getArgs } from "#root/utils/args";
 debug('cli.ts: importing getDbConnection');
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential } from "#root/packages/datastore/entities/Credential";
+import { Credential } from "#root/database/entities/Credential";
 import { determineFieldLengths, FieldSettings } from '#root/utils/cli/determineFieldLengths';
 import { printField, printHeader } from '#root/utils/cli/printField';
 

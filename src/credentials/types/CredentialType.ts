@@ -1,5 +1,4 @@
-import { CredentialProofData } from "#root/types/internal";
-import { CredentialDisplay } from "#root/types/specification/metadata";
+import { Session } from "#root/database/entities/index";
 import { Credential } from "../Credential.js";
 
 export interface ClaimList {
@@ -9,7 +8,7 @@ export interface ClaimList {
 export abstract class CredentialType
 {
     public abstract check(credential:Credential):boolean;
-    public abstract resolve(credential:Credential):Promise<boolean>;
+    public abstract resolve(credential:Credential, session:Session):Promise<boolean>;
     
     protected claimPresent(claim:string, type:string, claims:ClaimList)
     {
@@ -28,8 +27,8 @@ export abstract class CredentialType
 
     protected setCredentialDisplay(credential:Credential)
     {
-        if (credential.configuration?.display) {
-            for (const display of credential.configuration.display) {
+        if (credential.configuration?.credential_metadata?.display) {
+            for (const display of credential.configuration.credential_metadata.display) {
                 if (display.name) {
                     credential.addDictionaryValue('name', display.name, display.locale ?? 'en_US');
                 }
@@ -43,7 +42,8 @@ export abstract class CredentialType
     protected setIssuer(credential:Credential)
     {
         if (credential.issuer) {
-            const display = (credential.issuer.metadata.display ?? [{}]);
+            const metadata = credential.issuer.generateMetadata();
+            const display = (metadata.display ?? [{}]);
             for (const label of display) {
                 if (label.name) {
                     credential.addDictionaryValue('issuer_name', label.name, label.locale ?? 'en_US');
@@ -58,6 +58,26 @@ export abstract class CredentialType
 
             if (!display || display.length == 0) {
                 credential.addDictionaryValue('issuer_name', credential.issuer.options.baseUrl, 'en_US');
+            }
+        }
+    }
+
+    public async retrieveExternalCredential(credential:Credential, session:Session)
+    {
+        if (credential.callback !== null) {
+            const result = await fetch(credential.callback, {
+                method: 'POST',
+                body: JSON.stringify(session.data.accessData),
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            });
+
+            if (result.status == 200) {
+                credential.presetCredential = await result.json();
+            }
+            else {
+                throw new Error("Credential denied");
             }
         }
     }

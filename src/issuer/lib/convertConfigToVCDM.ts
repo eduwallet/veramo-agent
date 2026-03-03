@@ -26,8 +26,12 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
         },
         credential_metadata: {
             ...(config.display && {display: config.display}),
-            claims: []
+            claims: config?.credential_definition.claims ?? []
         }
+    }
+
+    if (config.format == 'jwt_vc_json') {
+        vcdm.credential_metadata!.claims = prependAllClaimPaths(vcdm.credential_metadata!.claims!, 'vc');
     }
 
     for (const key of Object.keys(config?.credential_definition?.credentialSubject ?? {})) {
@@ -50,4 +54,15 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
         vcdm.credential_metadata!.claims!.push(claim);
     }
     return vcdm as CredentialConfiguration;    
+}
+
+function prependAllClaimPaths(claims:CredentialConfigurationClaimData[], key:string)
+{
+    let retval:CredentialConfigurationClaimData[] = [];
+    for (const clm of claims) {
+        const claim = JSON.parse(JSON.stringify(clm)); // clone the data
+        claim.path.unshift(key);
+        retval.push(claim);
+    }
+    return retval;
 }

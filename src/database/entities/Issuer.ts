@@ -7,7 +7,6 @@ import {
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm'
-import { Key } from '#root/packages/datastore/index'
 
 @Entity('issuer')
 @Index(['did'], { unique: true })
@@ -43,6 +42,10 @@ export class Issuer extends BaseEntity {
     @Column({ type: 'text', nullable: true})
     // @ts-ignore
     clientId?: string
+
+    @Column({ type: 'text', nullable: true})
+    // @ts-ignore
+    clientSecret?: string
 
     @Column({ type: 'text', nullable: true})
     // @ts-ignore

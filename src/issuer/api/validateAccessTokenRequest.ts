@@ -5,7 +5,7 @@ import { PRE_AUTHORIZED_CODE } from "types/specification/credential_offer.js";
 import { ErrorCodes } from "types/api.js";
 import { ApiState } from "types/internal.js";
 import { GrantTypes, TokenRequest } from "types/specification/access_token.js";
-import { Session } from '#root/packages/datastore/entities/Session';
+import { Session } from '#root/database/entities/index';
 
 export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest): Promise<ApiState> {
     debug("validating access token request", tokenRequest);

@@ -11,19 +11,18 @@ import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/
 import { CredentialConfiguration, CredentialConfigurations,  Metadata } from '#root/types/specification/metadata';
 import { getCredentialConfigurationStore } from "#root/credentials/Store";
 import { getDbConnection } from "#root/database/databaseService";
-import { Credential as CredentialEntity, Identifier as IdentifierEntity, PrivateKey as PrivateKeyEntity} from "#root/packages/datastore/index";
+import { Credential as CredentialEntity, Identifier as IdentifierEntity, Session} from "#root/database/entities/index";
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import { Credential } from "#root/credentials/Credential";
-import { getVctForCredentialType } from '#root/vct/Store';
 import { SessionStateManager } from '#root/utils/SessionStateManager';
 import { StringKeyedObject } from '#root/types/index';
 import { retrieveASServerKey } from '#root/issuer/lib/retrieveASServerKey';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CryptoKey, Factory } from '@muisit/cryptokey';
-import { Session } from '#root/packages/datastore/entities/Session';
 import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
+import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
 import { convertConfigToSDJWT } from './lib/convertConfigToSDJWT.js';
 
@@ -35,18 +34,17 @@ export class Issuer
     public options:IssuerConfiguration;
     public did:IdentifierEntity|null = null;
     public key:CryptoKey|null;
-    public keyRef:string;
     public router:Router|undefined;
     public sessionData:SessionStateManager;
     public nonceStates:NonceManager;
     public serverKeys:StringKeyedObject;
+    public serverMetadata:any;
     public usesNonces:boolean;
 
     public constructor(_options:IssuerConfiguration, _metadata: MetadataConfiguration) {
         this.options = _options;
         this.metadata = _metadata;
         this.key = null;
-        this.keyRef = _options.key ?? '';
         this.id = _options.id;
         this.name = _options.name;
         this.sessionData = new SessionStateManager(this.name);
@@ -74,14 +72,65 @@ export class Issuer
 
     public async retrieveASServerKeys()
     {
-        if (this.options.authorizationEndpoint) {
+        if (this.options.authorizationEndpoint && (this.serverKeys.length == 0 || !this.serverMetadata)) {
+            debug("retrieving AS server keys and metadata");
             const keys = await retrieveASServerKey(this.options.authorizationEndpoint);
             if (keys !== null && keys.length) {
                 for (const key of keys) {
                     this.serverKeys[key.kid] = key;
                 }
             }
+
+            this.serverMetadata = await retrieveServerMetadata(this.options.authorizationEndpoint);
+            if (!this.serverMetadata) {
+                debug("Could not contact server ", this.options.authorizationEndpoint);
+            }
         }
+    }
+
+    public async retrieveASUserInfo(token:string)
+    {
+        this.retrieveASServerKeys();
+        const endpoint = this.serverMetadata?.userinfo_endpoint;
+        try {
+            const json = await fetch(endpoint, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            }).then((r) => r.json());
+            return json;
+        }
+        catch (e:any) {
+            console.error("Caught error retrieving the user info endpoint", endpoint, token)
+        }
+        return {};
+    }
+
+    public async retrieveASIssuerIntrospection(token:string)
+    {
+        this.retrieveASServerKeys();
+        const endpoint = this.serverMetadata?.authorization_introspection_endpoint;
+        try {
+            // the client secret contains the clientId + ':' + clientSecret, allowing us to use the clientId as the id sent to the wallet for use
+            // use the Buffer route here instead of toString(fromString(x,'utf-8'),'base64') because that results in missing padding
+            const basicauth = Buffer.from(this.options.clientSecret ?? '', 'utf-8').toString('base64');
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + basicauth,
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: new URLSearchParams({
+                    'access-token': token
+                })
+            });
+            const json = await resp.json();
+            return json;
+        }
+        catch (e:any) {
+            console.error("Caught error retrieving the user info endpoint", endpoint, token)
+        }
+        return {};
     }
 
     public async signData(data: Uint8Array)
@@ -165,11 +214,20 @@ export class Issuer
         else {
             dbCred.expirationDate = undefined;
         }
-        dbCred.holder = session.data.holder || '';
-        dbCred.credpid = session.data.principalCredentialId || '';
+        dbCred.holder = credential.holder?.did || '';
+        if (credential.holder?.type == 'kid') {
+            dbCred.original_holder = credential.holder?.data || '';
+        }
+        else if(credential.holder?.type == 'jwk') {
+            dbCred.original_holder = JSON.stringify(credential.holder?.data || {});
+        }
+        else if(credential.holder?.type == 'x5c') {
+            dbCred.original_holder = credential.holder?.data || '';
+        }
+        dbCred.credpid = credential.principalId || '';
         dbCred.issuer = this.name;
-        dbCred.metadata = this.getCredentialConfiguration(session.data.credentialId) as StringKeyedObject;
-        dbCred.credentialId = session.data.credentialId || '';
+        dbCred.metadata = this.getCredentialConfiguration(credential.type) as StringKeyedObject;
+        dbCred.credentialId = credential.type || '';
         if (credential.metaData.credentialStatus) {
             if (!Array.isArray(credential.metaData.credentialStatus)) {
                 dbCred.statuslists = [credential.metaData.credentialStatus];
@@ -178,6 +236,7 @@ export class Issuer
                 dbCred.statuslists = credential.metaData.credentialStatus;
             }
         }
+        dbCred.status='ISSUED'; // initial status
         await repo.save(dbCred);
         session.data.uuid = dbCred.uuid;
     }
@@ -288,10 +347,6 @@ export class Issuer
         else if(metadata.authorization_servers) {
             delete metadata.authorization_servers;
         }
-        // left-overs from backwards compatible metadata
-        if(metadata.authorization_server) {
-            delete metadata.authorization_server;
-        }
 
         return metadata;
     }
@@ -370,11 +425,12 @@ export class Issuer
       if (holder && holder.length) {
           qb = qb.andWhere('c.holder=:holder', {holder});
       }
+      qb = qb.andWhere('c.issuer=:issuer', {issuer: this.name});
 
       return await qb.orderBy('c.id', 'ASC').getRawMany();
     }
 
-    public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string): Promise<StatusListRevocationState>
+    public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string|null, onlyRevoke:boolean = false): Promise<StatusListRevocationState>
     {
         debug("revoking specific credential " + uuid);
         const dbConnection = await getDbConnection();
@@ -396,9 +452,18 @@ export class Issuer
         debug("looping over " + statuslists.length + " statuslists");
         for (const statlist of statuslists) {
             if (!listName || statlist.credentialStatus?.id?.startsWith(listName)) {
-                retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+                // if we are only revoking, only call on the lists with purpose revocation
+                // this allows us to explicitely suspend credentials
+                // TODO: if we only suspend, this implementation still returns REVOKED and stores it
+                // as such on the credential. We need to implement the additional features of the
+                // remote status list and its messages
+                if (!onlyRevoke || !statlist.purpose || statlist.purpose == 'revocation') {
+                    retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+                }
             }
         }
+        credential.status = retval;
+        await repo.save(credential);
         return retval;
     }
 

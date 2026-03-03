@@ -9,6 +9,7 @@ import { getVctForCredentialType } from "#root/vct/Store";
 import { VctClaimPathElement } from "#root/types/specification/vct";
 import { fromString } from 'uint8arrays';
 import moment from 'moment';
+import { Factory } from '@muisit/cryptokey';
 
 export class SDJWT
 {
@@ -25,14 +26,25 @@ export class SDJWT
         debug("signing SD JWT");
         const vct = getVctForCredentialType(this.credential.type!);
 
-        let baseCredential:SdJwtVcPayload = {
+        const baseCredential:SdJwtVcPayload = {
             iss: this.credential.issuer!.did!.did,
             vct: vct!.vct!,
             iat: moment().unix()
         };
         if (this.credential.automaticallyBindHolder && this.credential.holder) {
             // https://www.rfc-editor.org/rfc/rfc7800.html
-            baseCredential.cnf = {kid: this.credential.holder};
+            if (this.credential.holder.type == "kid") {
+                baseCredential.cnf = {kid: this.credential.holder.data};
+            }
+            else if (this.credential.holder.type == "jwk") {
+                baseCredential.cnf = {jwk: this.credential.holder.data};
+            }
+            else if (this.credential.holder.type == "x5c") {
+                baseCredential.cnf = {x5c: this.credential.holder.data};
+            }
+            else {
+                throw new Error("Cannot create confirm cnf claim for holder binding for non supported proof type " + this.credential.holder.type);
+            }
         }
 
         // if we have a credentialSubject, convert it to claims
@@ -45,6 +57,7 @@ export class SDJWT
         if (this.credential.metaData.expirationDate) {
             baseCredential.exp = moment(this.credential.metaData.expirationDate).unix();
         }
+        this.addStatusListData(baseCredential);
 
         // TODO: encode the baseCredential.status referring to the status list implementation
         // the spec does not define this explicitely
@@ -60,12 +73,12 @@ export class SDJWT
           hashAlg: 'sha-256',
         });
     
-        let disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(vct);
+        const disclosureFrame:DisclosureFrame<SdJwtVcPayload> = this.createDisclosureFrameFromVct(vct);
         const sdcredential = await sdjwt.issue(baseCredential, disclosureFrame, {
           header: {
             typ: this.type,
             cty: 'vc',
-            kid: '#' + this.credential.issuer!.keyRef
+            kid: '#' + Factory.getKeyReference(this.credential.issuer!.did!.did)
           },
         });
     
@@ -104,5 +117,34 @@ export class SDJWT
             disclosureFrame[key] = frame as any;
         }
         return disclosureFrame;
+    }
+
+    // add the status-list data for IETF token lists.
+    private addStatusListData(baseCredential:SdJwtVcPayload)
+    {
+        if (this.credential.metaData.credentialStatus) {
+            let statusses:any = [];
+
+            if (this.credential.metaData.credentialStatus.type) {
+                statusses = [this.credential.metaData.credentialStatus];
+            }
+            else {
+                statusses = this.credential.metaData.credentialStatus;
+            }
+            
+            // as opposed to the JOSE implementation, we retain all the available
+            // status lists and add them as entries here.
+            // However, the IETF spec only allows a single status list. We take the first
+            // one if there are more, so SDJWT implementations must restrict the number
+            // of configured status lists
+            if (statusses.length > 0) {
+                // IETF specifies that the status of a JWT is embedded in the status claim
+                // as a status_list entry, no matter the encoding.
+                // The statuslist agent returns a ready to use return value
+                baseCredential.status = {
+                    status_list: statusses[0].credentialStatus
+                };
+            }
+        }
     }
 }

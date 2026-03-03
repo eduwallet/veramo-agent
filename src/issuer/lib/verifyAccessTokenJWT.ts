@@ -1,6 +1,4 @@
 import { Issuer } from "#root/issuer/Issuer";
-import { jwtVerify } from "jose";
-import { Factory } from "@muisit/cryptokey";
 import { JWT } from "#root/jwt/JWT";
 
 /*
@@ -14,24 +12,27 @@ import { JWT } from "#root/jwt/JWT";
 
 export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
 {
-    // because we do not yet support RSA256 in CryptoKey, we use the jwk implementation
-    if (issuer.usesAuthorisedCodeFlow()) {
-        return await jwtVerify(token, (a:any, b?:any) => getVerificationKey(issuer, a, b), {
-            algorithms: ['RS256', 'EdDSA', 'ES256']
-        });   
-    }
-    else {
+    try {
         const jwt = JWT.fromToken(token);
         if (await jwt.verify(issuer.key!)) {
             return jwt;
         }
+        throw new Error("Invalid JWT");
     }
-    return null;
-}
+    catch {
+        if (issuer.usesAuthorisedCodeFlow()) {
+            const userdata = await issuer.retrieveASIssuerIntrospection(token);
+            if (userdata && Object.keys(userdata).length > 0 && userdata.user_info) {
+                const jwt = new JWT();
+                jwt.payload = {
+                    ...userdata.user_info,
+                    ...(userdata.token_details && userdata.token_details.issuer_state && {issuer_state: userdata.token_details.issuer_state})
+                };
+                jwt.payload.iss = issuer.options?.authorizationEndpoint; // the location where we got our info
+                return jwt;
+            }
+        }
+    }
 
-async function getVerificationKey(issuer:Issuer, protectedHeader:any, jws?:any): Promise<any> {
-    if (protectedHeader.kid && issuer.serverKeys[protectedHeader.kid]) {
-        return issuer.serverKeys[protectedHeader.kid];
-    }
-    return {};
+    return null;
 }

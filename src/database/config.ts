@@ -1,4 +1,5 @@
-import {Entities, migrations } from '#root/packages/datastore/index'
+import { Entities } from './entities/index.js';
+import { migrations } from './migrations/index.js';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions.js'
 import {DB_NAME, DB_SCHEMA, DB_HOST, DB_USER, DB_PORT, DB_PASSWORD} from "#root/environment";
 

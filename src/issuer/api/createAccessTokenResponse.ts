@@ -4,7 +4,7 @@ import { AccessTokenResponse } from 'types/specification/access_token.js';
 import { Issuer } from 'issuer/Issuer.js';
 import { CredentialOfferStatus } from 'types/api.js';
 import { JWT } from '#root/jwt/JWT';
-import { Session } from '#root/packages/datastore/entities/Session';
+import { Session } from '#root/database/entities/index';
 import moment from 'moment';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;

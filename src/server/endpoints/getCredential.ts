@@ -19,8 +19,18 @@ export function getCredential(issuer:Issuer, path:string)
                 const proofData:CredentialProofData = error.data;
                 await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-request", request.body);
 
-                const credentialResponse = await issueCredential(issuer, proofData);
-
+                let credentialResponse;
+                try {
+                    credentialResponse = await issueCredential(issuer, proofData);
+                }
+                catch (e) {
+                    return sendErrorResponse(response, 400, {
+                            error: ErrorCodes.CREDENTIAL_REQUEST_DENIED,
+                            error_description: (e as Error).message,
+                        },
+                        e
+                    );
+                }
                 await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-response", credentialResponse);
                 return response.json(credentialResponse);
             }

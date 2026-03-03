@@ -3,6 +3,7 @@ import { Issuer } from '../../../issuer/Issuer';
 import { JOSE } from '../JOSE';
 import { Credential } from '../../Credential';
 import { Factory } from '@muisit/cryptokey';
+import { VCDM } from '../VCDM';
 
 test('JOSE conversion', async () => {
     const issuer = new Issuer({}, {});
@@ -14,10 +15,12 @@ test('JOSE conversion', async () => {
     credential.issuer = issuer;
     credential.type = 'CredentialTest';
     credential.data = {name:'Test'};
-    credential.holder = 'did:test:holder';
+    credential.holder = {type:'kid', did:'did:test:holder', data: 'did:test:holder#0'};
     credential.metaData.issuanceDate = '2025-01-01 01:01:01';
 
-    const jose = new JOSE(credential, 'vc+jwt', '2020-01-01 01:01:01');
+    const vcdm = new VCDM(credential);
+    const baseCredential = await vcdm.build();
+    const jose = new JOSE(credential, baseCredential, 'vc+jwt', '2020-01-01 01:01:01');
     await jose.sign();
 
     expect(credential.output).toBeDefined();

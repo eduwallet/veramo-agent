@@ -5,7 +5,7 @@ import { Credential } from '../../Credential';
 
 
 
-test('VCDM conversion', () => {
+test('VCDM conversion', async () => {
     const issuer = new Issuer({}, {});
     let dataToSign:any = null; 
     vi.spyOn(issuer, 'signData').mockImplementation(async (arg:Uint8Array):string => {
@@ -23,13 +23,13 @@ test('VCDM conversion', () => {
     credential.addDictionaryValue('issuer_description', 'Descr', 'en_US');
     credential.type = 'CredentialTest';
     credential.data = {name:'Test'};
-    credential.holder = 'did:test:holder';
+    credential.holder = {type:'kid', did:'did:test:holder', data:'did:test:holder#0'};
     credential.metaData.issuanceDate = '2025-01-01 01:01:01';
     issuer.did = {did: 'did:test:me'};
     issuer.keyRef = '1234';
 
     const vcdm = new VCDM(credential);
-    const result = vcdm.build();
+    const result = await vcdm.build();
 
     expect(credential.output).toBeUndefined();
     expect(result).toBeDefined();
@@ -43,7 +43,7 @@ test('VCDM conversion', () => {
 
 
 
-test('VCDM dates', () => {
+test('VCDM dates', async () => {
     const issuer = new Issuer({}, {});
       
     const credential = new Credential();
@@ -56,7 +56,7 @@ test('VCDM dates', () => {
     issuer.keyRef = '1234';
 
     const vcdm = new VCDM(credential);
-    const result = vcdm.build();
+    const result = await vcdm.build();
 
     expect(result).toBeDefined();
     expect(result.validFrom).toBe('2025-01-01T01:01:01+01:00');
@@ -69,7 +69,7 @@ test('VCDM dates', () => {
 });
 
 
-test('VCDM holder binding', () => {
+test('VCDM holder binding', async () => {
     const issuer = new Issuer({}, {});
       
     const credential = new Credential();
@@ -80,32 +80,32 @@ test('VCDM holder binding', () => {
     issuer.keyRef = '1234';
 
     let vcdm = new VCDM(credential);
-    let result = vcdm.build();
+    let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialSubject.id).toBeUndefined();
 
-    credential.holder = 'did:test:holder';
-    result = vcdm.build();
+    credential.holder = {type:'kid', did:'did:test:holder', data:'did:test:holder#0'};
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialSubject.id).toBe('did:test:holder');
 
     credential.automaticallyBindHolder = false;
-    result = vcdm.build();
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialSubject.id).toBeUndefined();
 
     credential.data = {name:'Test', id:'did:test:subject'};
-    result = vcdm.build();
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialSubject.id).toBe('did:test:subject');
 
     credential.automaticallyBindHolder = true;
-    result = vcdm.build();
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialSubject.id).toBe('did:test:subject');
 });
 
-test('VCDM status lists', () => {
+test('VCDM status lists', async () => {
     const issuer = new Issuer({}, {});
       
     const credential = new Credential();
@@ -119,14 +119,14 @@ test('VCDM status lists', () => {
     // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
     credential.metaData.credentialStatus = {type:'BitstringStatusList', credentialStatus:{type: 'a'}};
     let vcdm = new VCDM(credential);
-    let result = vcdm.build();
+    let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
     expect(result.credentialStatus!.length).toBe(1);
     expect(result.credentialStatus![0].type).toBe('a');
 
     credential.metaData.credentialStatus = [{type:'BitstringStatusList',credentialStatus:{type:'a'}},{type:'RevocationList2021',credentialStatus:{type:'b'}}];
-    result = vcdm.build();
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
     expect(result.credentialStatus!.length).toBe(2);
@@ -135,14 +135,14 @@ test('VCDM status lists', () => {
 
     // statuslist+jwt is filtered out
     credential.metaData.credentialStatus = [{type:'BitstringStatusList',credentialStatus:{type:'a'}},{type:'statuslist+jwt',credentialStatus:{type:'b'}}];
-    result = vcdm.build();
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
     expect(result.credentialStatus!.length).toBe(1);
     expect(result.credentialStatus![0].type).toBe('a');
 });
 
-test('VCDM evidence', () => {
+test('VCDM evidence', async () => {
     const issuer = new Issuer({}, {});
       
     const credential = new Credential();
@@ -156,7 +156,7 @@ test('VCDM evidence', () => {
     // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
     credential.metaData.evidence = {type:'Evidence2020', id: 'https://youtu.be/movie'};
     let vcdm = new VCDM(credential);
-    let result = vcdm.build();
+    let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.evidence).toBeDefined();
     expect(result.evidence!.length).toBe(1);
@@ -164,7 +164,7 @@ test('VCDM evidence', () => {
     expect(result.evidence![0].id).toBe('https://youtu.be/movie');
 
     credential.metaData.evidence = [{type:'Evidence2020', id: 'https://youtu.be/movie'},{type:'Evidence2025', id:'did:you:tube'}];
-    result = vcdm.build();
+    result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.evidence).toBeDefined();
     expect(result.evidence!.length).toBe(2);

@@ -9,12 +9,11 @@ import { validateAccessTokenRequest } from '#root/issuer/api/validateAccessToken
 import { ErrorCodes } from '#root/types/api'
 
 export function accessToken(issuer: Issuer, tokenPath:string) {
-    const externalAS = issuer.metadata.authorization_servers
-    if (externalAS) {
+    if (issuer.usesAuthorisedCodeFlow()) {
         debug(`[OID4VCI] External Authorization Server is being used. Not enabling issuer token endpoint`)
         return;
     } 
-    // this.issuer.issuerMetadata.token_endpoint = url.toString()
+
     issuer.router!.post(tokenPath,
         async (request:Request<TokenRequest>, response: Response<TokenResponse>) => {
             try {

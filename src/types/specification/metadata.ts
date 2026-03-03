@@ -88,6 +88,10 @@ export interface CredentialConfigurationMetadata {
     claims?: CredentialConfigurationClaimData[];
 };
 
+export interface NameSpacedCredentialConfigurationMetadata {
+    [x:string]: CredentialConfigurationClaimData;
+}
+
 export interface CredentialConfigurationDisplay {
     name?:string;
     locale?:string;

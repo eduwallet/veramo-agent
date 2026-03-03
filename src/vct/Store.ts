@@ -9,7 +9,7 @@ import { loadJsonFiles } from "#root/utils/generic";
 import { getBaseUrl } from "#root/utils/getBaseUrl";
 import { Vct } from "#root/types/specification/vct";
 import { getDbConnection } from '#root/database/databaseService';
-import { VCTDocument } from '#root/packages/datastore/index';
+import { VCTDocument } from '#root/database/entities/index';
 import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 

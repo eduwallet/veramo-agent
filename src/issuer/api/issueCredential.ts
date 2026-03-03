@@ -6,7 +6,7 @@ import { CredentialOfferStatus } from "#root/types/api";
 import { CredentialProofData } from "#root/types/internal";
 import { CredentialResponse } from "#root/types/specification/credential_response";
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
-import { Nonce } from '#root/packages/datastore/index';
+import { Nonce } from '#root/database/entities/index';
 
 export async function issueCredential(issuer:Issuer, proofData:CredentialProofData): Promise<CredentialResponse>
 {
@@ -43,10 +43,11 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         // format to indicate format, whose combination would lead to a credentialId
         credential.data = proofData.credentialDataSet.data;
         credential.presetCredential = proofData.credentialDataSet.credential ?? null;
+        credential.callback = proofData.credentialDataSet.callback ?? null;
         credential.metaData = session.data.metaData;
-        credential.holder = proof.did;
+        credential.holder = proof.holder;
 
-        if (!await CredentialFactory.resolve(credential)) {
+        if (!await CredentialFactory.resolve(credential, session)) {
             debug("error creating actual credential");
             throw Error('Could not create a credential');
         }

@@ -1,46 +1,38 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType, W3CJWT as W3CType} from '#root/credentials/formats/VCDMTypes';
-import { VCDM } from "#root/credentials/formats/VCDM";
-import { W3C } from "#root/credentials/formats/W3C"
+import { VCDM as VCDMType, W3CJWT, W3CJWT as W3CType} from '#root/credentials/formats/VCDMTypes';
 import { JSONLD } from '#root/credentials/formats/JSONLD';
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { JWT } from '#root/jwt/JWT';
+import { Factory } from '@muisit/cryptokey';
 
 export class JOSE
 {
     private credential:Credential;
+    private baseCredential:VCDMType|W3CJWT;
     private type:string = 'vc+jwt';
     private date:string;
 
-    public constructor(credential:Credential, type:string = 'vc+jwt', date?:string)
+    public constructor(credential:Credential, baseCredential:VCDMType|W3CJWT, type:string = 'vc+jwt', date?:string)
     {
         this.credential = credential;
         this.type = type;
         this.date = moment(date).toISOString();
+        this.baseCredential = baseCredential;
     }
 
     public async sign()
     {
         debug("signing VCDM using JOSE");
-        let vcdm:any;
-        if (this.type == 'vc+jwt') {
-            vcdm = new VCDM(this.credential);
-        }
-        else {
-            vcdm = new W3C(this.credential);
-        }
-        let baseCredential = vcdm.build();
-
         // apply filters to add proofs
         if (this.type == 'jwt_vc_json-ld') {
-            baseCredential = JSONLD.sign(this.credential, baseCredential);
+            this.baseCredential = await JSONLD.sign(this.credential, this.baseCredential);
         }
 
         // pack and sign the credential
-        this.credential.output = await this.packCredential(baseCredential);
+        this.credential.output = await this.packCredential(this.baseCredential);
     }
 
     private async packCredential(baseCredential:VCDMType|W3CType)
@@ -55,7 +47,7 @@ export class JOSE
         // these headers, but they are not explicitely disallowed either
         jwt.header = {
             alg: this.credential.issuer!.algorithm(),
-            kid: this.credential.issuer!.did!.did + '#' + this.credential.issuer!.keyRef,
+            kid: '#' + Factory.getKeyReference(this.credential.issuer!.did!.did),
             // VCDM 1.1: if typ is present, it must be JWT
             typ: this.type == 'vc+jwt' ? this.type : 'JWT',
             cty: 'vc'
@@ -71,7 +63,13 @@ export class JOSE
         // represent the issuance and expiration time of the signature, respectively.
         jwt.payload.iat = moment(this.date).unix();
         // if nbf is present, it MUST represent the issuance date (VCDM 1.1)
-        jwt.payload.nbf = jwt.payload.iat; // Sphereon requires this claim
+        if (this.credential.metaData.issuanceDate) {
+            // signature at least expires at the expiration date of the credential itself
+            jwt.payload.nbf = moment(this.credential.metaData.issuanceDate).unix();
+        }
+        else {
+            jwt.payload.nbf = jwt.payload.iat;
+        }
         if (this.credential.metaData.expirationDate) {
             // signature at least expires at the expiration date of the credential itself
             jwt.payload.exp = moment(this.credential.metaData.expirationDate).unix();
@@ -95,6 +93,8 @@ export class JOSE
         return await this.credential.issuer!.signToken(jwt);
     }
 
+    // add the status-list data for IETF token lists. The regular VCDM encoded status lists
+    // are added in the VCDM object
     private addStatusListData(jwt:JWT)
     {
         if (this.credential.metaData.credentialStatus) {

@@ -5,7 +5,7 @@ import { CREDENTIAL_CONFIGURATION_PATH } from "../environment.js";
 import { loadJsonFiles } from "utils/generic.js";
 import { CredentialConfiguration } from "types/specification/metadata.js";
 import { getDbConnection } from '#root/database/databaseService';
-import { CredentialType } from '#root/packages/datastore/index';
+import { CredentialType } from '#root/database/entities/CredentialType';
 import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface CredentialConfigurationStore {

@@ -11,7 +11,7 @@ import { Issuer } from "./Issuer.js";
 import { IssuerConfiguration } from "types/internal.js";
 import { MetadataConfiguration } from "types/api/metadata.js";
 import { getDbConnection } from '#root/database/databaseService';
-import { Issuer as IssuerEntity } from '#root/packages/datastore/index';
+import { Issuer as IssuerEntity } from '#root/database/entities/index';
 import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface IssuerStore {
@@ -33,17 +33,22 @@ async function readFromDB()
                 name: issuer.name,
                 baseUrl: issuer.baseUrl,
                 clientId: issuer.clientId,
+                clientSecret: issuer.clientSecret,
                 adminToken: issuer.adminToken,
                 authorizationEndpoint: issuer.authorizationEndpoint,
                 tokenEndpoint: issuer.tokenEndpoint,
                 statusLists: JSON.parse(issuer.statuslists ?? '{}'),
                 did: issuer.did,
             }, JSON.parse(issuer.metadata ?? '{}'));
+
+            // we store the entry, then initialise. If there is an error on
+            // initialisation, do not read the file config to override this
+            // (which may/would/will cause double entries)
+            _issuerStore[issuer.name] = entry;
             try {
                 await entry.setDid(); // do some asynchronous post-initialisation
                 await entry.retrieveASServerKeys(); // retrieve the AS server keys
 
-                _issuerStore[issuer.name] = entry;
             }
             catch (e) {
                 console.error("Caught error initialising issuer, skipping entry", e);
@@ -108,6 +113,7 @@ async function readFromFile()
                     dbIssuer.authorizationEndpoint = config.authorizationEndpoint;
                     dbIssuer.tokenEndpoint = config.tokenEndpoint;
                     dbIssuer.clientId = config.clientId;
+                    dbIssuer.clientSecret = config.clientSecret;
                     dbIssuer.metadata = JSON.stringify(metadata);
                     dbIssuer.statuslists = JSON.stringify(config.statusLists);
                     await issuerRepo.save(dbIssuer);

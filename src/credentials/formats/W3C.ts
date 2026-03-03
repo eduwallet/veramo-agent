@@ -4,6 +4,7 @@ const debug = Debug('issuer:vcdm');
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { W3CJWT, W3C as W3CType } from '#root/credentials/formats/VCDMTypes';
+import { HolderData } from '#root/types/internal';
 
 // https://www.w3.org/TR/vc-data-model/
 
@@ -16,15 +17,19 @@ export class W3C
         this.credential = credential;
     }
 
-    public build():W3CJWT
+    public async build():Promise<W3CJWT>
     {
         debug("creating W3C");
 
         const issuerName = this.getString('issuer_name');
         const issuerDescription = this.getString('issuer_description');
+        let context = (this.credential.contexts ?? []).slice();
+        if (!context.includes('https://www.w3.org/2018/credentials/v1')) {
+            context.unshift('https://www.w3.org/2018/credentials/v1');
+        }
         let baseCredential:W3CType = {
             // The value of the @context property MUST be an ordered set where the first item is a URI with the value https://www.w3.org/2018/credentials/v1.
-            "@context": ["https://www.w3.org/2018/credentials/v1", ...this.credential.contexts],
+            "@context": context,
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
             issuer: {
@@ -39,7 +44,7 @@ export class W3C
 
         // Each object MAY also contain an id property to identify the subject, as described in Section 4.2 Identifiers.
         if (this.credential.automaticallyBindHolder && !baseCredential.credentialSubject.id && this.credential.holder) {
-            baseCredential.credentialSubject.id = this.credential.holder;
+            baseCredential.credentialSubject.id = await this.convertHolderToDid(this.credential.holder);
         }
 
         if (this.credential.dictionary['name']) {
@@ -50,9 +55,11 @@ export class W3C
         }
 
         if (this.credential.metaData.issuanceDate) {
+            debug('issuanceDate is set to ', this.credential.metaData.issuanceDate);
             baseCredential.issuanceDate = moment(this.credential.metaData.issuanceDate).format('YYYY-MM-DDTHH:mm:ssZ');
         }
         else {
+            debug('no issuance date set, setting to now', this.credential.metaData);
             baseCredential.issuanceDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
         }
         if (this.credential.metaData.expirationDate) {
@@ -63,6 +70,14 @@ export class W3C
         this.addEvidenceData(baseCredential);
 
         return { vc: baseCredential };
+    }
+
+    private async convertHolderToDid(holder:HolderData):Promise<string>
+    {
+        if ((holder.type == "kid" || holder.type == "jwk") && holder.data) {
+            return holder.data;
+        }
+        throw new Error("W3C not applicable for x5c holding JWT proofs");
     }
 
     private getString(value:string)

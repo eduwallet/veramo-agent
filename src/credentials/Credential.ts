@@ -1,9 +1,13 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credential');
+
 import moment from "moment";
 import { StringKeyedObject } from "#root/types/index";
 import { CredentialConfiguration } from "#root/types/specification/metadata";
 import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
 import { StatusList } from "#root/types/internal/statuslists";
+import { HolderData } from "#root/types/internal";
 
 export interface LanguageLabel
 {
@@ -19,13 +23,14 @@ export class Credential
     public issuer?:Issuer;
     public data:StringKeyedObject = {};
     public presetCredential:any = null; // used for passing a full-blown credential and hoping everything works out
+    public callback:string|null = null; // used for retrieving a full-blowb credential over the network
     public metaData:StringKeyedObject = {};
     public dictionary:Dictionary = {};
     public id?:string; // the identifier in the credential data set for this session
     public principalId?:string; // a globally unique identifier for this type and issuer
     public type:string = 'GenericCredential';
     public format:string = 'jwt_vc_json';
-    public holder?:string;
+    public holder?:HolderData;
     public configuration?:CredentialConfiguration;
     public credential:any; // basic readable data
     public output:any; // signed, proofed data, possibly encoded
@@ -42,6 +47,7 @@ export class Credential
 
     public async resolve()
     {
+        debug('resolving credential data');
         if (this.data?._exp) {
             this.handleExpirationDate(this.data._exp);
             delete this.data._exp;
@@ -50,15 +56,20 @@ export class Credential
             this.handleExpirationDate(this.data._ttl);
             delete this.data._ttl;
         }
-        if (this.metaData?.expiration) {
+        if (this.metaData.expiration) {
             this.handleExpirationDate(this.metaData.expiration);
         }
+        if (process.env.EXPIRATION_DATE) {
+            this.handleExpirationDate(process.env.EXPIRATION_DATE);
+        }
+        debug('setting issuanceDate to now');
         this.metaData.issuanceDate = moment().toISOString();
 
         const enableLists = (typeof this.metaData?.enableStatusLists === 'undefined') || (this.metaData?.enableStatusLists === true);
         if (this.issuer!.options.statusLists && enableLists) {
             await this.handleStatusLists();
         }
+        debug('end of credential data resolving');
         return true;
     }
 
@@ -114,10 +125,23 @@ export class Credential
         }
     }
 
-    private handleExpirationDate(date:string)
+    private handleExpirationDate(date?:string)
     {
-        if (date && date.toString().length) {
-            this.metaData.expirationDate = moment().add(parseInt(date.toString()), 's').toISOString();
+        let currentDate = this.metaData.expirationDate ? moment(this.metaData.expirationDate) : null;
+        let expDate = null;
+        if (date && typeof(date) == 'string' && date.indexOf('-') > 0) {
+            expDate = moment(date);
+        }
+        else if (date) {
+            expDate = moment().add(parseInt(date.toString()), 's');
+        }
+
+        if (expDate) {
+            debug('current expiry is ', currentDate, 'vs',expDate);
+            if (!currentDate || currentDate.isAfter(expDate)) {
+                currentDate = expDate;
+            }
+            this.metaData.expirationDate = currentDate.toISOString();
         }
     }
 

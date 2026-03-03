@@ -134,6 +134,37 @@ The metadata is configured separately from the issuer configuration for historic
 
 To allow credential configuration reuse, the metadata configuration `credential_configurations_supported` attribute is parsed when the metadata is loaded. Each credential defined there is extended with any credential data defined for the same identifier in the `conf/credentials/` configuration. In that way, the basic credential display information can be centralized, but branding information can be specified in the issuer metadata configuration.
 
+The credential claim data is located in the `credential_definition` attribute. It can either be specified using the older type of `credentialSubject` or the new `claims` attribute. The following example specifies both, but if both exist, the `credentialSubject` elements are added at the end of the existing `claims` elements. The code automatically converts the data to the required output, depending on the type of the resulting credential ('w3c', 'vcdm' or 'sd-jwt').
+
+```json
+    "GenericCredential": {
+        "format": "credential format, like jwt_vc_json",
+        "scope": "optional scope attribute",
+        "display": <display object for the entire credential>,
+        "credential_definition": {
+            "type": ["VerifiableCredential", "another type name"],
+            "credentialSubject": {
+                "key1": {
+                    "mandatory": <optional boolean>,
+                    "value_type": "unused optional type indication",
+                    "display": <display object with attribute names>
+                },
+                ...
+            },
+            "claims": [
+                {
+                    "path": ["list of path elements"],
+                    "mandatory": "optional boolean",
+                    "display": <display object with attribute names>
+                },
+                ...
+            ]
+        }
+    }
+```
+
+Please note: for the 'w3c' type, the `vc` prefix is automatically prepended to the path specifiers, it should not be added explicitely in this claims definition.
+
 Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` or `dc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
 
 ```json
@@ -267,7 +298,7 @@ The `did.json` endpoint provides a convenient way of publishing the `did:web` co
 `did:web` to point to this endpoint to complete the configuration. In this way, the agent contains both public and private keys and if the agent
 is restarted or keys refreshed, the key configuration will be correct. The did specification also allows a `path` setting to host the did directly on the root of the issuer, which is convenient if there is only one actual issuer tenant. Make sure to include the `:.well-known` subpath if you want to use the did directly on the published path above, e.g.: `did:web:example.com:tenant:.well-known` for the did on `https://example.com/tenant`.
 
-The `credentials` URL serves the credential, provided the user can supply the required data (grant, authorization code, pin, credential reference, etc.). This follows the basic OpenID4VC specification.
+The `credentials` URL serves the credential, provided the user can supply the required data (grant, authorization code, pin, credential reference, etc.). This follows the basic OpenID4VC specification. During this call, the issuer will perform a `credential_callback` if such a callback was specified in the `create-offer` request (described below). Also, for `authorization_code` flow, the issuer will establish some basic user info for the authorized user, which can be used in the creation of credentials. An implementation of this is in the `EduID` and `EduIDEntitlement` credentials.
 
 The `nonce` POST endpoint serves a fresh nonce value, not linked to any session. This follows the basic OpenID4VC specification version 1.16 and higher.
 
@@ -302,7 +333,8 @@ This creates a credential offer in the agent database based on supplied credenti
     },
     "credentialDataSupplierInput": "object containing key-value pairs of the credentials",
     "credentialMetadata": "object containing key-value pairs defining the metadata",
-    "credential": "optional object containing a prefilled credential, including metadata"
+    "credential": "optional object containing a prefilled credential, including metadata",
+    "credential_callback": "optional URL to use as a callback to retrieve a prefilled credential"
 }
 ```
 
@@ -319,9 +351,13 @@ The `credentialMetadata` attribute can contain settings about the credential. Cu
 - `enableStatusLists`: a boolean field that enables or disables generating status list information. If not specified, but status lists are configured for an issuer, status list information is generated. Set this field explicitely to `false` to prevent generating status list information
 - `evidence`: an object or array containing evidence data as specified in the VCDM spec.
 
-The `credential` attribute can contain a full credential, some values of which will be overwritten or adjusted by the issuer during issuance. Fields that are supported, like `@context`, `name`, `description`, `credentialStatus` or `evidence`, will be interpreted if possible, other fields (including `credentialSubject`) are transported verbatim to the output. This feature is mainly used for the `VCDM` `OpenBadgeCredential` implementation and should be used with care. 
+The `credential` attribute can contain a full credential, some values of which will be overwritten or adjusted by the issuer during issuance. Fields that are supported, like `@context`, `name`, `description`, `credentialStatus` or `evidence`, will be interpreted if possible, other fields (including `credentialSubject`) are transported verbatim to the output. This feature is mainly used for the `VCDM` `OpenBadgeCredential` implementation and should be used with care.
 
-The call returns a JSON object containing the following elements:
+The `credential_callback` attribute is used to validate an `authorization_code` flow authorization against an external application, which can then return a full credential or an error status. In case of errors (unauthorized, not found), the credential issuance is halted. If the callback succeeds, the return value is used as the preset credential following the same implementation as if the credential was set using the `credential` attribute described above.
+
+The `credential_callback` is done using a `POST` call and contains a JSON object (content type `application/json`) with a variety of parameters depending on the authorization flow that was performed. In case of a `pre-authorized_code` flow, the parameters contain the `issuer_state`, issuance and expiration information of the access token. In case of a `authorization_code` flow, the parameters contain all accumulated data as received from the Authorization Server, which depends heavily on the implementation of the AS.
+
+The create-offer call finally returns a JSON object containing the following elements:
 
 ```json
 {
@@ -417,7 +453,11 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|  v1.4.0 | dd8595b | 2026-03-03 | `credential_callback` now returns the full access token claim set |
+|         | 55f3438 | 2026-01-27 | Added `/api/export` endpoint to export a zip archive with ready to use configuration files |
+|         | 3082911 | 2026-01-08 | Allowing the `claims` attribute in `credentialSubject` to directly set the 'new' `claims` data for metadata |
 |  v1.3.1 | ed601cc | 2026-01-06 | Support for tenant domains, where the base url is redirected to a tenant subpath |
+|         | 613e66c | 2025-12-02 | Implementation of the `credential_callback` url allowing EduBadges to match a credential after authorization |
 |  v1.3.0 | 441aa60 | 2025-11-25 | Added `/api/version` endpoint that returns commit, tag, node version and package version information |
 |         | 13f5167 | 2025-11-19 | Empty BEARER_TOKEN forces `truncate` on vct, context, credential and issuer tables (not identifiers and keys). This ensures a file based configuration and a proper reinitialisation based on (changed) files at restart |
 |         | 792ccb1 | 2025-11-12 | Implementation of encoded private keys. When running this version, make sure the PASSPHRASE environment variable is set. If it is not set, the keys are not encoded with the migration (so remain unchanged). This will work, but encoding manually afterwards is a pain. The easiest way to fix this is to remove the EncKey migration from the `migrations` table, which will retry to encode all private keys. |

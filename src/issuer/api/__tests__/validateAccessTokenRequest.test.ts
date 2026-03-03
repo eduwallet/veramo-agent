@@ -3,7 +3,7 @@ import { ErrorCodes } from '../../../types/api.js';
 import { GrantTypes, TokenRequest } from '../../../types/specification/access_token.js';
 import { Issuer } from '../../Issuer.js';
 import { validateAccessTokenRequest } from '../validateAccessTokenRequest.js';
-import { Session } from '#root/packages/datastore/entities/Session';
+import { Session } from '#root/database/entities/index';
 
 test('basic offer', async () => {
     const tokenRequest:TokenRequest = {

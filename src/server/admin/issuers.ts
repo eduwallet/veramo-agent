@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('server:api');
 
 import { getDbConnection } from '#root/database/databaseService';
-import { Issuer } from "#root/packages/datastore/index";
+import { Issuer } from "#root/database/entities/index";
 import { Request, Response } from 'express'
 import { DataList, issuerToScheme } from './types.js';
 
@@ -62,6 +62,7 @@ interface StoreIssuerRequest {
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
     clientId?:string;
+    clientSecret?:string;
     metadata?:any;
     statusLists?:any;
 }
@@ -75,6 +76,7 @@ async function setIssuerData(issuer:Issuer, data:StoreIssuerRequest)
     issuer.authorizationEndpoint = data.authorizationEndpoint;
     issuer.tokenEndpoint = data.tokenEndpoint;
     issuer.clientId = data.clientId;
+    issuer.clientSecret = data.clientSecret;
     if (data.metadata) {
         issuer.metadata = JSON.stringify(data.metadata);
     }
