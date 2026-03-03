@@ -40,11 +40,6 @@ export class W3C
             }
         };
 
-        // if we have issuer metadata, allow enriching our basic information
-        if (this.credential.metaData.issuer) {
-            baseCredential.issuer = Object.assign({}, this.credential.metaData.issuer, baseCredential.issuer);
-        }
-
         // If present, id property's value MUST be a single URL, recommended to be machine readable
 
         // Each object MAY also contain an id property to identify the subject, as described in Section 4.2 Identifiers.
@@ -73,6 +68,7 @@ export class W3C
 
         this.addStatusListData(baseCredential);
         this.addEvidenceData(baseCredential);
+        this.addOtherMetadata(baseCredential);
 
         return { vc: baseCredential };
     }
@@ -129,6 +125,34 @@ export class W3C
             else if (this.credential.metaData.evidence.length) {
                 // array of entries
                 baseCredential.evidence = this.credential.metaData.evidence.slice();
+            }
+        }
+    }
+
+    private addOtherMetadata(baseCredential:W3CType)
+    {
+        // this only works on the OpenBadgeCredential, because the other types cannot set other metadata
+        for (const key of Object.keys(this.credential.metaData)) {
+            switch (key) {
+                case 'evidence':
+                case 'credentialStatus':
+                case 'issuanceDate':
+                case 'expirationDate':
+                    // pass
+                    break;
+                case 'issuer':
+                    baseCredential.issuer = Object.assign({}, this.credential.metaData.issuer, baseCredential.issuer);
+                    // make sure our issuer.id is set correctly though
+                    if (typeof(baseCredential.issuer) == 'object') {
+                        baseCredential.issuer.id = this.credential.issuer!.did!.did;
+                    }
+                    else {
+                        baseCredential.issuer = this.credential.issuer!.did!.did;
+                    }
+                    break;
+                default:
+                    baseCredential[key] = this.credential.metaData[key];
+                    break;
             }
         }
     }

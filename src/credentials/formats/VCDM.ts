@@ -143,10 +143,13 @@ export class VCDM
                     // pass
                     break;
                 case 'issuer':
-                    baseCredential.issuer = this.credential.metaData[key];
+                    baseCredential.issuer = Object.assign({}, this.credential.metaData.issuer, baseCredential.issuer);
                     // make sure our issuer.id is set correctly though
                     if (typeof(baseCredential.issuer) == 'object') {
                         baseCredential.issuer.id = this.credential.issuer!.did!.did;
+                    }
+                    else {
+                        baseCredential.issuer = this.credential.issuer!.did!.did;
                     }
                     break;
                 default:
