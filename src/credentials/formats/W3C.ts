@@ -40,6 +40,11 @@ export class W3C
             }
         };
 
+        // if we have issuer metadata, allow enriching our basic information
+        if (this.credential.metaData.issuer) {
+            baseCredential.issuer = Object.assign({}, baseCredential.issuer, this.credential.metaData.issuer);
+        }
+
         // If present, id property's value MUST be a single URL, recommended to be machine readable
 
         // Each object MAY also contain an id property to identify the subject, as described in Section 4.2 Identifiers.
