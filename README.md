@@ -353,16 +353,9 @@ The `credentialMetadata` attribute can contain settings about the credential. Cu
 
 The `credential` attribute can contain a full credential, some values of which will be overwritten or adjusted by the issuer during issuance. Fields that are supported, like `@context`, `name`, `description`, `credentialStatus` or `evidence`, will be interpreted if possible, other fields (including `credentialSubject`) are transported verbatim to the output. This feature is mainly used for the `VCDM` `OpenBadgeCredential` implementation and should be used with care.
 
-The `credential_callback` attribute is used to validate an `authorized_code` flow authorization against an external application, which can then return a full credential or an error status. In case of errors (unauthorized, not found), the credential issuance is halted. If the callback succeeds, the return value is used as the preset credential following the same implementation as if the credential was set using the `credential` attribute described above.
+The `credential_callback` attribute is used to validate an `authorization_code` flow authorization against an external application, which can then return a full credential or an error status. In case of errors (unauthorized, not found), the credential issuance is halted. If the callback succeeds, the return value is used as the preset credential following the same implementation as if the credential was set using the `credential` attribute described above.
 
-The `credential_callback` is done using a `POST` call and contains a JSON object (content type `application/json`) with the following parameters:
-
-```json
-{
-    "state": "<issuer state as defined in the create-offer call, or as set by the issuer if none was given>",
-    "user_id": "<the persistent identifier or pseudonym returned by the Authorization Server for this user in the 'sub' claim>"
-}
-```
+The `credential_callback` is done using a `POST` call and contains a JSON object (content type `application/json`) with a variety of parameters depending on the authorization flow that was performed. In case of a `pre-authorized_code` flow, the parameters contain the `issuer_state`, issuance and expiration information of the access token. In case of a `authorization_code` flow, the parameters contain all accumulated data as received from the Authorization Server, which depends heavily on the implementation of the AS.
 
 The create-offer call finally returns a JSON object containing the following elements:
 

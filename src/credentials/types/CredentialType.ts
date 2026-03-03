@@ -67,10 +67,7 @@ export abstract class CredentialType
         if (credential.callback !== null) {
             const result = await fetch(credential.callback, {
                 method: 'POST',
-                body: JSON.stringify({
-                    state: session.data.accessData.issuer_state,
-                    user_id: session.data.accessData.sub
-                }),
+                body: JSON.stringify(session.data.accessData),
                 headers: {
                     'Content-type': 'application/json'
                 }
