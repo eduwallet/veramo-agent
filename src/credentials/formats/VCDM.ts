@@ -20,8 +20,12 @@ export class VCDM
         debug("creating VCDM");
         const issuerName = this.createLanguageObject('issuer_name');
         const issuerDescription = this.createLanguageObject('issuer_description');
-        const baseCredential:VCDMType = {
-            "@context": ["https://www.w3.org/ns/credentials/v2", ...this.credential.contexts],
+        let context = (this.credential.contexts ?? []).slice();
+        if (!context.includes('https://www.w3.org/ns/credentials/v2')) {
+            context.unshift('https://www.w3.org/ns/credentials/v2');
+        }
+        let baseCredential:VCDMType = {
+            "@context": context,
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
             issuer: {
@@ -132,6 +136,13 @@ export class VCDM
                 case 'issuanceDate':
                 case 'expirationDate':
                     // pass
+                    break;
+                case 'issuer':
+                    baseCredential.issuer = this.credential.metaData[key];
+                    // make sure our issuer.id is set correctly though
+                    if (typeof(baseCredential.issuer) == 'object') {
+                        baseCredential.issuer.id = this.credential.issuer!.did!.did;
+                    }
                     break;
                 default:
                     baseCredential[key] = this.credential.metaData[key];

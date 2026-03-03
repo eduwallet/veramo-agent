@@ -453,7 +453,9 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
-|         |         | 2026-01-08 | Allowing the `claims` attribute in `credentialSubject` to directly set the 'new' `claims` data for metadata |
+|         | dd8595b | 2026-03-03 | `credential_callback` now returns the full access token claim set |
+|         | 55f3438 | 2026-01-27 | Added `/api/export` endpoint to export a zip archive with ready to use configuration files |
+|         | 3082911 | 2026-01-08 | Allowing the `claims` attribute in `credentialSubject` to directly set the 'new' `claims` data for metadata |
 |         | 613e66c | 2025-12-02 | Implementation of the `credential_callback` url allowing EduBadges to match a credential after authorization |
 |         | 441aa60 | 2025-11-25 | Added `/api/version` endpoint that returns commit, tag, node version and package version information |
 |         | 13f5167 | 2025-11-19 | Empty BEARER_TOKEN forces `truncate` on vct, context, credential and issuer tables (not identifiers and keys). This ensures a file based configuration and a proper reinitialisation based on (changed) files at restart |
