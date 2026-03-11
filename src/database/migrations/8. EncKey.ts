@@ -2,9 +2,6 @@ import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm'
 import { migrationGetTableName } from './migration-functions.js'
 import { getDbConnection } from '#root/database/databaseService';
 import { PrivateKey } from '../entities/PrivateKey.js';
-import crypto from 'crypto';
-import { encrypt, decrypt } from '@futuretense/secret-box';
-import { fromString, toString } from "uint8arrays";
 
 export class EncKey1762521078111 implements MigrationInterface {
   name = 'EncKey1762521078111';

@@ -99,7 +99,7 @@ class ContextConfigurationStore {
             }
         }
         catch (e) {
-            debug("Missing configuration path");
+            debug("Missing configuration path", e);
         }
     }
 
@@ -159,5 +159,5 @@ class ContextConfigurationStore {
     }
 }
 
-var _contextConfigurationStore: ContextConfigurationStore = new ContextConfigurationStore();
+const _contextConfigurationStore: ContextConfigurationStore = new ContextConfigurationStore();
 export const getContextConfigurationStore = (): ContextConfigurationStore => _contextConfigurationStore;

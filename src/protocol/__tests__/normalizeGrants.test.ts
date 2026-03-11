@@ -4,7 +4,7 @@ import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRAN
 import type { APIGrants } from '../../types/api/credentialOffer.js';
 
 test('generate authorization issuer state', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[AUTHORIZATION_CODE_GRANT] = {};
     const newGrant = normalizeGrants(grant);
 
@@ -17,7 +17,7 @@ test('generate authorization issuer state', () => {
 });
 
 test('generate authorization issuer state from empty state', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[AUTHORIZATION_CODE_GRANT] = {issuer_state:''};
     const newGrant = normalizeGrants(grant);
 
@@ -30,7 +30,7 @@ test('generate authorization issuer state from empty state', () => {
 });
 
 test('generate authorization issuer state from generate', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[AUTHORIZATION_CODE_GRANT] = {issuer_state:'generate'};
     const newGrant = normalizeGrants(grant);
 
@@ -44,7 +44,7 @@ test('generate authorization issuer state from generate', () => {
 });
 
 test('generate pre-auth state', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -58,7 +58,7 @@ test('generate pre-auth state', () => {
 });
 
 test('generate pre-auth state from empty', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':''};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -72,7 +72,7 @@ test('generate pre-auth state from empty', () => {
 });
 
 test('generate pre-auth state from generate', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate'};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -87,7 +87,7 @@ test('generate pre-auth state from generate', () => {
 });
 
 test('generate pin from boolean', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: true};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -104,7 +104,7 @@ test('generate pin from boolean', () => {
 });
 
 test('generate pin from object', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: {}};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -120,7 +120,7 @@ test('generate pin from object', () => {
 });
 
 test('generate pin from object length', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: {length:6}};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -137,7 +137,7 @@ test('generate pin from object length', () => {
 });
 
 test('generate pin from object length and mode', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: {length:8, input_mode:'text'}};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -155,7 +155,7 @@ test('generate pin from object length and mode', () => {
 });
 
 test('copy description', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: {description: 'yolo'}};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -168,7 +168,7 @@ test('copy description', () => {
 });
 
 test('remove tx_code:false from grant', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = {'pre-authorized_code':'generate', tx_code: false};
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;
@@ -179,7 +179,7 @@ test('remove tx_code:false from grant', () => {
 });
 
 test('convert empty array to empty object grant', () => {
-    let grant:APIGrants = {};
+    const grant:APIGrants = {};
     grant[PRE_AUTHORIZED_CODE_GRANT] = [];
     const newGrant = normalizeGrants(grant);
     const preAuth = (newGrant.grants[PRE_AUTHORIZED_CODE_GRANT] || {}) as PreAuthGrant;

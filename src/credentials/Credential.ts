@@ -105,7 +105,7 @@ export class Credential
         if (this.issuer!.options?.statusLists && this.issuer!.options?.statusLists[this.id!]) {
             const slist = this.issuer!.options.statusLists[this.id!];
             if (Array.isArray(slist)) {
-                for (let sl of slist) {
+                for (const sl of slist) {
                     statusses.push(await this.reserveOnStatusList(sl));
                 }
             }

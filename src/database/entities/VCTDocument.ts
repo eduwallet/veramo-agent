@@ -3,7 +3,6 @@ import {
   Column,
   PrimaryGeneratedColumn,
   BaseEntity,
-  Index,
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm'
@@ -11,23 +10,23 @@ import {
 @Entity('vct_document')
 export class VCTDocument extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     id: number;
 
     @Column({ type: 'varchar'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     name: string
 
     @Column('varchar')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     path: string
 
     @Column('text')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     credentials: string
 
     @Column('text')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     document: string
 
     @BeforeInsert()
@@ -42,10 +41,10 @@ export class VCTDocument extends BaseEntity {
     }
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     saveDate: Date
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     updateDate: Date
 }

@@ -1,6 +1,6 @@
 import { JWT } from "#root/jwt/JWT";
 import { HolderData } from "#root/types/internal";
-import { CryptoKey, Factory } from "@muisit/cryptokey";
+import { Factory } from "@muisit/cryptokey";
 
 export async function getHolderKeyFromProofJwt(jwt:JWT): Promise<HolderData|null>
 {

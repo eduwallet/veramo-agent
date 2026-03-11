@@ -4,7 +4,7 @@ import { Request, Response} from 'express'
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { createAccessTokenResponse } from '#root/issuer/api/createAccessTokenResponse';
 import { Issuer } from '#root/issuer/Issuer'
-import { TokenRequest, TokenResponse } from '#root/types/specification/access_token'
+import { AccessTokenResponse, TokenRequest } from '#root/types/specification/access_token'
 import { validateAccessTokenRequest } from '#root/issuer/api/validateAccessTokenRequest'
 import { ErrorCodes } from '#root/types/api'
 
@@ -15,7 +15,7 @@ export function accessToken(issuer: Issuer, tokenPath:string) {
     } 
 
     issuer.router!.post(tokenPath,
-        async (request:Request<TokenRequest>, response: Response<TokenResponse>) => {
+        async (request:Request<TokenRequest>, response: Response<AccessTokenResponse>) => {
             try {
                 const error = await validateAccessTokenRequest(issuer, request.body);
                 if (error.error != ErrorCodes.NO_ERROR) {

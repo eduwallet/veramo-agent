@@ -12,7 +12,7 @@ export interface CredentialConfigurationStore {
   [x: string]: CredentialConfiguration;
 }
 
-var _credentialConfigurationStore: CredentialConfigurationStore = {};
+const _credentialConfigurationStore: CredentialConfigurationStore = {};
 export const getCredentialConfigurationStore = (): CredentialConfigurationStore => _credentialConfigurationStore;
 
 async function readFromDB()
@@ -60,7 +60,7 @@ async function readFromFile()
       }
     }
     catch (e) {
-      debug("Missing credentials configuration path");
+      debug("Missing credentials configuration path", e);
     }
   }
   catch (e) {

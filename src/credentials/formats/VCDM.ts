@@ -20,11 +20,11 @@ export class VCDM
         debug("creating VCDM");
         const issuerName = this.createLanguageObject('issuer_name');
         const issuerDescription = this.createLanguageObject('issuer_description');
-        let context = (this.credential.contexts ?? []).slice();
+        const context = (this.credential.contexts ?? []).slice();
         if (!context.includes('https://www.w3.org/ns/credentials/v2')) {
             context.unshift('https://www.w3.org/ns/credentials/v2');
         }
-        let baseCredential:VCDMType = {
+        const baseCredential:VCDMType = {
             "@context": context,
             type: ["VerifiableCredential", this.credential.type],
             credentialSubject: Object.assign({}, this.credential.data),
@@ -82,7 +82,7 @@ export class VCDM
     private createLanguageObject(value:string)
     {
         if (this.credential.dictionary[value]) {
-            let retval:LanguageObject[] = [];
+            const retval:LanguageObject[] = [];
             for (const label of this.credential.dictionary[value]) {
                 // TODO: this was temporarily changed due to Sphereon and Unime not supporting it
                 return label.value;

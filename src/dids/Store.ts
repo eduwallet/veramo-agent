@@ -181,5 +181,5 @@ class DIDConfigurationStore {
     }
 }
 
-var _didConfigurationStore: DIDConfigurationStore = new DIDConfigurationStore();
+const _didConfigurationStore: DIDConfigurationStore = new DIDConfigurationStore();
 export const getDIDConfigurationStore = (): DIDConfigurationStore => _didConfigurationStore;

@@ -79,7 +79,7 @@ test('VCDM holder binding', async () => {
     issuer.did = {did: 'did:test:me'};
     issuer.keyRef = '1234';
 
-    let vcdm = new VCDM(credential);
+    const vcdm = new VCDM(credential);
     let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialSubject.id).toBeUndefined();
@@ -118,7 +118,7 @@ test('VCDM status lists', async () => {
     // single status list is converted to array of length 1, which is allowed in the spec
     // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
     credential.metaData.credentialStatus = {type:'BitstringStatusList', credentialStatus:{type: 'a'}};
-    let vcdm = new VCDM(credential);
+    const vcdm = new VCDM(credential);
     let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
@@ -155,7 +155,7 @@ test('VCDM evidence', async () => {
     // single status list is converted to array of length 1, which is allowed in the spec
     // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
     credential.metaData.evidence = {type:'Evidence2020', id: 'https://youtu.be/movie'};
-    let vcdm = new VCDM(credential);
+    const vcdm = new VCDM(credential);
     let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.evidence).toBeDefined();

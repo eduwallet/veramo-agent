@@ -162,7 +162,7 @@ export class JwsLinkedDataSignature extends LinkedDataSignature {
    *
    * @returns {Promise<boolean>} Whether a match for the proof was found.
    */
-  async matchProof({proof, document, purpose, documentLoader}: { proof: any; document: object; purpose: object; documentLoader: Function; }): Promise<boolean> {
+  async matchProof({proof, document, purpose, documentLoader}: { proof: any; document: object; purpose: object; documentLoader: any; }): Promise<boolean> {
     if(!await super.matchProof(
       {proof, document, purpose, documentLoader})) {
       return false;

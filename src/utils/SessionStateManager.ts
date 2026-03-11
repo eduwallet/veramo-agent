@@ -4,6 +4,8 @@ import { getDbConnection } from '#root/database/databaseService';
 import { Session } from '#root/database/entities/index';
 import { LessThan } from 'typeorm';
 
+type NotFoundCallback = (data:any) => any;
+
 export class SessionStateManager {
     private issuer:string = '';
 
@@ -22,7 +24,7 @@ export class SessionStateManager {
         await repo.delete({uuid: id, issuer: this.issuer});
     }
 
-    public async get(id:string, callbackIfNotFound?:Function):Promise<Session> {
+    public async get(id:string, callbackIfNotFound?:NotFoundCallback):Promise<Session> {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(Session);
         let session = await repo.findOneBy({uuid: id, issuer: this.issuer});

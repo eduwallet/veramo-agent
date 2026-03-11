@@ -13,8 +13,6 @@ tsconfigPaths.register({
 });
 
 export async function resolve(specifier, context, defaultResolve) {
-  const { parentURL = baseUrl } = context;
-
   const [mappedPath] = tsconfigPaths.match(specifier);
   if (mappedPath) {
     const resolvedPath = pathResolve(baseUrl, mappedPath);

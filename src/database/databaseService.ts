@@ -8,7 +8,7 @@ import { DB_SCHEMA } from 'environment.js';
 /**
  * Todo, move to a class
  */
-var dataSource:DataSource|null = null;
+let dataSource:DataSource|null = null;
 export const getDbConnection = async (skipMigrate?:boolean): Promise<DataSource> => {
   debug("getting db connection");
   if (dbConfig.synchronize) {

@@ -1,6 +1,8 @@
 import { fromString, toString } from 'uint8arrays';
 import { CryptoKey } from '@muisit/cryptokey';
 
+type SignFunction = (e:Buffer) => Promise<string>;
+
 export class JWT {
     public token:string;
     public headerPart:string;
@@ -9,7 +11,6 @@ export class JWT {
 
     public header:any = null;
     public payload:any = null;
-
 
     constructor() {
         this.token = '';
@@ -20,7 +21,7 @@ export class JWT {
 
     static fromToken(token:string)
     {
-        let retval = new JWT();
+        const retval = new JWT();
         retval.token = token;
         const parts = token.match(/^([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
         if (parts && parts.length == 4) {
@@ -57,7 +58,7 @@ export class JWT {
         return await key.verify(alg, fromString(this.signaturePart, 'base64url'), data);
     }
 
-    async sign(key:CryptoKey|Function, alg?:string)
+    async sign(key:CryptoKey|SignFunction, alg?:string)
     {
         const algUsed = alg || this.header.alg || 'ES256';
         if (typeof(key) != 'function') {
@@ -87,13 +88,13 @@ export class JWT {
 
     public decodeFromBase64(payload:string)
     {
-        let bytes = fromString(payload, 'base64url');
-        let jsonstring = toString(bytes);
+        const bytes = fromString(payload, 'base64url');
+        const jsonstring = toString(bytes);
         try {
             return JSON.parse(jsonstring);
         }
         catch (e) {
-
+            console.error('error decoding payload in JWT', e);
         }
         return null;
     }

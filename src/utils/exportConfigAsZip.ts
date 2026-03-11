@@ -1,4 +1,3 @@
-import { fromString } from "uint8arrays";
 import archiver from 'archiver';
 import { Response } from "express";
 

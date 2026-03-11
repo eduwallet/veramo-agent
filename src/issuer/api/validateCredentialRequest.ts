@@ -14,7 +14,7 @@ import moment from 'moment';
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
     debug("validating credential request", request.body);
-    let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
+    const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
 
     const jwt = extractBearerToken(request.header('Authorization'));
     if (!jwt) {
@@ -150,7 +150,7 @@ async function validateCredentialRequestProofs(issuer:Issuer, session:Session, c
     if ((!proofs || !proofs.length) && credentialRequest.proof && credentialRequest.proof.proof_type == 'jwt' && credentialRequest.proof.jwt) {
         proofs = [credentialRequest.proof?.jwt];
     }
-    let proofResults:ApiState[] = [];
+    const proofResults:ApiState[] = [];
 
     if (!proofs || proofs.length < 1) {
         return {
@@ -235,7 +235,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     }
 
     const payload = jwt.payload;
-    const { iss, aud, iat, nonce } = payload;
+    const { aud, iat, nonce } = payload;
     // in the body:
     // iss: optional, must not be present for pre-auth, contains client_id
     // not testing for this. We could test that it is not present in pre-auth, but who cares

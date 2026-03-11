@@ -6,7 +6,7 @@ export function generatePin(type:'text'|'numeric', length:number)
     }
     let retval = '';
     while (retval.length < length) {
-        let randomIndex = Math.floor((Math.random() * (validTokens.length - 1)) + 0.5);
+        const randomIndex = Math.floor((Math.random() * (validTokens.length - 1)) + 0.5);
         retval += validTokens[randomIndex];
     }
     return retval;

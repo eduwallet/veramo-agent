@@ -101,7 +101,7 @@ export class Issuer
             return json;
         }
         catch (e:any) {
-            console.error("Caught error retrieving the user info endpoint", endpoint, token)
+            console.error("Caught error retrieving the user info endpoint", endpoint, token, e)
         }
         return {};
     }
@@ -128,7 +128,7 @@ export class Issuer
             return json;
         }
         catch (e:any) {
-            console.error("Caught error retrieving the user info endpoint", endpoint, token)
+            console.error("Caught error retrieving the user info endpoint", endpoint, token, e)
         }
         return {};
     }
@@ -322,7 +322,7 @@ export class Issuer
 
     public generateMetadata() {
         const metadata:Metadata = Object.assign({}, this.metadata) as Metadata;
-        var credentials:CredentialConfigurations = {};
+        const credentials:CredentialConfigurations = {};
         for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
             const credentialConfiguration = this.decorateCredentialConfiguration(id, this.metadata.credential_configurations_supported[id]);
             credentials[id] = credentialConfiguration;
@@ -409,7 +409,7 @@ export class Issuer
     public async listCredentials(primaryId?:string, credential?:string, issuanceDate?:string, state?:string, holder?:string)
     {
       const dbConnection = await getDbConnection();
-      var qb = dbConnection.createQueryBuilder().select('c.uuid, c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(CredentialEntity, 'c').where('c.id > 0');
+      let qb = dbConnection.createQueryBuilder().select('c.uuid, c.id, c.issuer, c.state, c.holder, c.credentialId as "credentialType", c.credpid as "principalCredentialId", c."issuanceDate", c."expirationDate", c."saveDate", c."updateDate", c.claims, c.statuslists').from(CredentialEntity, 'c').where('c.id > 0');
       if (primaryId && primaryId.length) {
           qb = qb.andWhere('c.credpid=:credpid', {credpid: primaryId});
       }
@@ -445,7 +445,7 @@ export class Issuer
             throw new Error("No statuslist available");
         }
 
-        var retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
+        let retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
         // we should have store this as an array, but you never know with these specs...
         const statuslists = Array.isArray(credential.statuslists) ? credential.statuslists : [credential.statuslists];
 

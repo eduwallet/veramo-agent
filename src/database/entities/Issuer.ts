@@ -12,47 +12,41 @@ import {
 @Index(['did'], { unique: true })
 export class Issuer extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     id: number;
 
     @Column('text')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     did: string
 
     @Column({ type: 'varchar'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     name: string
 
     @Column({ type: 'text'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     baseUrl: string
 
     @Column({ type: 'varchar'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     adminToken: string
 
     @Column({ type: 'text', nullable: true})
-    // @ts-ignore
     authorizationEndpoint?: string
 
     @Column({ type: 'text', nullable: true})
-    // @ts-ignore
     tokenEndpoint?: string
 
     @Column({ type: 'text', nullable: true})
-    // @ts-ignore
     clientId?: string
 
     @Column({ type: 'text', nullable: true})
-    // @ts-ignore
     clientSecret?: string
 
     @Column({ type: 'text', nullable: true})
-    // @ts-ignore
     metadata?: string
 
     @Column({ type: 'text', nullable: true})
-    // @ts-ignore
     statuslists?: string
 
     @BeforeInsert()
@@ -67,10 +61,10 @@ export class Issuer extends BaseEntity {
     }
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     saveDate: Date
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     updateDate: Date
 }

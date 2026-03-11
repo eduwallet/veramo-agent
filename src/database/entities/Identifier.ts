@@ -13,50 +13,45 @@ import { Key } from './index.js'
 @Entity('identifier')
 @Index(['alias', 'provider'], { unique: true })
 export class Identifier extends BaseEntity {
-  @PrimaryColumn('varchar')
-  // @ts-ignore
-  did: string
+    @PrimaryColumn('varchar')
+    //@ts-expect-error has no initializer
+    did: string
 
-  @Column({ type: 'varchar', nullable: true })
-  // @ts-ignore
-  provider?: string
+    @Column({ type: 'varchar', nullable: true })
+    provider?: string
 
-  @Column({ type: 'varchar', nullable: true })
-  // @ts-ignore
-  alias?: string
+    @Column({ type: 'varchar', nullable: true })
+    alias?: string
 
-  @Column({ type: 'varchar', nullable: true })
-  // @ts-ignore
-  path?: string
+    @Column({ type: 'varchar', nullable: true })
+    path?: string
 
-  @Column({ type: 'text', nullable: true })
-  // @ts-ignore
-  services?: string
+    @Column({ type: 'text', nullable: true })
+    services?: string
 
-  @BeforeInsert()
-  setSaveDate() {
-    this.saveDate = new Date()
-    this.updateDate = new Date()
-  }
+    @BeforeInsert()
+    setSaveDate() {
+        this.saveDate = new Date()
+        this.updateDate = new Date()
+    }
 
-  @BeforeUpdate()
-  setUpdateDate() {
-    this.updateDate = new Date()
-  }
+    @BeforeUpdate()
+    setUpdateDate() {
+        this.updateDate = new Date()
+    }
 
-  @Column({ type: 'timestamp', select: true })
-  // @ts-ignore
-  saveDate: Date
+    @Column({ type: 'timestamp', select: true })
+    //@ts-expect-error has no initializer
+    saveDate: Date
 
-  @Column({ type: 'timestamp', select: true })
-  // @ts-ignore
-  updateDate: Date
+    @Column({ type: 'timestamp', select: true })
+    //@ts-expect-error has no initializer
+    updateDate: Date
 
-  @Column({ type: 'varchar', nullable: true })
-  // @ts-ignore
-  controllerKeyId?: string
+    @Column({ type: 'varchar', nullable: true })
+    controllerKeyId?: string
 
-  @OneToMany(() => Key, (key:Key) => key.identifier, { cascade: true })
-  // @ts-ignore
-  keys: Key[]
+    @OneToMany(() => Key, (key:Key) => key.identifier, { cascade: true })
+    //@ts-expect-error has no initializer
+    keys: Key[]
 }

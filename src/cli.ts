@@ -50,7 +50,7 @@ async function inspectCredential(idOpt?:string)
         return;
     }
     const dbConnection = await getDbConnection();
-    var qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
+    const qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
     const res = await qb.select('*').where('uuid=:id', {id: idOpt}).getRawOne();
     console.log(res);
 }
@@ -58,9 +58,9 @@ async function inspectCredential(idOpt?:string)
 async function listCredentials(options:any[])
 {
     const dbConnection = await getDbConnection();
-    var qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
+    let qb = dbConnection.getRepository(Credential).createQueryBuilder('c');
     qb = qb.select('*').where('id > 0');
-    for (var opt of options) {
+    for (const opt of options) {
         const kv = opt.split('=');
         switch (kv[0]) {
             case 'issuer':
@@ -87,7 +87,7 @@ async function listCredentials(options:any[])
         }
     }
     const credentials = await qb.orderBy('c.id', 'ASC').getRawMany();
-    var fieldSettings:FieldSettings = {
+    let fieldSettings:FieldSettings = {
         id: { length: 6, type: 'number' },
         uuid: { length: 6, type: 'string' },
         issuer: { length: 10, type: 'string'},
@@ -96,7 +96,7 @@ async function listCredentials(options:any[])
     }
     fieldSettings = determineFieldLengths(credentials, fieldSettings);
     printHeader(fieldSettings);
-    for (var cred of credentials) {
+    for (const cred of credentials) {
         printField(cred, fieldSettings);
     }
     console.log('');

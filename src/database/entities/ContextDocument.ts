@@ -3,7 +3,6 @@ import {
   Column,
   PrimaryGeneratedColumn,
   BaseEntity,
-  Index,
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm'
@@ -11,19 +10,19 @@ import {
 @Entity('context_document')
 export class ContextDocument extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     id: number;
 
     @Column({ type: 'varchar'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     name: string
 
     @Column('varchar')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     path: string
 
     @Column('text')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     document: string
 
     @BeforeInsert()
@@ -38,10 +37,10 @@ export class ContextDocument extends BaseEntity {
     }
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     saveDate: Date
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     updateDate: Date
 }
