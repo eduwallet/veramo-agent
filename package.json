@@ -39,13 +39,12 @@
     "morgan": "^1.10.0",
     "passport": "^0.7.0",
     "passport-http-bearer": "^1.0.1",
-    "patch-package": "^8.0.0",
     "pg": "^8.12.0",
-    "postinstall": "^0.10.3",
     "reflect-metadata": "^0.2.2",
+    "sha.js": "2.4.12",
     "string-width": "^4.2.3",
     "tsconfig-paths": "^4.2.0",
-    "typeorm": "^0.3.25",
+    "typeorm": "0.3.28",
     "uint8arrays": "^5.1.0",
     "uuid": "^11.1.0"
   },
@@ -73,7 +72,7 @@
     "@types/morgan": "^1.9.10",
     "@types/passport": "^1.0.16",
     "@types/passport-http-bearer": "^1.0.41",
-    "eslint": "^9.26.0",
+    "eslint": "10.0.3",
     "eslint-config-prettier": "^10.1.3",
     "prettier": "^3.5.3",
     "tsx": "^4.16.2",
@@ -85,5 +84,9 @@
   "imports": {
     "#root/*": "./src/*.ts"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "yarn@1.22.22",
+  "overrides": {
+    "glob": "10.5.0",
+    "minimatch": "10.2.4"
+  }
 }
