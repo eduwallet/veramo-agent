@@ -83,4 +83,5 @@ export interface W3C {
     refreshService?:ExternalService|ExternalService[]; // https://www.w3.org/TR/vc-data-model/#refreshing
     termsOfUse?:ExternalService|ExternalService[];     // https://www.w3.org/TR/vc-data-model/#terms-of-use
     evidence?:ExternalService|ExternalService[];       // https://www.w3.org/TR/vc-data-model/#evidence
+    [x:string]:any;
 }
