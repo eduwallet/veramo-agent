@@ -34,7 +34,7 @@ export class EduID extends CredentialType
         this.enrichDataWithUserInfo(credential, session);
         debug("credential data is ", credential.data);
         debug("checking holder key reuse");
-        await this.checkHolderkeyReuse(credential, session);
+        await this.checkHolderkeyReuse(credential);
         debug("revoking previous");
         await this.revokePreviousCredentials(credential);
         credential.data = this.convertDataToClaims(credential.data);
