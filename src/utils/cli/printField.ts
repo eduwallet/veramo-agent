@@ -14,10 +14,10 @@ function padWithSpaces(str:string, length:number, onRight:boolean)
 
 export function printHeader(settings:FieldSettings)
 {
-    var isFirst = true;
-    var line = '';
-    for (var key of Object.keys(settings)) {
-        var output = padWithSpaces(settings[key].name || key, settings[key].length, true);
+    let isFirst = true;
+    let line = '';
+    for (const key of Object.keys(settings)) {
+        const output = padWithSpaces(settings[key].name || key, settings[key].length, true);
         line += (!isFirst ? ' | ' : '') + output;
         isFirst = false;
     }
@@ -27,10 +27,10 @@ export function printHeader(settings:FieldSettings)
 
 export function printField(obj:any, settings:FieldSettings)
 {
-    var isFirst = true;
-    var line = '';
-    for (var key of Object.keys(settings)) {
-        var output = '' + (obj[key] || '');
+    let isFirst = true;
+    let line = '';
+    for (const key of Object.keys(settings)) {
+        let output = '' + (obj[key] || '');
         switch (settings[key].type) {
             case 'string':
                 output = padWithSpaces(output, settings[key].length, true);

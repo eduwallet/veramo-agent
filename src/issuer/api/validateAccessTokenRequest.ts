@@ -9,10 +9,10 @@ import { Session } from '#root/database/entities/index';
 
 export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest): Promise<ApiState> {
     debug("validating access token request", tokenRequest);
-    let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
+    const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     // this method only handles access token requests for pre-authorized code flows. In authorization code flows,
     // the Authorization Server will handle the access token request and this endpoint is skipped.
-    let stateid = tokenRequest[PRE_AUTHORIZED_CODE] as string;
+    const stateid = tokenRequest[PRE_AUTHORIZED_CODE] as string;
 
     // spec ID-1: 6.1: pre-authorized_code: The code representing the authorization to obtain Credentials of a certain type.
     // This parameter MUST be present if the grant_type is urn:ietf:params:oauth:grant-type:pre-authorized_code.

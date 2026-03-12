@@ -8,7 +8,7 @@ import { ApiState } from 'types/internal.js';
 export async function validateGetCredentialOffer(issuer:Issuer, request:Request)
 {
     debug("validating get-credential-offer", request.params);
-    let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
+    const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     const { id } = request.params;
     const session = await issuer.getSessionById(id);
     if (!session) {

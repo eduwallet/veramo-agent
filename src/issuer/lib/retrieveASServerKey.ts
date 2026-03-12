@@ -23,6 +23,8 @@ export async function retrieveASServerKey(baseurl:string): Promise<ASKey[]|null>
             }
         }
     }
-    catch (e) {}
+    catch (e) {
+        console.error("Caught error retrieving server keys from AS", e);
+    }
     return null;
 }

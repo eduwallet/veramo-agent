@@ -12,15 +12,15 @@ import {
 @Index(['name'], { unique: true })
 export class CredentialType extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     id: number;
 
     @Column('text')
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     configuration: string
 
     @Column({ type: 'varchar'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     name: string
 
     @BeforeInsert()
@@ -35,10 +35,10 @@ export class CredentialType extends BaseEntity {
     }
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     saveDate: Date
 
     @Column({ type: 'timestamp'})
-    // @ts-ignore
+    //@ts-expect-error has no initializer
     updateDate: Date
 }

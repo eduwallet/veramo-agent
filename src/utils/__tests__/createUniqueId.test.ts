@@ -9,8 +9,8 @@ test("check length", () => {
 });
 
 test("check uniqueness", () => {
-    let elements:string[] = [];
-    for(var i = 0; i < 10000; i++) {
+    const elements:string[] = [];
+    for(let i = 0; i < 10000; i++) {
         const id = createUniqueId();
         expect(elements.indexOf(id)).toBe(-1);
         elements.push(id);

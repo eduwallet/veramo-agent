@@ -13,7 +13,7 @@ export function determineFieldLengths(objlist:any[], settings:FieldSettings): Fi
     for (const obj of objlist) {
         for (const key of Object.keys(settings)) {
             if (key && obj[key]) {
-                var length = settings[key].length;
+                let length = settings[key].length;
                 switch (settings[key].type) {
                     case 'number':
                         // only support integers here

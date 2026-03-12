@@ -11,62 +11,61 @@ import {
 @Entity('credential')
 export class Credential extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     id: number;
     
     @Column('varchar')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     uuid: string
 
     @Column('varchar')
-    //@ts-ignore
     // the original issuer state used to issue this credential
+    //@ts-expect-error has no initializer
     state: string
 
     @Column('varchar')
-    //@ts-ignore
     // the current revocation state of the credential
+    //@ts-expect-error has no initializer
     status: string
 
     @Column('varchar')
-    //@ts-ignore
     // principal id by which this credential is known
+    //@ts-expect-error has no initializer
     credpid: string
 
     @Column('varchar')
-    //@ts-ignore
     // did representation of the holder key
+    //@ts-expect-error has no initializer
     holder: string
 
     @Column('varchar')
-    //@ts-ignore
     // representation of holder key as defined by the wallet
+    //@ts-expect-error has no initializer
     original_holder: string
 
     @Column('varchar')
-    //@ts-ignore
     // configured name of the issuer
+    //@ts-expect-error has no initializer
     issuer: string
 
     @Column('varchar')
-    //@ts-ignore
     // configured type of the credential
+    //@ts-expect-error has no initializer
     credentialId: string
 
     @Column({ type: 'simple-json' })
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     metadata: StringKeyedObject;
 
     @Column({ type: 'simple-json' })
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     claims: StringKeyedObject
 
     @Column({ type: 'simple-json', nullable: true })
-    //@ts-ignore
     statuslists?: StringKeyedObject
 
     @Column('timestamp')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     issuanceDate: Date
 
     @Column({ type: 'timestamp', nullable: true })
@@ -84,10 +83,10 @@ export class Credential extends BaseEntity {
     }
 
     @Column({ type: 'timestamp', select: true })
-        //@ts-ignore
+    //@ts-expect-error has no initializer
     saveDate: Date
 
     @Column({ type: 'timestamp', select: true })
-        //@ts-ignore
+    //@ts-expect-error has no initializer
     updateDate: Date
 }

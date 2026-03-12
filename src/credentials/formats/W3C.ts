@@ -23,11 +23,11 @@ export class W3C
 
         const issuerName = this.getString('issuer_name');
         const issuerDescription = this.getString('issuer_description');
-        let context = (this.credential.contexts ?? []).slice();
+        const context = (this.credential.contexts ?? []).slice();
         if (!context.includes('https://www.w3.org/2018/credentials/v1')) {
             context.unshift('https://www.w3.org/2018/credentials/v1');
         }
-        let baseCredential:W3CType = {
+        const baseCredential:W3CType = {
             // The value of the @context property MUST be an ordered set where the first item is a URI with the value https://www.w3.org/2018/credentials/v1.
             "@context": context,
             type: ["VerifiableCredential", this.credential.type],
@@ -68,6 +68,7 @@ export class W3C
 
         this.addStatusListData(baseCredential);
         this.addEvidenceData(baseCredential);
+        this.addOtherMetadata(baseCredential);
 
         return { vc: baseCredential };
     }
@@ -124,6 +125,34 @@ export class W3C
             else if (this.credential.metaData.evidence.length) {
                 // array of entries
                 baseCredential.evidence = this.credential.metaData.evidence.slice();
+            }
+        }
+    }
+
+    private addOtherMetadata(baseCredential:W3CType)
+    {
+        // this only works on the OpenBadgeCredential, because the other types cannot set other metadata
+        for (const key of Object.keys(this.credential.metaData)) {
+            switch (key) {
+                case 'evidence':
+                case 'credentialStatus':
+                case 'issuanceDate':
+                case 'expirationDate':
+                    // pass
+                    break;
+                case 'issuer':
+                    baseCredential.issuer = Object.assign({}, this.credential.metaData.issuer, baseCredential.issuer);
+                    // make sure our issuer.id is set correctly though
+                    if (typeof(baseCredential.issuer) == 'object') {
+                        baseCredential.issuer.id = this.credential.issuer!.did!.did;
+                    }
+                    else {
+                        baseCredential.issuer = this.credential.issuer!.did!.did;
+                    }
+                    break;
+                default:
+                    baseCredential[key] = this.credential.metaData[key];
+                    break;
             }
         }
     }

@@ -34,7 +34,7 @@ export class EduID extends CredentialType
         this.enrichDataWithUserInfo(credential, session);
         debug("credential data is ", credential.data);
         debug("checking holder key reuse");
-        await this.checkHolderkeyReuse(credential, session);
+        await this.checkHolderkeyReuse(credential);
         debug("revoking previous");
         await this.revokePreviousCredentials(credential);
         credential.data = this.convertDataToClaims(credential.data);
@@ -42,13 +42,13 @@ export class EduID extends CredentialType
         return true;
     }
 
-    public check(credential:Credential)
+    public check()
     {
         return true;
     }
 
     private convertDataToClaims(input:any):any {
-        var retval:any = {};
+        const retval:any = {};
         for (const key of Object.keys(input)) {
             if (this.acceptedClaims.includes(key)) {
                 switch (key) {
@@ -96,7 +96,7 @@ export class EduID extends CredentialType
         }
     }
 
-    private async checkHolderkeyReuse(credential:Credential, session:Session)
+    private async checkHolderkeyReuse(credential:Credential)
     {
         // a holder key that received a EduID in the past cannot receive a new EduID again
         // UNLESS it is for the same EduID.

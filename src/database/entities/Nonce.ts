@@ -9,19 +9,19 @@ import {
 @Entity('nonce')
 export class Nonce extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     id: number;
     
     @Column('varchar')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     uuid: string
 
     @Column('varchar')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     session: string
 
     @Column('varchar')
-    //@ts-ignore
+    //@ts-expect-error has no initializer
     issuer: string
 
     @Column({ type: 'timestamp', nullable: true })
@@ -32,8 +32,7 @@ export class Nonce extends BaseEntity {
         this.saveDate = new Date()
     }
 
-
     @Column({ type: 'timestamp', select: false })
-        //@ts-ignore
+    //@ts-expect-error has no initializer
     saveDate: Date
 }

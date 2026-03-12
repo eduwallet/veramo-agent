@@ -4,7 +4,7 @@ const debug = Debug('issuer:eduid');
 import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { Credential } from '#root/credentials/Credential';
 import { CredentialType } from "#root/credentials/types/CredentialType";
-import { Session, Credential as DBCredential } from "#root/database/entities/index";
+import { Session } from "#root/database/entities/index";
 
 export class EduIDEntitlement extends CredentialType
 {

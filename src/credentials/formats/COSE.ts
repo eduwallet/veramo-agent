@@ -1,7 +1,6 @@
 import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
-import { VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
 import { VCDM } from "#root/credentials/formats/VCDM";
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
@@ -12,12 +11,10 @@ import { Factory } from '@muisit/cryptokey';
 export class COSE
 {
     private credential:Credential;
-    private type:string = 'vc+jwt';
 
-    public constructor(credential:Credential, type:string = 'vc+jwt')
+    public constructor(credential:Credential)
     {
         this.credential = credential;
-        this.type = type;
     }
 
     public async sign()

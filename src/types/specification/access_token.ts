@@ -22,10 +22,6 @@ export interface TokenRequest {
     authorization_details?:AuthorizationDetail[];
 }
 
-export interface TokenResponse {
-
-}
-
 export interface AuthorizationDetail {
     [x:string]: any;
 }

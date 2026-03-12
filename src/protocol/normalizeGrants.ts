@@ -1,7 +1,7 @@
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { AUTHORIZATION_CODE_GRANT, Grants, PRE_AUTHORIZED_CODE, PRE_AUTHORIZED_CODE_GRANT } from '../types/specification/credential_offer.js';
 import { generatePin } from './generatePin.js';
-import { APIGrants, TxCodeRequest } from 'types/api/credentialOffer.js';
+import { APIGrants } from 'types/api/credentialOffer.js';
 
  export function normalizeGrants(apiGrants: APIGrants) {
     let preAuthorizedCode: string | undefined = undefined
@@ -21,7 +21,7 @@ import { APIGrants, TxCodeRequest } from 'types/api/credentialOffer.js';
             apiGrants[PRE_AUTHORIZED_CODE_GRANT] = {};
         }
         preAuthorizedCode = apiGrants[PRE_AUTHORIZED_CODE_GRANT][PRE_AUTHORIZED_CODE]
-        let txCode = apiGrants[PRE_AUTHORIZED_CODE_GRANT].tx_code;
+        const txCode = apiGrants[PRE_AUTHORIZED_CODE_GRANT].tx_code;
         if (txCode !== false && txCode) {
             const length = txCode === true ? 4 : (txCode.length || 4);
             const mode = txCode === true ? 'numeric' : (txCode?.input_mode || 'numeric');

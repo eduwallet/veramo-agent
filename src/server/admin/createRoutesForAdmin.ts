@@ -10,9 +10,11 @@ import { adminBearerToken, hasAdminBearerToken } from '#root/utils/adminBearerTo
 import { getVersion } from './getVersion.js';
 import { exportConfig } from './exportConfig.js';
 
+type PassportCallback = (err:any, res:boolean) => void;
+
 function bearerAdminForAPI() {
     passport.use('admin-api', new Strategy(
-        function (token:string, done:Function) {
+        function (token:string, done:PassportCallback) {
             if (token == adminBearerToken()) {
                 return done(null, true);
             }

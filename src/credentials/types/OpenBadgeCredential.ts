@@ -4,17 +4,16 @@ const debug = Debug('issuer:obc');
 import { CredentialType } from "#root/credentials/types/CredentialType";
 import { Credential } from '#root/credentials/Credential';
 import { createUniqueId } from '#root/utils/createUniqueId';
-import { Session } from "#root/database/entities/index";
 
 export class OpenBadgeCredential extends CredentialType {
-    check(credential:Credential): boolean {
+    check(): boolean {
         // TODO: check using jsonschema in payload and hardcoded obv3p0 schema
         // Checking claims by randomly looking for presence of attributes is a lot of work.
         // and adds little for the rather complex obv3 schema. So we just skip it entirely.
         return true;
     }
 
-    public async resolve(credential:Credential, session:Session) {
+    public async resolve(credential:Credential) {
         debug('resolving OBC credential instance');
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
@@ -29,14 +28,16 @@ export class OpenBadgeCredential extends CredentialType {
                 credential.contexts = credential.presetCredential[key];
                 break;
               case 'credentialSubject':
-                const data = Object.assign({}, credential.presetCredential[key]);
-                // if the preset credential has an id in the credentialSubject, remove it. We need this to
-                // bind our key
-                if (data.id) {
-                  delete data.id;
+                {
+                  const data = Object.assign({}, credential.presetCredential[key]);
+                  // if the preset credential has an id in the credentialSubject, remove it. We need this to
+                  // bind our key
+                  if (data.id) {
+                    delete data.id;
+                  }
+                  credential.data = data;
+                  break;
                 }
-                credential.data = data;
-                break;
               case 'name':
               case 'description':
                 credential.addDictionaryValue(key, credential.presetCredential[key], 'en_US');

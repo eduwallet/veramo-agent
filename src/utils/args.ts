@@ -10,9 +10,9 @@ export interface Arguments {
 }
 
 export const getArgs = (opts:Option[]) => {
-    var currentOpt:Option|null = null;
-    var options:Arguments = {};
-    var files:string[] = [];
+    let currentOpt:Option|null = null;
+    const options:Arguments = {};
+    const files:string[] = [];
 
     process.argv.forEach((v,i) => {
         if (i > 1) {
@@ -21,7 +21,7 @@ export const getArgs = (opts:Option[]) => {
                 currentOpt = null;
             }
             else {
-                var found = false;
+                let found = false;
                 for (const opt of opts) {
                     if (v == ('-' + opt.short) || v == ('--' + opt.name)) {
                         found = true;

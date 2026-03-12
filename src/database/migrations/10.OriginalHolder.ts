@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn } from 'typeorm'
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm'
 import { migrationGetTableName } from './migration-functions.js'
 
 export class OriginalHolder1769001656333 implements MigrationInterface {

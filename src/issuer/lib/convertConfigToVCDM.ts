@@ -58,7 +58,7 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
 
 function prependAllClaimPaths(claims:CredentialConfigurationClaimData[], key:string)
 {
-    let retval:CredentialConfigurationClaimData[] = [];
+    const retval:CredentialConfigurationClaimData[] = [];
     for (const clm of claims) {
         const claim = JSON.parse(JSON.stringify(clm)); // clone the data
         claim.path.unshift(key);

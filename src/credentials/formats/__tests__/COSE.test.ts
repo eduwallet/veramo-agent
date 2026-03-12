@@ -1,4 +1,4 @@
-import { vi, expect, test} from 'vitest';
+import { expect, test} from 'vitest';
 import { Issuer } from '../../../issuer/Issuer';
 import { COSE } from '../COSE';
 import { Credential } from '../../Credential';

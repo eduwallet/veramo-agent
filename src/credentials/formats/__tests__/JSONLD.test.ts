@@ -66,7 +66,7 @@ test('JSONLD conversion with unspecced attributes', async () => {
     credential.metaData.evidence = {type:'Evidence2020'}; // not (yet) in the VC context apparently
     credential.contexts.push("http://example.net");
 
-    let output = (new VCDM(credential)).build();
+    const output = (new VCDM(credential)).build();
     await expect(JSONLD.sign(credential, output, '2025-01-01T02:02:02')).rejects.toThrow("JWS Safe event handler");
 });
 

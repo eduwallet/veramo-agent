@@ -10,7 +10,7 @@ import { CredentialOfferStatus } from 'types/api.js';
 
 export async function createCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):Promise<CreateCredentialData> {
     debug("creating credential offer", request);
-    let { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(request.grants);
+    const { grants, issuerState, preAuthorizedCode, userPin } = normalizeGrants(request.grants);
 
     const credentialConfigIds = request.credentials as string[]
 

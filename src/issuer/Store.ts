@@ -18,7 +18,7 @@ export interface IssuerStore {
     [x:string]:Issuer;
 }
 
-var _issuerStore:IssuerStore = {};
+const _issuerStore:IssuerStore = {};
 export const getIssuerStore = ():IssuerStore => _issuerStore;
 
 async function readFromDB()

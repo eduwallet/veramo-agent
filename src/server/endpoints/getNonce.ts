@@ -1,4 +1,4 @@
-import { Request, Router } from 'express'
+import { Request } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
 
 export function getNonce(issuer:Issuer) {

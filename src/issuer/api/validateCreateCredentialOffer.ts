@@ -9,7 +9,7 @@ import { PRE_AUTHORIZED_CODE_GRANT } from '#root/types/specification/credential_
 export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):ApiState
 {
     debug("validating createCredentialOffer", request);
-    let error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
+    const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
 
     debug('validateCreateCredentialOffer to issue credential from', issuer.name, request);
     if (!request.grants || Object.keys(request.grants).length === 0) {

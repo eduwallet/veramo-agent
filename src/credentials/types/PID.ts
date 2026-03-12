@@ -3,13 +3,12 @@ import { toStringByJoin } from "#root/utils/toStringByJoin";
 import { Credential } from '#root/credentials/Credential';
 import { CredentialType } from "#root/credentials/types/CredentialType";
 import moment from "moment";
-import { Session } from "#root/database/entities/index";
 
 const pidIssuanceFormat = 'DD-MM-YYYY';
 
 export class PID extends CredentialType
 {
-    public async resolve(credential:Credential, session:Session) {
+    public async resolve(credential:Credential) {
         this.setCredentialDisplay(credential);
         this.setIssuer(credential);
         credential.data = this.convertDataToClaims(credential.data);
@@ -30,7 +29,7 @@ export class PID extends CredentialType
     }
 
     private convertDataToClaims(input:any):any {
-        var retval:any = {};
+        const retval:any = {};
         for (const key of Object.keys(input)) {
             switch (key) {
                 case "personal_administrative_number":
@@ -63,11 +62,13 @@ export class PID extends CredentialType
                 case "age_over_13":
                 case "age_over_18":
                 case "sex":
-                    const value = parseFloat(toStringByJoin(input[key]));
-                    if (!isNaN(value) && value !== null) {
-                        retval[key] = value;
-                    }                
-                    break;
+                    {
+                        const value = parseFloat(toStringByJoin(input[key]));
+                        if (!isNaN(value) && value !== null) {
+                            retval[key] = value;
+                        }                
+                        break;
+                    }
             }
         }
         return retval;
