@@ -73,7 +73,10 @@ The Docker setup installs all dependencies inside the container, so there's no n
 - `LISTEN_ADDRESS`: local bind address for the Express server
 - `BASEURL`: base url served by the issuer agent
 - `BEARER_TOKEN`: access token for the administration api
-- `PASSPHRASE`: encoding passphrase used to encrypt secrets
+- `PASSPHRASE`: encoding passphrase used to encrypt secrets. This is a 32 character alpha-numeric string
+- `OIDFED_KEY`: alias of the identifier key to use for OID Federation purposes
+- `OIDFED_ADMIN_CONTACT`: contact e-mail address for administrative purposes
+- `OIDFED_AUTH`: base url of the directly supervising authority (the authority hint)
 
 ### File based configuration
 

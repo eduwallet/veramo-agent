@@ -17,6 +17,7 @@ import {
     revokeCredential,
     getNonce,
 } from './endpoints/index.js'
+import { getOIDFed } from './endpoints/getOIDFed.js';
 
 export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnownRouter:Router) {
     // to support internal redirections, we set up the routes on <base-url>/<tenant>/...
@@ -49,6 +50,9 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
     getMetadata(issuer, basePath, wellKnownRouter)
+
+    // Serving the /.well-known/openid-federation document
+    getOIDFed(issuer);
   
     if (issuer.did?.provider == 'did:web') {
         // This endpoint serves the /.well-known/did.json document

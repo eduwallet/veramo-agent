@@ -66,6 +66,7 @@ export class W3C
             baseCredential.expirationDate = moment(this.credential.metaData.expirationDate).format('YYYY-MM-DDTHH:mm:ssZ');
         }
 
+        this.addOIDFedMetadata(baseCredential, this.credential.issuer?.options.baseUrl);
         this.addStatusListData(baseCredential);
         this.addEvidenceData(baseCredential);
         this.addOtherMetadata(baseCredential);
@@ -94,6 +95,35 @@ export class W3C
         return '';
     }
 
+    private addOIDFedMetadata(baseCredential:W3CType, entity?:string)
+    {
+
+        if (!baseCredential.termsOfUse) {
+            baseCredential.termsOfUse = {
+                "type": "OpenIDFederation",
+                "policyId": entity
+            };
+        }
+        else {
+            if (!Array.isArray(baseCredential.termsOfUse) && baseCredential.termsOfUse.type != 'OpenIDFederation') {
+                baseCredential.termsOfUse = [baseCredential.termsOfUse];
+                baseCredential.termsOfUse.push({
+                    "type": "OpenIDFederation",
+                    "policyId": entity
+                });
+            }
+            else if(Array.isArray(baseCredential.termsOfUse)) {
+                const hasOIDFed = baseCredential.termsOfUse.filter((i) => i.type == 'OpenIDFederation').length  > 0;
+                if (!hasOIDFed) {
+                    baseCredential.termsOfUse.push({
+                        "type": "OpenIDFederation",
+                        "policyId": entity
+                    }); 
+                }
+            }
+        }
+    }
+    
     private addStatusListData(baseCredential:W3CType)
     {
         if (this.credential.metaData.credentialStatus) {
