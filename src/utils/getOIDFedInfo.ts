@@ -20,6 +20,7 @@ export async function getOIDFedInfo(issuer:Issuer, date?:string) {
     typ: 'JWT',
     kid: jwk.kid
   };
+  const dpl = (metadata.display ?? [])[0];
   jwt.payload = {
     "iss": issuer.options.baseUrl,
     "sub": issuer.options.baseUrl,
@@ -27,9 +28,9 @@ export async function getOIDFedInfo(issuer:Issuer, date?:string) {
     "exp": moment(date).unix() + 300,
     "metadata": {
       "federation_entity": {
-        "display_name": issuer.options.name,
+        "display_name": dpl ? dpl.name : issuer.options.name,
         ...(logouri && {"logo_uri": logouri}),
-        "organization_name": issuer.options.name,
+        "organization_name": dpl ? dpl.name : issuer.options.name,
         "contacts": [process.env.OIDFED_ADMIN_CONTACT]
       },
       "openid_credential_issuer": metadata,
