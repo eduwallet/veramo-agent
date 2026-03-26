@@ -1,6 +1,6 @@
 {
   "name": "veramo-agent",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Veramo agent",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
