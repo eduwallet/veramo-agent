@@ -68,6 +68,7 @@ export class VCDM
         this.addStatusListData(baseCredential);
         this.addEvidenceData(baseCredential);
         this.addOtherMetadata(baseCredential);
+        this.addOIDFedMetadata(baseCredential, this.credential.issuer?.options.baseUrl);
         return baseCredential;
     }
 
@@ -94,6 +95,35 @@ export class VCDM
             return retval;
         }
         return '';
+    }
+
+    private addOIDFedMetadata(baseCredential:VCDMType, entity?:string)
+    {
+
+        if (!baseCredential.termsOfUse) {
+            baseCredential.termsOfUse = {
+                "type": "OpenIDFederation",
+                "policyId": entity
+            };
+        }
+        else {
+            if (!Array.isArray(baseCredential.termsOfUse) && baseCredential.termsOfUse.type != 'OpenIDFederation') {
+                baseCredential.termsOfUse = [baseCredential.termsOfUse];
+                baseCredential.termsOfUse.push({
+                    "type": "OpenIDFederation",
+                    "policyId": entity
+                });
+            }
+            else if(Array.isArray(baseCredential.termsOfUse)) {
+                const hasOIDFed = baseCredential.termsOfUse.filter((i) => i.type == 'OpenIDFederation').length  > 0;
+                if (!hasOIDFed) {
+                    baseCredential.termsOfUse.push({
+                        "type": "OpenIDFederation",
+                        "policyId": entity
+                    }); 
+                }
+            }
+        }
     }
 
     private addStatusListData(baseCredential:VCDMType)

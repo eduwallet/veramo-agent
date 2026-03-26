@@ -29,6 +29,7 @@ export class SDJWT
         const baseCredential:SdJwtVcPayload = {
             iss: this.credential.issuer!.did!.did,
             vct: vct!.vct!,
+            fed: this.credential.issuer?.options.baseUrl,
             iat: moment().unix()
         };
         if (this.credential.automaticallyBindHolder && this.credential.holder) {
