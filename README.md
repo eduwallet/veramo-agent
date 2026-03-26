@@ -273,6 +273,18 @@ If a status list is configured for an issuer, the application will request the s
 in the bitstring. The relevant data is returned in the `credentialStatus` attribute of the credential. This information
 is also stored in the database, so it can be used for later revocation and/or suspension.
 
+## OpenID Federation
+
+This issuer version supports OpenID Federation. Please set the relevant environment variables to fill the relevant configurations:
+
+- `OIDFED_KEY`: alias of the identifier key to use for OID Federation purposes
+- `OIDFED_ADMIN_CONTACT`: contact e-mail address for administrative purposes
+- `OIDFED_AUTH`: base url of the directly supervising authority (the authority hint)
+
+The `OIDFED_KEY` must be configured in the `dids` configuration as a regular key. Do not reuse another key for this, OpenID Federation states that these keys must only ever be used for OpenID Federation purposes.
+
+The `OIDFED_ADMIN_CONTACT` is used verbatim in the OpenID Federation metadata hosted at `<base-url>/<tenant>/.well-known/openid-federation`. The `OIDFED_AUTH` url is added there as the `authority_hint` and should match the supervising entity at which this leaf is registered. The tool signs the OpenID Federation metadata with the indicated `OIDFED_KEY`.
+
 ## Endpoints
 
 Routing and endpoints are set in various places. There are two kinds of endpoints: OpenID4VC endpoints and API endpoints.
@@ -456,6 +468,7 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|  v1.5.0 | a4b7690 | 2026-03-26 | Support for OpenID Federation for SD-JWT and VCDM/W3C credentials using the DIIPv5 spec |
 |  v1.4.0 | dd8595b | 2026-03-03 | `credential_callback` now returns the full access token claim set |
 |         | 55f3438 | 2026-01-27 | Added `/api/export` endpoint to export a zip archive with ready to use configuration files |
 |         | 3082911 | 2026-01-08 | Allowing the `claims` attribute in `credentialSubject` to directly set the 'new' `claims` data for metadata |
