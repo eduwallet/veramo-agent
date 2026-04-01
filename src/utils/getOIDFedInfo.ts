@@ -13,11 +13,14 @@ export async function getOIDFedInfo(issuer:Issuer, date?:string) {
 
   const jwk = await Factory.toJWK(oidfedkey.key);
   const issuerJWK = await Factory.toJWK(issuer.key!);
+  // DIIPv5: the kid in the OIDFed JWK must/should match the kid as used in the credential kid header (absolute or relative)
+  issuerJWK.kid = issuer.did!.did + '#' + Factory.getKeyReference(issuer.did!.did);
   const metadata = issuer.generateMetadata();
   const logouri = metadata.display![0].logo?.uri;
   const jwt = new JWT();
   jwt.header = {
-    typ: 'JWT',
+    alg: oidfedkey.key.algorithms()[0],
+    typ: 'entity-statement+jwt',
     kid: jwk.kid
   };
   const dpl = (metadata.display ?? [])[0];
@@ -50,6 +53,6 @@ export async function getOIDFedInfo(issuer:Issuer, date?:string) {
         jwt.payload.metadata.federation_entity['organization_name#' + dpl.locale] = dpl.name!;
     }
   }
-  await jwt.sign(issuer.key!, issuer.algorithm());
+  await jwt.sign(oidfedkey.key, oidfedkey.key.algorithms()[0]);
   return jwt.token;
 }
