@@ -41,7 +41,7 @@ export async function getOIDFedInfo(issuer:Issuer, date?:string) {
         "jwks": [issuerJWK]
       }
     },
-    "jwks": [jwk],
+    "jwks": {"keys": [jwk]},
     "authority_hints": [process.env.OIDFED_AUTH]
   };
 
