@@ -3,20 +3,8 @@ import { CredentialConfiguration, CredentialConfigurationClaimData, CredentialCo
 
 export function convertConfigToVCDM(credentialId:string, config:ExtendableCredentialConfiguration): CredentialConfiguration
 {
-    let format:CredentialFormat = 'jwt_vc_json';
-    switch (config.format) {
-        default:
-        case 'jwt_vc_json':
-        case 'vc+jwt':
-            format = 'jwt_vc_json';
-            break;
-        case 'jwt_vc_json-ld':
-        case 'ldp_vc':
-            format = config.format;
-            break;
-    }
     const vcdm:CredentialConfigurationVCDM = {
-        format,
+        format: config.format,
         // skip credential_signing_algs_supported, it is added in the issuer
         // skip cryptographic_binding_methods_supported, it is added in the issuer
         // skip proof_types_supported, it is added in the issuer
