@@ -10,10 +10,12 @@ import { VctClaimPathElement } from "#root/types/specification/vct";
 import { fromString } from 'uint8arrays';
 import moment from 'moment';
 import { Factory } from '@muisit/cryptokey';
+import { VCDM } from './VCDM.js';
 
 export class SDJWT
 {
     private credential:Credential;
+    private baseCredential:any;
     private type:string = 'dc+sd-jwt';
     public constructor(credential:Credential, type:string = 'dc+sd-jwt')
     {
@@ -21,14 +23,28 @@ export class SDJWT
         this.type = type;
     }
 
+    public async build()
+    {
+        if (this.type == 'dc+sd-jwt') {
+            this.baseCredential = this.credential.data;
+        }
+        else {
+            const cred = new VCDM(this.credential);
+            this.baseCredential = await cred.build();
+        }
+    }
+
     public async sign()
     {
         debug("signing SD JWT");
-        const vct = getVctForCredentialType(this.credential.type!);
+        let vct:any = null;
+        if (this.type == 'dc+sd-jwt') {
+            vct = getVctForCredentialType(this.credential.type!);
+        }
 
         const baseCredential:SdJwtVcPayload = {
             iss: this.credential.issuer!.did!.did,
-            vct: vct!.vct!,
+            ...(vct && {vct: vct!.vct!}),
             fed: this.credential.issuer?.options.baseUrl,
             iat: moment().unix()
         };
@@ -49,9 +65,9 @@ export class SDJWT
         }
 
         // if we have a credentialSubject, convert it to claims
-        if (this.credential.data) {
-            Object.keys(this.credential.data).forEach((k) => {
-                baseCredential[k] = this.credential.data![k];
+        if (this.baseCredential) {
+            Object.keys(this.baseCredential).forEach((k) => {
+                baseCredential[k] = this.baseCredential![k];
             });
         }
 

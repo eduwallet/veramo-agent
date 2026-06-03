@@ -72,9 +72,9 @@ export class CredentialFactory
         switch ((credential.format || '') as string) {
             case 'dc+sd-jwt':
             case 'vc+sd-jwt':
-                // TODO: vc+sd-jwt is a VCDM 2 credential encoded as SD-JWT
                 {
                     const sdjwt = new SDJWT(credential, credential.format);
+                    await sdjwt.build();
                     await sdjwt.sign();
                     break;
                 }
