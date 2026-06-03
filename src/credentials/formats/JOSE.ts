@@ -82,6 +82,9 @@ export class JOSE
         if ((baseCredential as VCDMType).id) {
             jwt.payload.jti = (baseCredential as VCDMType).id;
         }
+        if ((baseCredential as W3CType).vc?.id) {
+            jwt.payload.jti = (baseCredential as W3CType).vc.id;
+        }
         if ((baseCredential as VCDMType).credentialSubject?.id) {
             jwt.payload.sub = (baseCredential as VCDMType).credentialSubject.id;
         }
