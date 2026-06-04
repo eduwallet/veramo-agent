@@ -24,7 +24,7 @@ import { NonceManager } from '#root/utils/NonceManager';
 import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
-import { convertConfigToSDJWT } from './lib/convertConfigToSDJWT.js';
+import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertConfigToSDJWT.js';
 
 export class Issuer
 {
@@ -389,8 +389,10 @@ export class Issuer
                 resultCredential = convertConfigToVCDM(credentialId, decoratedCredential);
                 break;
             case 'vc+sd-jwt':
+                resultCredential = convertConfigToVCSDJWT(credentialId, decoratedCredential);
+                break;
             case 'dc+sd-jwt':
-                resultCredential = convertConfigToSDJWT(credentialId, decoratedCredential);
+                resultCredential = convertConfigToDCSDJWT(credentialId, decoratedCredential);
                 break;
         }
 
