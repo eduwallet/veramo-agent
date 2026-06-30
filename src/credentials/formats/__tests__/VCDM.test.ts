@@ -8,7 +8,7 @@ import { Credential } from '../../Credential';
 test('VCDM conversion', async () => {
     const issuer = new Issuer({}, {});
     let dataToSign:any = null; 
-    vi.spyOn(issuer, 'signData').mockImplementation(async (arg:Uint8Array):string => {
+    vi.spyOn(issuer, 'signData').mockImplementation(async function(arg:Uint8Array):Promise<string> {
         dataToSign = arg;
         return 'mocked-signature';
     });
@@ -36,7 +36,7 @@ test('VCDM conversion', async () => {
 
     //const expected = {"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","CredentialTest"],"credentialSubject":{"name":"Test","id":"did:test:holder"},"issuer":{"id":"did:test:me","name":[{"@value":"Name","@language":"en_US"},{"@value":"Naam","@language":"nl_NL"}],"description":[{"@value":"Descr","@language":"en_US"}]},"name":[{"@value":"TestCredential","@language":"en_US"},{"@value":"TestDingetje","@language":"nl_NL"}],"description":[{"@value":"Beschrijving","@language":"nl_NL"}],"validFrom":"2025-01-01T01:01:01+01:00"};
     // due to Sphereon and Unime not supporting language objects, we use basic strings
-    const expected = {"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","CredentialTest"],"credentialSubject":{"name":"Test","id":"did:test:holder"},"issuer":{"id":"did:test:me","name":"Name","description":"Descr"},"name":"TestCredential","description":"Beschrijving","validFrom":"2025-01-01T01:01:01+01:00"};
+    const expected = {"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","CredentialTest"],"credentialSubject":{"name":"Test","id":"did:test:holder#0"},"issuer":{"id":"did:test:me","name":"Name","description":"Descr"},"name":"TestCredential","description":"Beschrijving","validFrom":"2025-01-01T01:01:01+01:00"};
     expect(result).toStrictEqual(expected);
     expect(dataToSign).toBe(null); // signing not called
 });
@@ -87,7 +87,7 @@ test('VCDM holder binding', async () => {
     credential.holder = {type:'kid', did:'did:test:holder', data:'did:test:holder#0'};
     result = await vcdm.build();
     expect(result).toBeDefined();
-    expect(result.credentialSubject.id).toBe('did:test:holder');
+    expect(result.credentialSubject.id).toBe('did:test:holder#0');
 
     credential.automaticallyBindHolder = false;
     result = await vcdm.build();

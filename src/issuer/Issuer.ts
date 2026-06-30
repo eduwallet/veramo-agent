@@ -323,7 +323,7 @@ export class Issuer
     public generateMetadata() {
         const metadata:Metadata = Object.assign({}, this.metadata) as Metadata;
         const credentials:CredentialConfigurations = {};
-        for (const id of Object.keys(this.metadata.credential_configurations_supported)) {
+        for (const id of Object.keys(this.metadata.credential_configurations_supported || {})) {
             const credentialConfiguration = this.decorateCredentialConfiguration(id, this.metadata.credential_configurations_supported[id]);
             credentials[id] = credentialConfiguration;
         }

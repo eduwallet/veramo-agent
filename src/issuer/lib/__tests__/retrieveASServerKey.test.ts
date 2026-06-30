@@ -64,7 +64,7 @@ describe('retrieveASServerKey', () => {
 });
 
 function createFetchResponse(oidc:any, oauth:any, data:any) {
-    return async (url) => {
+    return async function(url) {
         if (url.indexOf('https://test/.well-known/openid-configuration') == 0) {
             return { json: () => new Promise((resolve) => resolve(oidc)) };
         }
