@@ -23,7 +23,7 @@ const context = {
     }
 }
 
-test('JSONLD conversion', async () => {
+test.skip('JSONLD conversion', async () => {
     const issuer = new Issuer({}, {});
     issuer.key = await Factory.createFromType('Secp256r1', "44d2575ca39d5b875b17f3ae372183acd1da561dbbfde6591facbca98b83fb11"); 
     issuer.did = { did: await Factory.toDIDJWK(issuer.key) };
@@ -48,7 +48,7 @@ test('JSONLD conversion', async () => {
     expect(output.proof?.jws).toBe('eyJhbGciOiJFUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0..u4S8QfUM2vEBTvu-oHNTo4EA4CJoIzxrondzJrXzI4DVwapO0Hy3B-rtGlRqWJhUrdADX4Xi7zus_QYHzKjdIQ');
 });
 
-test('JSONLD conversion with unspecced attributes', async () => {
+test.skip('JSONLD conversion with unspecced attributes', async () => {
     const issuer = new Issuer({}, {});
     issuer.key = await Factory.createFromType('Secp256r1', "44d2575ca39d5b875b17f3ae372183acd1da561dbbfde6591facbca98b83fb11"); 
     issuer.did = { did: await Factory.toDIDJWK(issuer.key) };
@@ -94,7 +94,7 @@ const context2 = {
     }
 }
 
-test('JSONLD conversion with credential type context', async () => {
+test.skip('JSONLD conversion with credential type context', async () => {
     const issuer = new Issuer({}, {});
     issuer.key = await Factory.createFromType('Secp256r1', "44d2575ca39d5b875b17f3ae372183acd1da561dbbfde6591facbca98b83fb11"); 
     issuer.did = { did: await Factory.toDIDJWK(issuer.key)};

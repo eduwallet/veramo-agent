@@ -99,6 +99,7 @@ export class VCDM
 
     private addOIDFedMetadata(baseCredential:VCDMType, entity?:string)
     {
+        if (!entity) return;
 
         if (!baseCredential.termsOfUse) {
             baseCredential.termsOfUse = {

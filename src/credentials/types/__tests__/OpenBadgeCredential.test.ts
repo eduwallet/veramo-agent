@@ -15,7 +15,7 @@ test('generate OpenBadgeCredential without evidence', async () => {
   });
 
   const obc = new OpenBadgeCredential();
-  expect(obc.check(credential)).toBeTruthy();
+  expect(obc.check()).toBeTruthy();
 
   const output = await obc.resolve(credential);
   expect(output).toBeTruthy();
