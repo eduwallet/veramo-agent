@@ -62,7 +62,7 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
     // We need to loop over all the ids supplied and set the relevant configuration and data
     session.data.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
-        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0], false),
+        credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0]),
         data: request.credentialDataSupplierInput,
         ...(request.credential && {credential: request.credential}),
         ...(request.credential_callback && {callback: request.credential_callback})

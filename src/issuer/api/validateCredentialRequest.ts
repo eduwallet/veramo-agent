@@ -104,7 +104,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     if (!credentialDataSet) {
     // TODO: update this when we want to support multiple credential issuance
         // if we did not get a credentialDataSet back, we rely on the id as documented in the session
-        const credentialConfiguration = issuer.getCredentialConfiguration(session.data?.credentialId, false);
+        const credentialConfiguration = issuer.getCredentialConfiguration(session.data?.credentialId);
         if (credentialConfiguration === null) {
             debug("invalid because credential configuration could not be found", session.data?.credentialId);
             error.error = ErrorCodes.INVALID_REQUEST;

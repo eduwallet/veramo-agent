@@ -290,12 +290,10 @@ export class Issuer
         return false;
     }
 
-    public getCredentialConfiguration(id:string, decorate:boolean = true): CredentialConfiguration|null {
+    public getCredentialConfiguration(id:string): CredentialConfiguration|null {
         let credential:any = this.hasCredentialConfiguration(id);
         if (credential !== false) {
-            if (decorate) {
-                credential = this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration);
-            }
+            credential = this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration, false);
             return credential;
         }
         return null;
@@ -361,7 +359,7 @@ export class Issuer
      * for this credential. 
      * If required, convert this from vc_jwt to vc+sw-jwt configuration.
      */
-    private decorateCredentialConfiguration(credentialId:string, overriddenConfiguration:ExtendableCredentialConfiguration):CredentialConfiguration {
+    private decorateCredentialConfiguration(credentialId:string, overriddenConfiguration:ExtendableCredentialConfiguration, convert:boolean = true):CredentialConfiguration {
         const store = getCredentialConfigurationStore();
 
         // allow the override configuration to specify which credential id it is explicitely overriding
@@ -374,9 +372,8 @@ export class Issuer
             store[credentialId] ?? {},
             overriddenConfiguration);
 
-        // remove extension mechanism from ExtendableCredentialConfiguration
-        if ((decoratedCredential as ExtendableCredentialConfiguration).extends) {
-            delete (decoratedCredential as ExtendableCredentialConfiguration).extends;
+        if (!convert) {
+            return decoratedCredential as CredentialConfiguration;
         }
 
         let resultCredential:CredentialConfiguration;

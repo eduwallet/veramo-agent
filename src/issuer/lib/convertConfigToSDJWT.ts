@@ -4,6 +4,7 @@ import { getVctForCredentialType } from "#root/vct/Store";
 
 export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCredentialConfiguration): CredentialConfiguration
 {
+    const claims = (config?.credential_definition.claims ?? []).filter((c) => (c.value_type !== 'internal'));
     const vct = getVctForCredentialType(credentialId);
     const sdjwt:CredentialConfigurationDCSD = {
         format: config.format,
@@ -14,12 +15,16 @@ export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCre
         ...(config.scope && {scope: config.scope}),
         credential_metadata: {
             ...(config.display && {display: config.display}),
-            claims: config?.credential_definition.claims ?? []
+            claims
         }
     }
 
     for (const key of Object.keys(config?.credential_definition?.credentialSubject ?? {})) {
         const value = config.credential_definition.credentialSubject![key];
+        if (value.value_type == 'internal') {
+            continue;
+        }
+
         // at this point we only support simple claims: single path elements
         const claim:CredentialConfigurationClaimData = {
             path: [key],
@@ -33,6 +38,7 @@ export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCre
 
 export function convertConfigToVCSDJWT(credentialId:string, config:ExtendableCredentialConfiguration): CredentialConfiguration
 {
+    const claims = (config?.credential_definition.claims ?? []).filter((c) => (c.value_type !== 'internal'));
     const sdjwt:CredentialConfigurationVCSD = {
         format: config.format,
         credential_definition: {
@@ -44,12 +50,15 @@ export function convertConfigToVCSDJWT(credentialId:string, config:ExtendableCre
         ...(config.scope && {scope: config.scope}),
         credential_metadata: {
             ...(config.display && {display: config.display}),
-            claims: config?.credential_definition.claims ?? []
+            claims: claims
         }
     }
 
     for (const key of Object.keys(config?.credential_definition?.credentialSubject ?? {})) {
         const value = config.credential_definition.credentialSubject![key];
+        if (value.value_type == 'internal') {
+            continue;
+        }
         // at this point we only support simple claims: single path elements
         const claim:CredentialConfigurationClaimData = {
             path: ['credentialSubject', key],
