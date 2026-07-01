@@ -36,6 +36,7 @@ export interface CredentialConfigurationClaimData {
     path: string[];
     origin?: ClaimOriginPath[]; // an array of paths of possible origins for this specific claim
     mandatory?:boolean;
+    value_type?: string;
     display?: CredentialConfigurationDisplay[];
 }
 

@@ -3,6 +3,7 @@ import { CredentialConfiguration, CredentialConfigurationClaimData, CredentialCo
 
 export function convertConfigToVCDM(credentialId:string, config:ExtendableCredentialConfiguration): CredentialConfiguration
 {
+    const claims = (config?.credential_definition.claims ?? []).filter((c) => (c.value_type !== 'internal'));
     const vcdm:CredentialConfigurationVCDM = {
         format: config.format,
         // skip credential_signing_algs_supported, it is added in the issuer
@@ -14,7 +15,7 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
         },
         credential_metadata: {
             ...(config.display && {display: config.display}),
-            claims: config?.credential_definition.claims ?? []
+            claims
         }
     }
 
@@ -24,6 +25,9 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
 
     for (const key of Object.keys(config?.credential_definition?.credentialSubject ?? {})) {
         const value = config.credential_definition.credentialSubject![key];
+        if (value.value_type == 'internal') {
+            continue;
+        }
         // at this point we only support simple claims: single path elements
         // for more complicated claims, populate the claims attribute directly
         let path = [key];
@@ -42,6 +46,7 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
         };
         vcdm.credential_metadata!.claims!.push(claim);
     }
+
     return vcdm as CredentialConfiguration;    
 }
 
