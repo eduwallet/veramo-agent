@@ -85,9 +85,10 @@ export class EduID extends CredentialType
 
     private enrichDataWithUserInfo(credential:Credential, session:Session)
     {
-        debug("enriching data with user info ", session.data.accessData);
+        debug("enriching data with user info ", session.data.accessData, 'using', credential.configuration);
         const data = session.data.accessData;
         this.copyClaimsFromOrigin(credential, data);
+        debug("resulting credential data", credential.data);
         if (credential.data.sub) {
             credential.principalId = toStringByJoin(credential.data.sub);
             delete credential.data.sub;

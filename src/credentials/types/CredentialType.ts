@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug('issuer:credentialtype');
+
 import { Session } from "#root/database/entities/index";
 import { CredentialConfigurationClaimData } from "#root/types/api/metadata";
 import { Credential } from "../Credential.js";
@@ -168,8 +171,10 @@ export abstract class CredentialType
             for (const origin of path.origin!) {
                 // origin is an array of strings
                 let value;
+                debug("copying value for ", path, " from ", origin);
                 switch (origin[0]) {
                     case '#accessData':
+                        debug("getting origin from accessData");
                         value = this.getAttributeFromPath(accessData, origin.slice(1));
                         break;
                     default:
@@ -177,11 +182,13 @@ export abstract class CredentialType
                         break;
                 }
                 if (typeof(value) != 'undefined' && value !== null) {
+                    debug("value found, setting on result");
                     result = this.setAttributeUsingPath(result, path.path, value);
                     break; // take the first valid value we find
                 }
             }
         }
+        debug("resulting credential data" , result);
         credential.data = result;
     }
 }
