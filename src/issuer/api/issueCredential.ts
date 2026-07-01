@@ -30,7 +30,7 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         const credential = new Credential();
         credential.issuer = issuer;
         credential.id = proofData.credentialDataSet.credentialId;
-        credential.setConfiguration(issuer.getCredentialConfiguration(credential.id, false)!);
+        credential.setConfiguration(issuer.getCredentialConfiguration(credential.id)!);
 
         // the format parameter can have an internal and an external value... not ideal
         // if we have an internal value, set it as the credential format instead of the
