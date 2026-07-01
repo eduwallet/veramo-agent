@@ -150,13 +150,16 @@ The credential claim data is located in the `credential_definition` attribute. I
                 "key1": {
                     "mandatory": <optional boolean>,
                     "value_type": "unused optional type indication",
-                    "display": <display object with attribute names>
+                    "display": <display object with attribute names>,
+                    "origin": [["optional list of paths (array of string arrays) to retrieve this claim from"]]
                 },
                 ...
             },
             "claims": [
                 {
                     "path": ["list of path elements"],
+                    "origin": [["optional list of paths (array of string arrays) to retrieve this claim from"]],
+                    "value_type": "optional value, use only to indicate a claim is 'internal' and should not be published",
                     "mandatory": "optional boolean",
                     "display": <display object with attribute names>
                 },
@@ -184,6 +187,8 @@ Optionally, instead of extending a credential based on the credential identifier
 The `extends` attribute is removed from the output if it was present.
 
 The `format` attribute is rewritten if it is `vc+jwt` to `json_vc_jwt`. This format indicates the credential should be output as VCDM 2.0.
+
+Note that the `value_type` of a claim can contain the string `internal`, in which case the whole claim is filtered out in the published metadata. This is used for specific credentials to allow retrieving special data that is not exported in the credential, but kept with the internal database anyway. When claims are provided in the "modern" `claims` attribute instead of through `credentialSubject`, do __not__ provide the `value_type` attribute unless it is set to `internal`.
 
 ### Issuers
 
@@ -468,6 +473,7 @@ The endpoint returns a JSON object containing a `status` attribute indicating th
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|  v1.6.0 | a185d3f | 2026-07-01 | Origin paths for credential claims to allow mixing different origins for specific credentials, only used for eduID |
 |  v1.5.0 | a4b7690 | 2026-03-26 | Support for OpenID Federation for SD-JWT and VCDM/W3C credentials using the DIIPv5 spec |
 |  v1.4.0 | dd8595b | 2026-03-03 | `credential_callback` now returns the full access token claim set |
 |         | 55f3438 | 2026-01-27 | Added `/api/export` endpoint to export a zip archive with ready to use configuration files |
