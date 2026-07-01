@@ -87,12 +87,10 @@ export class EduID extends CredentialType
     {
         debug("enriching data with user info ", session.data.accessData);
         const data = session.data.accessData;
-        if (data && Object.keys(data).length > 0) {
-            for (const nm of this.acceptedClaims) {
-                if (data[nm]) credential.data[nm] = data[nm];
-            }
-            debug('setting principalId to ', data['sub']);
-            credential.principalId = toStringByJoin(data['sub']);
+        this.copyClaimsFromOrigin(credential, data);
+        if (credential.data.sub) {
+            credential.principalId = toStringByJoin(credential.data.sub);
+            delete credential.data.sub;
         }
     }
 

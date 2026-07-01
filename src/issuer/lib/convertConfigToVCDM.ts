@@ -25,6 +25,7 @@ export function convertConfigToVCDM(credentialId:string, config:ExtendableCreden
     for (const key of Object.keys(config?.credential_definition?.credentialSubject ?? {})) {
         const value = config.credential_definition.credentialSubject![key];
         // at this point we only support simple claims: single path elements
+        // for more complicated claims, populate the claims attribute directly
         let path = [key];
         if (config.format == 'jwt_vc_json') {
             // old skool VCDM 1.0, which puts the credential in a vc top claim

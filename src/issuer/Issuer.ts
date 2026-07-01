@@ -374,11 +374,6 @@ export class Issuer
             store[credentialId] ?? {},
             overriddenConfiguration);
 
-        // remove extension mechanism from ExtendableCredentialConfiguration
-        if ((decoratedCredential as ExtendableCredentialConfiguration).extends) {
-            delete (decoratedCredential as ExtendableCredentialConfiguration).extends;
-        }
-
         let resultCredential:CredentialConfiguration;
         switch (decoratedCredential.format) {
             default:
