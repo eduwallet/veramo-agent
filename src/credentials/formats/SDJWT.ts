@@ -11,6 +11,7 @@ import { fromString } from 'uint8arrays';
 import moment from 'moment';
 import { Factory } from '@muisit/cryptokey';
 import { VCDM } from './VCDM.js';
+import { StatusListCredentialAttribute, StatusListCredentialAttributeIETF } from '#root/types/internal/statuslists';
 
 export class SDJWT
 {
@@ -76,8 +77,6 @@ export class SDJWT
         }
         this.addStatusListData(baseCredential);
 
-        // TODO: encode the baseCredential.status referring to the status list implementation
-        // the spec does not define this explicitely
         const signer: Signer = async (data: string): Promise<string> => {
             return await this.credential.issuer!.key!.sign(this.credential.issuer!.algorithm(), fromString(data, 'utf-8'), 'base64url')
         }
@@ -139,16 +138,13 @@ export class SDJWT
     // add the status-list data for IETF token lists.
     private addStatusListData(baseCredential:SdJwtVcPayload)
     {
+        // status list data should _always_ be added by the issuer, never by passing prefabricated data.
+        // Hence we can be more or less sure of the constitution of the data at this point. It should contain
+        // ready to consume StatusListCredentialAttributes
         if (this.credential.metaData.credentialStatus) {
-            let statusses:any = [];
-
-            if (this.credential.metaData.credentialStatus.type) {
-                statusses = [this.credential.metaData.credentialStatus];
-            }
-            else {
-                statusses = this.credential.metaData.credentialStatus;
-            }
-            
+            // array of entries
+            let statusses:StatusListCredentialAttribute[] = this.credential.metaData.credentialStatus;
+           
             // as opposed to the JOSE implementation, we retain all the available
             // status lists and add them as entries here.
             // However, the IETF spec only allows a single status list. We take the first
@@ -159,7 +155,9 @@ export class SDJWT
                 // as a status_list entry, no matter the encoding.
                 // The statuslist agent returns a ready to use return value
                 baseCredential.status = {
-                    status_list: statusses[0].credentialStatus
+                    // we cast here to pass the type check, but if it were a BitstringStatusList, it'd be fine
+                    // this is very much use case driven, so application defined
+                    status_list: statusses[0] as StatusListCredentialAttributeIETF
                 };
             }
         }

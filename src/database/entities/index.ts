@@ -8,7 +8,6 @@ import { Nonce } from "./Nonce.js";
 import { PrivateKey } from "./PrivateKey.js";
 import { Session } from "./Session.js";
 import { StatusList } from "./StatusList.js";
-import { StatusListConfiguration } from "./StatusListConfiguration.js";
 import { VCTDocument } from "./VCTDocument.js";
 
 export {
@@ -22,7 +21,6 @@ export {
     PrivateKey,
     Session,
     StatusList,
-    StatusListConfiguration,
     VCTDocument
 };
 
@@ -37,6 +35,5 @@ export const Entities = [
     PrivateKey,
     Session,
     StatusList,
-    StatusListConfiguration,
     VCTDocument
 ];

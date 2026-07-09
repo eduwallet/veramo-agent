@@ -3,7 +3,7 @@ const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";
-import { StatusList, StatusListIETF, StatusListW3C } from "#root/types/internal/statuslists";
+import { StatusList, StatusListIETF, StatusListOptions, StatusListW3C } from "#root/types/internal/statuslists";
 import { StatusListRevocationState } from '#root/types/api';
 import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
@@ -25,6 +25,8 @@ import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
 import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertConfigToSDJWT.js';
+import { getStatusListStore } from '#root/statusLists/StatusListStore';
+import { StatusListType } from '#root/statusLists/StatusListType';
 
 export class Issuer
 {
@@ -53,9 +55,24 @@ export class Issuer
         this.usesNonces = _options.usesNonces ?? true;
     }
 
+    public basePath(): string
+    {
+        return '/' + this.name;
+    }
+
     public algorithm():string
     {
         return this.key?.algorithms()[0] || 'EdDSA';
+    }
+
+    public usesAuthorisedCodeFlow()
+    {
+        return this.options.authorizationEndpoint && this.options.authorizationEndpoint.length;
+    }
+
+    public async exportJWK()
+    {
+        return this.key!.toJWK();
     }
 
     public async setDid()
@@ -269,7 +286,7 @@ export class Issuer
         return await Factory.toDIDDocument(this.key!, this.did?.did, services, "JsonWebKey2020"); // Sphereon requires the deprecated JsonWebKey2020 verification-method
     }
 
-    public hasCredentialConfiguration(name:string):boolean|ExtendableCredentialConfiguration {
+    public hasCredentialConfiguration(name:string):false|ExtendableCredentialConfiguration {
         if (!name || typeof(name) != 'string' || name == '') {
             return false;
         }
@@ -290,11 +307,10 @@ export class Issuer
         return false;
     }
 
-    public getCredentialConfiguration(id:string): CredentialConfiguration|null {
-        let credential:any = this.hasCredentialConfiguration(id);
+    public getCredentialConfiguration(id:string): ExtendableCredentialConfiguration|null {
+        let credential = this.hasCredentialConfiguration(id);
         if (credential !== false) {
-            credential = this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration, false);
-            return credential;
+            return this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration, false) as ExtendableCredentialConfiguration;
         }
         return null;
     }
@@ -359,7 +375,8 @@ export class Issuer
      * for this credential. 
      * If required, convert this from vc_jwt to vc+sw-jwt configuration.
      */
-    private decorateCredentialConfiguration(credentialId:string, overriddenConfiguration:ExtendableCredentialConfiguration, convert:boolean = true):CredentialConfiguration {
+    private decorateCredentialConfiguration(credentialId:string, overriddenConfiguration:ExtendableCredentialConfiguration, convert:boolean = true)
+        :CredentialConfiguration|ExtendableCredentialConfiguration {
         const store = getCredentialConfigurationStore();
 
         // allow the override configuration to specify which credential id it is explicitely overriding
@@ -373,7 +390,7 @@ export class Issuer
             overriddenConfiguration);
 
         if (!convert) {
-            return decoratedCredential as CredentialConfiguration;
+            return decoratedCredential;
         }
 
         let resultCredential:CredentialConfiguration;
@@ -429,6 +446,7 @@ export class Issuer
       return await qb.orderBy('c.id', 'ASC').getRawMany();
     }
 
+    // STATLIST-TODO: rewrite this to revoke the credentials in the database, matching an optional listname
     public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string|null, onlyRevoke:boolean = false): Promise<StatusListRevocationState>
     {
         debug("revoking specific credential " + uuid);
@@ -531,13 +549,11 @@ export class Issuer
         return StatusListRevocationState.UNKNOWN;
     }
 
-    public usesAuthorisedCodeFlow()
+    public async reserveOnStatusList(statlist:StatusListOptions, expiry:Date|undefined): Promise<StatusList>
     {
-        return this.options.authorizationEndpoint && this.options.authorizationEndpoint.length;
-    }
-
-    public async exportJWK()
-    {
-        return this.key!.toJWK();
+        const statuslistType = new StatusListType(statlist, this);
+        const listAndIndex = await statuslistType.newIndex(expiry);
+        const credValue = statuslistType.indexAsCredential(listAndIndex.list, listAndIndex.index);
+        return credValue;
     }
 }

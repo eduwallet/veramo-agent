@@ -157,6 +157,7 @@ The credential claim data is located in the `credential_definition` attribute. I
             "claims": [
                 {
                     "path": ["list of path elements"],
+                    "origin": [["optional list of path elements"], ...]
                     "mandatory": "optional boolean",
                     "display": <display object with attribute names>
                 },
@@ -167,6 +168,10 @@ The credential claim data is located in the `credential_definition` attribute. I
 ```
 
 Please note: for the 'w3c' type, the `vc` prefix is automatically prepended to the path specifiers, it should not be added explicitely in this claims definition.
+
+The `credentialSubject.key1.{}` way of specifying claims only supports single layered, single value claims. Use the `claims` array to specificy more complex claim structures.
+
+The optional `origin` value allows some degree of mapping external claim data to a specific credential claim. It is a list of lists, each evaluated in turn and the first valid entry is used. It can be used when the external data retrieved from an `authorisation_code` flow returns a data structure that can change for users or situations. In `pre-authorized` code flow, the data structure is assumed to be defined up front by the front-end issuing application and can be set precisely to the fields the credential requires.
 
 Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` or `dc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
 
@@ -183,7 +188,46 @@ Optionally, instead of extending a credential based on the credential identifier
 
 The `extends` attribute is removed from the output if it was present.
 
-The `format` attribute is rewritten if it is `vc+jwt` to `json_vc_jwt`. This format indicates the credential should be output as VCDM 2.0.
+If a credential supports a status list implementation, the status list options can be configured in the metadata. Like with the `extends` attribute, this configuration is removed from the metadata output:
+
+## Status Lists
+
+The statuslist configuration lists the available status lists for this issuer for each credential available:
+
+```json
+{
+    ...
+    "CredentialId2": {
+        ...
+        "statusLists": {
+            "AcademicBaseCredential": {
+                "name": "generic name, like revoke or suspend, to be able to distinguish multiple status lists for the same credential",
+                "size": <number of entries allowed in this list, by default and at least set to 131072>,
+                "bitSize": <number of bits per entry, being 1, 2, 3 or 4>,
+                "purpose": "optional string like revocation, suspension",
+                "type": "type specification, by default set to BitstringStatusList",
+                "messages": [
+                    {
+                        "status": "string representation in hex of the message value, like 0x01",
+                        "message": "message related to this bit value"
+                    }, ...
+                ]
+            }, ...
+            ...
+        }
+    }
+    ...
+}
+```
+
+This application implements several types of status lists:
+
+- `StatusList2020`, `RevocationList2020Status`, `SuspensionList2020Status`: an outdated version of `BitstringStatusList`
+- `StatusList2021`, `RevocationList2021Status`, `SuspensionList2021Status`: an outdated version of `BitstringStatusList`
+- `BitstringStatusList`: see https://w3c.github.io/vc-bitstring-status-list/ for more information
+- `statuslist+jwt`: see https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/21/
+
+If a statuslist is configured for a credential of an issuer, the issuer will reserve the appropiate bits on that statuslist and add the relevant attribute to the credential output. The `messages` attribute is optional and will be automatically filled for `BitstringStatusList` entries in credentials, which require a `messages` list if the `bitSize` is larger than 1.
 
 ### Issuers
 
@@ -198,7 +242,6 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
     "adminToken": <string bearer token to be passed by front end agents to create credential offers>,
     "authorizationEndpoint": <optional authorization server to be used for authorized code flow>,
     "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
-    "statusLists": <optional status list specifications>,
     "did": <did alias or did name as configured in the did section above>,
     "key": "optional key reference index, like '0', depending on the identifier key format",
     "usesNonces": <boolean value that indicates if a nonce value should be generated in the access token>
@@ -209,21 +252,7 @@ The definition is available in the `src/types/internal.ts` file, `IssuerConfigur
 
 The `key` attribute is automatically set based on the type of the key, usually to '0'. If you have a very specific key configuration, you can override it with the `key` attribute, but it should not be necessary. The `did:jwk` keys always have a key reference of '0'. The `did:web` implementation has a key reference of '0' as well. The `did:key` specification indicates the key reference is the multibase encoded public key, but that is not known in advance if the key needs to be generated fresh.
 
-The statuslist configuration lists the available status lists for this issuer:
-
-```json
-{
-    ...
-    "statusLists": {
-        "AcademicBaseCredential": {
-            "url": <endpoint of the status list reservation service>,
-            "revoke": <endpoint of the status list revoke service>,
-            "token": <string bearer token to be used to access the status list service>
-        }
-    }
-    ...
-}
-```
+See the chapter on StatusLists below for the status list configuration options.
 
 The `usesNonces` setting is used to enforce the use of nonce values in access tokens from external authorization servers. Because it it not known in advance if such AS entities do or do not use nonce values, their presence can be enforced with this setting. Please note that there is no way for the issuer to know if this nonce value is actually correct without having a separate api to check this. For this reason, using nonce values with external AS entities does not increase security. For the `pre-authorized_code` flow, nonce values _are_ used regardless of this setting.
 
@@ -264,14 +293,6 @@ If the `access token` is a JWT, the issuer tries to retrieve the `issuer_state` 
 the session, the issuer will then determine the credential subject data. There is currently no implementation to retrieve additional data based
 on the authenticated user, like requesting a user info endpoint or further dissecting the `access token`.
 
-## Status Lists
-
-This application implements `StatusList2021`, which is an outdated version of `BitstringStatuslist`. See
-https://w3c.github.io/vc-bitstring-status-list/ for more information.
-
-If a status list is configured for an issuer, the application will request the status list agent to reserve a bit
-in the bitstring. The relevant data is returned in the `credentialStatus` attribute of the credential. This information
-is also stored in the database, so it can be used for later revocation and/or suspension.
 
 ## Endpoints
 

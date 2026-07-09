@@ -25,26 +25,7 @@ export class Statuslists1769001656334 implements MigrationInterface {
           ],
         }),
         true,
-      )
-
-    await queryRunner.createTable(
-        new Table({
-          name: migrationGetTableName(queryRunner, 'statuslistconf'),
-          columns: [
-            { name: 'id', type: "int", isPrimary: true, isGenerated: true, generationStrategy: "increment" },
-            { name: 'name', type: 'varchar', isNullable: false},
-            { name: 'tokens', type: 'text', isNullable: false},
-            { name: 'messages', type: 'text', isNullable: true},
-            { name: 'size', type: 'int', isNullable: false},
-            { name: 'bitsize', type: 'int', isNullable: false},
-            { name: 'purpose', type: 'varchar', isNullable: false},
-            { name: 'type', type: 'varchar', isNullable: false },
-            { name: 'saveDate', type: dateTimeType },
-            { name: 'updateDate', type: dateTimeType }
-          ],
-        }),
-        true,
-      )
+      );
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {

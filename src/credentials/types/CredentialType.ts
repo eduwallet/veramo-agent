@@ -31,8 +31,8 @@ export abstract class CredentialType
 
     protected setCredentialDisplay(credential:Credential)
     {
-        if (credential.configuration?.credential_metadata?.display) {
-            for (const display of credential.configuration.credential_metadata.display) {
+        if (credential.configuration?.display) {
+            for (const display of credential.configuration.display) {
                 if (display.name) {
                     credential.addDictionaryValue('name', display.name, display.locale ?? 'en_US');
                 }
@@ -97,9 +97,9 @@ export abstract class CredentialType
         // We used to use the decorated (and transformed) credentials, but these will not have the origin attribute
         // that we need here.
         let claims:CredentialConfigurationClaimData[] = [];
-        if (credential.configuration.credential_definition?.claims) {
+        if (credential.configuration!.credential_definition?.claims) {
             // make sure every claim has an appropiate origin
-            for (const claim of credential.configuration.credential_definition?.claims) {
+            for (const claim of credential.configuration!.credential_definition?.claims) {
                 const newclaim = Object.assign({}, claim);
                 if (!newclaim.origin) {
                     newclaim.origin = [newclaim.path];
@@ -108,8 +108,8 @@ export abstract class CredentialType
             }
         }
 
-        for (const key of Object.keys(credential.configuration.credential_definition?.credentialSubject ?? {})) {
-            const value = credential.configuration.credential_definition.credentialSubject![key];
+        for (const key of Object.keys(credential.configuration!.credential_definition?.credentialSubject ?? {})) {
+            const value = credential.configuration!.credential_definition.credentialSubject![key];
             // at this point we only support simple claims: single path elements
             // for more complicated claims, populate the claims attribute directly
             let path = ['credentialSubject', key];

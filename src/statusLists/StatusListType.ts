@@ -4,15 +4,17 @@ import { getEnv } from "#root/utils/getEnv";
 import  {Bitstring} from '@digitalcredentials/bitstring';
 import { StatusList } from "#root/database/entities/StatusList";
 import { getDbConnection } from "#root/database/databaseService";
-import { StatusListInterface, StatusListMessage, StatusListTypeOptions } from '#root/types/internal/statuslists';
+import { StatusListInterface, StatusListMessage, StatusListOptions } from '#root/types/internal/statuslists';
 import {gzip, ungzip} from 'pako';
 import { inflateSync, deflateSync } from 'zlib';
 import { toString, fromString } from 'uint8arrays';
+import { createStatusCredential } from './lib/createStatusCredential.js';
+import { Issuer } from '#root/issuer/Issuer';
 
 export class StatusListType implements StatusListInterface {
+    public issuer:Issuer;
     public name:string;
     public id:string;
-    public adminTokens:string[];
     public size:number;
     public purpose:string;
     public type:string;
@@ -20,17 +22,20 @@ export class StatusListType implements StatusListInterface {
     public lists:StatusList[];
     public messages?:StatusListMessage[];
     
-    public constructor(opts:StatusListTypeOptions)
+    public constructor(opts:StatusListOptions, issuer:Issuer)
     {
+        this.issuer = issuer;
         this.name = opts.name;
-        this.adminTokens = opts.tokens;
         this.size = opts.size;
+        if (this.size < 131072) {
+            this.size = 131072;
+        }
         this.purpose = opts.purpose;
-        this.type = opts.type ?? 'StatusList2020';
+        this.type = opts.type ?? 'BitstringStatusList';
         this.bitSize = opts.bitSize ?? 1;
         this.messages = opts.messages;
 
-        this.id = getEnv('BASEURL', '') + '/' + this.name;
+        this.id = issuer.basePath() + '/sl/' + this.name;
         this.lists = [];
     }
 
@@ -83,7 +88,7 @@ export class StatusListType implements StatusListInterface {
     {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(StatusList);
-        this.lists = await repo.find({where:{name: this.name}, order: {index:'ASC'}});
+        this.lists = await repo.find({where:{name: this.id}, order: {index:'ASC'}});
     }
 
     public async get(index:number)
@@ -99,7 +104,17 @@ export class StatusListType implements StatusListInterface {
 
     public createCredentialUrl(listIndex?:number)
     {
-        return getEnv('BASEURL', '') + '/' + this.name + '/' + (listIndex != undefined ? listIndex : '');
+        return getEnv('BASEURL', '') + this.id + '/' + (listIndex != undefined ? listIndex : '');
+    }
+
+    public pathOfIndex(listIndex:number, index:number)
+    {
+        return this.createCredentialUrl(listIndex) + '#' + index;
+    }
+
+    public indexAsCredential(lst:StatusList, index:number) 
+    {
+        return createStatusCredential(this, lst, index);
     }
 
     public async newIndex(expirationDate:Date|null|undefined)
@@ -314,5 +329,4 @@ export class StatusListType implements StatusListInterface {
         }
         return await ungzip(buffer);
     }
-
 }

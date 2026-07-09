@@ -3,11 +3,11 @@ const debug = Debug('issuer:credential');
 
 import moment from "moment";
 import { StringKeyedObject } from "#root/types/index";
-import { CredentialConfiguration } from "#root/types/specification/metadata";
 import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
-import { StatusList } from "#root/types/internal/statuslists";
 import { HolderData } from "#root/types/internal";
+import { ExtendableCredentialConfiguration } from '#root/types/api/metadata';
+import { StatusListCredentialAttribute } from '#root/types/internal/statuslists';
 
 export interface LanguageLabel
 {
@@ -31,14 +31,14 @@ export class Credential
     public type:string = 'GenericCredential';
     public format:string = 'jwt_vc_json';
     public holder?:HolderData;
-    public configuration?:CredentialConfiguration;
+    public configuration?:ExtendableCredentialConfiguration;
     public credential:any; // basic readable data
     public output:any; // signed, proofed data, possibly encoded
     public contexts:string[] = [];
 
     public automaticallyBindHolder = true;
 
-    public setConfiguration(config:CredentialConfiguration)
+    public setConfiguration(config:ExtendableCredentialConfiguration)
     {
         this.configuration = config;
         this.type = getCredentialTypeFromConfig(config);
@@ -65,6 +65,8 @@ export class Credential
         debug('setting issuanceDate to now');
         this.metaData.issuanceDate = moment().toISOString();
 
+        // handle the status list information AFTER we set the expiration date, so we
+        // can use this to update the last-expiration date of the status list
         const enableLists = (typeof this.metaData?.enableStatusLists === 'undefined') || (this.metaData?.enableStatusLists === true);
         if (this.issuer!.options.statusLists && enableLists) {
             await this.handleStatusLists();
@@ -73,55 +75,21 @@ export class Credential
         return true;
     }
 
-    private async reserveOnStatusList(statusListData:any): Promise<StatusList>
-    {
-        const listData = await fetch(statusListData.url, {
-            method: 'POST',
-            body: JSON.stringify({ expirationDate: this.metaData.expirationDate }),
-            headers: {
-                'Content-type': 'application/json',
-                'Authorization': 'Bearer ' + statusListData.token,
-                }
-        }).then((r) => r.json()).catch((e) => { console.log(e); return null;});
-
-        if (!listData || !listData.index) {
-            throw new Error("Unable to contact status server");
-        }
-
-        // the status list server automatically returns the right status element depending
-        // on the configured list type.
-        // However, because the IETF type status list requires a different credential claim,
-        // we store the complete status list return value for later
-        //
-        // Store the status list api call to make sure we can distinguish them later on
-        listData.uri = statusListData.url;
-
-        return listData;
-    }
-
+    // STATLIST-TODO: store more data in the metadata, so we can more easily revoke/reset the status for this credential
+    // Look for statuslist name, listindex for example
     private async handleStatusLists()
     {
-        const statusses:StatusList[] = [];
-        if (this.issuer!.options?.statusLists && this.issuer!.options?.statusLists[this.id!]) {
-            const slist = this.issuer!.options.statusLists[this.id!];
-            if (Array.isArray(slist)) {
-                for (const sl of slist) {
-                    statusses.push(await this.reserveOnStatusList(sl));
-                }
-            }
-            else {
-                statusses.push(await this.reserveOnStatusList(slist));
+        // see if this credential configuration has a status list configuration
+        const statusses:StatusListCredentialAttribute[] = [];
+        if (this.configuration?.statuslist) {
+            for (const statlist of this.configuration.statuslist) {
+                const response = await this.issuer!.reserveOnStatusList(statlist, this.metaData.expirationDate);
+                statusses.push(response);
             }
         }
 
         if (statusses.length > 0) {
-            if (statusses.length > 1) {
-                // cast so we can assign the array as the spec indicates
-                this.metaData.credentialStatus = (statusses as unknown) as StatusList;
-            }
-            else {
-                this.metaData.credentialStatus = statusses[0];
-            }
+            this.metaData.credentialStatus = statusses;
         }
     }
 

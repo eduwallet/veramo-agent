@@ -4,7 +4,6 @@ export interface StatusListInterface
 {
     name:string;
     id:string;
-    adminTokens:string[];
     size:number;
     purpose:string;
     type:string;
@@ -27,12 +26,30 @@ export interface StatusListMessage {
     message: string;
 }
 
-export interface StatusListTypeOptions {
+export interface StatusListOptions {
     name: string;
-    tokens: string[];
     size: number;
     bitSize?: number;
     purpose:string;
     type?:string;
     messages?:StatusListMessage[];
+}
+
+export type StatusListCredentialAttribute = StatusListCredentialAttributeIETF | StatusListCredentialAttributeW3C;
+
+export interface StatusListCredentialAttributeIETF
+{
+    idx: number;
+    uri: string;
+}
+
+export interface StatusListCredentialAttributeW3C
+{
+    id: string;
+    type: string;
+    index: number;
+    statusListCredential: string;
+    statusPurpose?: string;
+    statusSize?: number;
+    statusMessage?:StatusListMessage[];
 }

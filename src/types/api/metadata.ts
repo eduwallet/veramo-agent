@@ -1,4 +1,5 @@
-import { CredentialConfigurationDisplay, CredentialFormat, Metadata, SupportedProofTypes } from "#root/types/specification/metadata";
+import { CredentialConfigurationDisplay, CredentialDisplay, CredentialFormat, Metadata, SupportedProofTypes } from "#root/types/specification/metadata";
+import { StatusListOptions } from "../internal/statuslists.js";
 
 export interface MetadataConfiguration extends Omit<Metadata, 'credential_configurations_supported'> {
     "@context"?: string[];
@@ -12,6 +13,7 @@ export interface ExtendableCredentialConfigurations {
 export interface ExtendableCredentialConfiguration extends CredentialConfigurationJwtVC {
     extends?:string;
     vct?:string;
+    statuslist?: StatusListOptions[];
 }
 
 export interface CredentialConfigurationJwtVC {
@@ -50,9 +52,4 @@ export interface CredentialSubjectConfiguration {
     value_type?: string;
     display?: CredentialDisplay[];
     origin?: ClaimOriginPath[]; // an array of paths of possible origins for this specific claim
-}
-
-export interface CredentialDisplay {
-    name?:string;
-    locale?:string;
 }

@@ -25,7 +25,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // The following statement makes it possible to set issuer.options.baseUrl == <app-baseUrl>/<tenant>
     // and not use the redirections.
     // However, for this to work, the name and the baseUrl should match in the configuration
-    const basePath = '/' + issuer.name;
+    const basePath = issuer.basePath();
     const tokenPath = '/token';
 
     debug('creating routes for ', issuer.name);
@@ -84,5 +84,9 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
 
     // allow the front-end issuer to revoke or unrevoke specific credentials based on an id
     revokeCredential(issuer, '/api/revoke-credential');
+
+    // STATLIST-TODO: add api interfaces to revoke specific indexes of a named status list
+    // Add endpoint to get and set the status, get the statuslist credential
+    // see the endpoints under endpoints/statuslist
 }
 

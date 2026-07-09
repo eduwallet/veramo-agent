@@ -129,22 +129,14 @@ export class VCDM
 
     private addStatusListData(baseCredential:VCDMType)
     {
+        // status list data should _always_ be added by the issuer, never by passing prefabricated data.
+        // Hence we can be more or less sure of the constitution of the data at this point. It should contain
+        // ready to consume StatusListCredentialAttributes
         if (this.credential.metaData.credentialStatus) {
-            if (this.credential.metaData.credentialStatus.type) {
-                // only one entry
-                // The status list agent returns a correct credentialStatus element in the credentialStatus attribute
-                if (this.credential.metaData.credentialStatus.type != 'statuslist+jwt') {
-                    // IETF says the the status claim is a JWT claim, not a VC claim, so we skip it
-                    baseCredential.credentialStatus = [Object.assign({}, this.credential.metaData.credentialStatus.credentialStatus)];
-                }
-            }
-            else if (this.credential.metaData.credentialStatus.length) {
-                // array of entries
-                // Return only the status list elements of the non-IETF statusses. We add the JWT claim later on
-                baseCredential.credentialStatus = this.credential.metaData.credentialStatus
-                    .filter((el:any) => el.type != 'statuslist+jwt')
-                    .map((el:any) => el.credentialStatus);
-            }
+            // array of entries
+            // the ietf version does not have a type attribute
+            baseCredential.credentialStatus = this.credential.metaData.credentialStatus
+                .filter((el:any) => typeof(el.type) != 'undefined');
         }
     }
 
