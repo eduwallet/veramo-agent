@@ -1,33 +1,38 @@
-export interface StatusListW3C {
-    id: string;
-    type: string;
-    statusListIndex: string
-    statusListCredential: string;
-    statusPurpose?: string;
-    statusSize?:number;
-    statusMessage?: any[];
-}
+import { StatusList } from "#root/database/entities/StatusList";
 
-export interface StatusListIETF {
-    idx: number;
-    uri: string;
-}
-
-// https://w3c.github.io/vc-bitstring-status-list/#examples
-export interface StatusList {
-    index:number;
-    list:number;
+export interface StatusListInterface
+{
+    name:string;
+    id:string;
+    adminTokens:string[];
+    size:number;
+    purpose:string;
     type:string;
-    uri:string;
-    credentialStatus: StatusListIETF|StatusListW3C
+    bitSize:number;
+    lists:StatusList[];
+
+    getCredentialType():string;
 }
 
-export interface StatusListOption {
-    url: string;
-    revoke: string;
-    token: string;
+export interface StatusListStatus
+{
+    type: StatusListInterface;
+    statusList: StatusList;
+    basepath:string;
+    date:any;
 }
 
-export interface StatusListsOption {
-    [x:string]: StatusListOption|StatusListOption[];
+export interface StatusListMessage {
+    status: string;
+    message: string;
+}
+
+export interface StatusListTypeOptions {
+    name: string;
+    tokens: string[];
+    size: number;
+    bitSize?: number;
+    purpose:string;
+    type?:string;
+    messages?:StatusListMessage[];
 }

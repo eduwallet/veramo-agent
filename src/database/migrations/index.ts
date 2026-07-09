@@ -9,6 +9,7 @@ import { CredStatus1761663603150 } from './8.CredStatus.js';
 import { ClientSecret1764064638150 } from './9.ClientSecret.js';
 import { EncKey1762521078111 } from './8. EncKey.js';
 import { OriginalHolder1769001656333 } from './10.OriginalHolder.js';
+import { Statuslists1769001656334 } from './11.Statuslists.js';
 
 export * from './migration-functions.js'
 
@@ -23,5 +24,6 @@ export const migrations = [
   CredStatus1761663603150,
   ClientSecret1764064638150,
   EncKey1762521078111,
-  OriginalHolder1769001656333
+  OriginalHolder1769001656333,
+  Statuslists1769001656334
 ]

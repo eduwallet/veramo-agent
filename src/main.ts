@@ -7,6 +7,7 @@ import { initialiseCredentialConfigurationStore } from '#root/credentials/Store'
 import { initialiseVctConfigurationStore } from '#root/vct/Store';
 import { getContextConfigurationStore } from '#root/contexts/Store';
 import { getDIDConfigurationStore } from '#root/dids/Store'; 
+import { initialiseStatusListStore } from '#root/statusLists/StatusListStore';
 
 async function main() {
     debug('Loading contexts');
@@ -22,6 +23,9 @@ async function main() {
 
     debug('Loading credential configurations');
     await initialiseCredentialConfigurationStore();
+
+    debug('Initialising StatusLists');
+    await initialiseStatusListStore();
 
     debug('Creating Issuer instances');
     await initialiseIssuerStore();
