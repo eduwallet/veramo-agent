@@ -190,45 +190,6 @@ The `extends` attribute is removed from the output if it was present.
 
 If a credential supports a status list implementation, the status list options can be configured in the metadata. Like with the `extends` attribute, this configuration is removed from the metadata output:
 
-## Status Lists
-
-The statuslist configuration lists the available status lists for this issuer for each credential available:
-
-```json
-{
-    ...
-    "CredentialId2": {
-        ...
-        "statusLists": {
-            "AcademicBaseCredential": {
-                "name": "generic name, like revoke or suspend, to be able to distinguish multiple status lists for the same credential",
-                "size": <number of entries allowed in this list, by default and at least set to 131072>,
-                "bitSize": <number of bits per entry, being 1, 2, 3 or 4>,
-                "purpose": "optional string like revocation, suspension",
-                "type": "type specification, by default set to BitstringStatusList",
-                "messages": [
-                    {
-                        "status": "string representation in hex of the message value, like 0x01",
-                        "message": "message related to this bit value"
-                    }, ...
-                ]
-            }, ...
-            ...
-        }
-    }
-    ...
-}
-```
-
-This application implements several types of status lists:
-
-- `StatusList2020`, `RevocationList2020Status`, `SuspensionList2020Status`: an outdated version of `BitstringStatusList`
-- `StatusList2021`, `RevocationList2021Status`, `SuspensionList2021Status`: an outdated version of `BitstringStatusList`
-- `BitstringStatusList`: see https://w3c.github.io/vc-bitstring-status-list/ for more information
-- `statuslist+jwt`: see https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/21/
-
-If a statuslist is configured for a credential of an issuer, the issuer will reserve the appropiate bits on that statuslist and add the relevant attribute to the credential output. The `messages` attribute is optional and will be automatically filled for `BitstringStatusList` entries in credentials, which require a `messages` list if the `bitSize` is larger than 1.
-
 ### Issuers
 
 The issuer configurations are specified in the `conf/issuer/` directory. Each entry there will instantiate an issuer service. The configuration is as follows (*Please note: this configuration has changed significantly*):
@@ -335,7 +296,6 @@ The setup has the following endpoints for the back-end API:
 - POST `<base URL>/<tenant>/api/create-offer`
 - POST `<base URL>/<tenant>/api/check-offer`
 - POST `<base URL>/<tenant>/api/list-credentials`
-- POST `<base URL>/<tenant>/api/revoke-credential`
 
 #### Create Offer
 
@@ -449,29 +409,6 @@ is optional):
 
 The endpoint returns a JSON array containing all the database rows, including the database id, the uuid, claims, status-list information
 and saved-updated dates. This data can be used in further interactions.
-
-#### Revoke Credential
-
-POST `<base URL>/<tenant>/api/revoke-credential`
-
-This endpoint allows an issuer to list the credentials it has previously issued. This can be used in use cases where
-users want to revoke or re-issue/refresh credentials.:
-
-```json
-{
-    "uuid": <credential uuid>,
-    "state": <set to 'revoke' to set the bit in the statuslist, or another value to unset it>,
-    "list": <optional URI of a specific statuslist for which to set/unset the status>
-}
-```
-
-The endpoint returns a JSON object containing a `status` attribute indicating the status of the revocation:
-
-- `REVOKED`: credential was revoked (bit is set)
-- `WAS_REVOKED`: credential was already set to revoked, state has not changed
-- `UNREVOKED`: credential was unrevoked (bit not set)
-- `WAS_UNREVOKED`: credential was not revoked, state has not changed
-- `UNKNOWN`: status list cannot be determined, bit was never reserved, etc.
 
 # Changelog / Release Notes
 
