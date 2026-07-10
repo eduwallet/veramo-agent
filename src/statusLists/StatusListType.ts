@@ -4,12 +4,15 @@ import { getEnv } from "#root/utils/getEnv";
 import  {Bitstring} from '@digitalcredentials/bitstring';
 import { StatusList } from "#root/database/entities/StatusList";
 import { getDbConnection } from "#root/database/databaseService";
-import { StatusListInterface, StatusListMessage, StatusListOptions } from '#root/types/internal/statuslists';
+import { StatusListInterface, StatusListMessage, StatusListOptions, StatusListStatus } from '#root/types/internal/statuslists';
 import {gzip, ungzip} from 'pako';
 import { inflateSync, deflateSync } from 'zlib';
 import { toString, fromString } from 'uint8arrays';
 import { createStatusCredential } from './lib/createStatusCredential.js';
 import { Issuer } from '#root/issuer/Issuer';
+import moment from 'moment';
+import { statusListAsVC } from './lib/statusListAsVC.js';
+import { statusListAsJWT } from './lib/statusListAsJWT.js';
 
 export class StatusListType implements StatusListInterface {
     public issuer:Issuer;
@@ -82,6 +85,41 @@ export class StatusListType implements StatusListInterface {
                 }
         }
         return 'StatusListStatus';
+    }
+
+    public getSpecType()
+    {
+        switch (this.type) {
+            case 'BitstringStatusList':
+            case 'StatusList2020':
+            case 'RevocationList2020':
+            case 'SuspensionList2020':
+            case 'StatusList2021':
+            case 'RevocationList2021':
+            case 'SuspensionList2021':
+                return 'w3c';
+            case 'statuslist+jwt':
+                return 'ietf';
+            default:
+                return 'unknown';
+        }
+    }
+
+    public async getListCredential(listIndex:number, issuer:Issuer)
+    {
+        const list = await this.get(listIndex);
+        const status:StatusListStatus = {
+            type: this,
+            statusList: list,
+            basepath: this.id + '/' + list.index,
+            date: moment()
+        }
+
+        if (this.getSpecType() == 'w3c') {
+            return await statusListAsVC(status, issuer);
+        } else {
+            return await statusListAsJWT(status, issuer);
+        }
     }
 
     public async loadLists()
@@ -201,10 +239,11 @@ export class StatusListType implements StatusListInterface {
         };
     }
 
-    public async revoke(list:StatusList, index:number, doRevoke:boolean):Promise<string>
+    public async revoke(listIndex:number, index:number, doRevoke:boolean):Promise<string>
     {
-        debug("revoking index ", index, doRevoke);
-        const state = await this.setState(list, index, doRevoke ? 1 : 0, -1);
+        debug("revoking index ", listIndex, index, doRevoke);
+        const statusList = await this.get(listIndex);
+        const state = await this.setState(statusList, index, doRevoke ? 1 : 0, -1);
         if (state == 'CHANGED') {
             if (doRevoke) {
                 return 'REVOKED';

@@ -3,8 +3,9 @@ const debug = Debug('issuer:vcdm');
 
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
-import { W3CJWT, W3C as W3CType } from '#root/credentials/formats/VCDMTypes';
+import { ExternalService, W3CJWT, W3C as W3CType } from '#root/credentials/formats/VCDMTypes';
 import { HolderData } from '#root/types/internal';
+import { StatusListCredentialData } from '#root/types/internal/statuslists';
 
 // https://www.w3.org/TR/vc-data-model/
 
@@ -133,7 +134,12 @@ export class W3C
             // array of entries
             // the ietf version does not have a type attribute
             baseCredential.credentialStatus = this.credential.metaData.credentialStatus
-                .filter((el:any) => typeof(el.type) != 'undefined');
+                .filter((el:StatusListCredentialData) => typeof(el.options.type) != 'undefined')
+                .map((el:StatusListCredentialData) => el.attribute);
+
+            if (baseCredential.credentialStatus!.length == 1) {
+                baseCredential.credentialStatus = (baseCredential.credentialStatus as ExternalService[])[0];
+            }                
         }
     }
 

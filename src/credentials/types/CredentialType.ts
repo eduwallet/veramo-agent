@@ -96,10 +96,10 @@ export abstract class CredentialType
         // This routine converts both options into an array of claims, much like the issue convertTo<Format> library functions do
         // We used to use the decorated (and transformed) credentials, but these will not have the origin attribute
         // that we need here.
-        let claims:CredentialConfigurationClaimData[] = [];
+        const claims:CredentialConfigurationClaimData[] = [];
         if (credential.configuration!.credential_definition?.claims) {
             // make sure every claim has an appropiate origin
-            for (const claim of credential.configuration!.credential_definition?.claims) {
+            for (const claim of (credential.configuration?.credential_definition?.claims ?? [])) {
                 const newclaim = Object.assign({}, claim);
                 if (!newclaim.origin) {
                     newclaim.origin = [newclaim.path];
@@ -112,10 +112,10 @@ export abstract class CredentialType
             const value = credential.configuration!.credential_definition.credentialSubject![key];
             // at this point we only support simple claims: single path elements
             // for more complicated claims, populate the claims attribute directly
-            let path = ['credentialSubject', key];
+            const path = ['credentialSubject', key];
             // by default, the origin is the attribute in the gathered data that is named the same as the output claim
             // the origin is an array-of-paths
-            let origin = value.origin ?? [[key]];
+            const origin = value.origin ?? [[key]];
             const claim:CredentialConfigurationClaimData = {
                 path,
                 origin

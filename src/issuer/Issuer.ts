@@ -3,7 +3,7 @@ const debug = Debug('issuer:issuer');
 
 import moment from "moment";
 import { Router } from "express";
-import { StatusList, StatusListIETF, StatusListOptions, StatusListW3C } from "#root/types/internal/statuslists";
+import { StatusListCredentialData, StatusListOptions } from "#root/types/internal/statuslists";
 import { StatusListRevocationState } from '#root/types/api';
 import { IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
@@ -25,7 +25,6 @@ import { getDIDConfigurationStore } from '#root/dids/Store';
 import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
 import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertConfigToSDJWT.js';
-import { getStatusListStore } from '#root/statusLists/StatusListStore';
 import { StatusListType } from '#root/statusLists/StatusListType';
 
 export class Issuer
@@ -246,12 +245,7 @@ export class Issuer
         dbCred.metadata = this.getCredentialConfiguration(credential.type) as StringKeyedObject;
         dbCred.credentialId = credential.type || '';
         if (credential.metaData.credentialStatus) {
-            if (!Array.isArray(credential.metaData.credentialStatus)) {
-                dbCred.statuslists = [credential.metaData.credentialStatus];
-            }
-            else {
-                dbCred.statuslists = credential.metaData.credentialStatus;
-            }
+            dbCred.statuslists = credential.metaData.credentialStatus;
         }
         dbCred.status='ISSUED'; // initial status
         await repo.save(dbCred);
@@ -308,7 +302,7 @@ export class Issuer
     }
 
     public getCredentialConfiguration(id:string): ExtendableCredentialConfiguration|null {
-        let credential = this.hasCredentialConfiguration(id);
+        const credential = this.hasCredentialConfiguration(id);
         if (credential !== false) {
             return this.decorateCredentialConfiguration(id, credential as ExtendableCredentialConfiguration, false) as ExtendableCredentialConfiguration;
         }
@@ -446,7 +440,6 @@ export class Issuer
       return await qb.orderBy('c.id', 'ASC').getRawMany();
     }
 
-    // STATLIST-TODO: rewrite this to revoke the credentials in the database, matching an optional listname
     public async revokeCredential(uuid:string, doRevoke:boolean, listName?:string|null, onlyRevoke:boolean = false): Promise<StatusListRevocationState>
     {
         debug("revoking specific credential " + uuid);
@@ -463,19 +456,18 @@ export class Issuer
         }
 
         let retval:StatusListRevocationState = StatusListRevocationState.UNKNOWN;
-        // we should have store this as an array, but you never know with these specs...
-        const statuslists = Array.isArray(credential.statuslists) ? credential.statuslists : [credential.statuslists];
-
+        const statuslists:StatusListCredentialData[] = credential.statuslists as StatusListCredentialData[];
         debug("looping over " + statuslists.length + " statuslists");
-        for (const statlist of statuslists) {
-            if (!listName || statlist.credentialStatus?.id?.startsWith(listName)) {
+        for (const statlistdata of statuslists) {
+            const statlist = new StatusListType(statlistdata.options, this);
+            if (!listName || statlist.id.startsWith(listName)) {
                 // if we are only revoking, only call on the lists with purpose revocation
                 // this allows us to explicitely suspend credentials
                 // TODO: if we only suspend, this implementation still returns REVOKED and stores it
                 // as such on the credential. We need to implement the additional features of the
                 // remote status list and its messages
                 if (!onlyRevoke || !statlist.purpose || statlist.purpose == 'revocation') {
-                    retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(credential, statlist, doRevoke));
+                    retval = this.mergeStatusListStates(retval, await this.revokeCredentialFromList(statlist, statlistdata, doRevoke));
                 }
             }
         }
@@ -500,60 +492,48 @@ export class Issuer
         return oldState;
     }
 
-    private async revokeCredentialFromList(credential:CredentialEntity, statlist:StatusList, doRevoke: boolean): Promise<StatusListRevocationState>
+    private async revokeCredentialFromList(statlist:StatusListType, statlistdata:StatusListCredentialData, doRevoke: boolean): Promise<StatusListRevocationState>
     {
-        debug("revoking credential of type " + credential.credentialId);
-        let slists = this.options.statusLists![credential.credentialId];
-        if (slists) {
-            // make sure it is an array
-            if (!Array.isArray(slists)) slists=[slists];
-            for (const slist of slists) {
-                // if we actually have a revoke interface, revoke it
-                // TODO: perhaps create other interfaces/services for suspend/message/etc
-                if (slist.url == statlist.uri && slist.revoke) {
-                    debug("invoking " + slist.revoke + " with " + statlist + ' and request to ' + (doRevoke ? 'revoke' : 'unrevoke'));
-                    try {
-                        const listuri = statlist.type == 'statuslist+jwt' ? (statlist.credentialStatus as StatusListIETF).uri : (statlist.credentialStatus as StatusListW3C).statusListCredential
-                        const returnValue:any = await fetch(slist.revoke, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                list: listuri,
-                                index: statlist.index,
-                                status: doRevoke ? 'revoke' : 'unrevoke'
-                            }),
-                            headers: {
-                                'Content-type': 'application/json',
-                                'Authorization': 'Bearer ' + slist.token,
-                            }
-                        }).then((r) => r.json());
-                        debug("return value is " + JSON.stringify(returnValue));
-
-                        // an error in the call will cause an exception which is caught upstairs
-                        switch (returnValue.status) {
-                            case 'REVOKED': return StatusListRevocationState.REVOKED;
-                            case 'UNREVOKED': return StatusListRevocationState.UNREVOKED;
-                            case 'UNCHANGED': return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
-                            default: return StatusListRevocationState.UNKNOWN;
-                        }
-                    }
-                    catch (e) {
-                        debug("caught exception ", e, " on revocation");
-                    }
-                }
-            }
+        // assume that the lists originally present on this credential are still available.
+        // They may not be configured anymore in the current configuration though, so
+        // we should NOT find the configuration and determine the list from there
+        const retval = await statlist.revoke(statlistdata.listIndex, statlistdata.index, doRevoke);
+        switch (retval) {
+            case 'REVOKED':
+                return StatusListRevocationState.REVOKED;
+            case 'UNREVOKED':
+                return StatusListRevocationState.UNREVOKED;
+            case 'UNCHANGED':
+                return doRevoke ? StatusListRevocationState.WAS_REVOKED : StatusListRevocationState.WAS_UNREVOKED;
+            default:
+                return StatusListRevocationState.UNKNOWN;
         }
-        else {
-            // else we ignore a statuslist that is no longer configured
-            debug("no status list associated with this credential type in the configuration (anymore). Ignoring request");
-        }
-        return StatusListRevocationState.UNKNOWN;
     }
 
-    public async reserveOnStatusList(statlist:StatusListOptions, expiry:Date|undefined): Promise<StatusList>
+    public async reserveOnStatusList(statlist:StatusListOptions, expiry:Date|undefined): Promise<StatusListCredentialData>
     {
         const statuslistType = new StatusListType(statlist, this);
         const listAndIndex = await statuslistType.newIndex(expiry);
         const credValue = statuslistType.indexAsCredential(listAndIndex.list, listAndIndex.index);
-        return credValue;
+        return {
+            attribute: credValue,
+            listIndex: listAndIndex.list.index,
+            index: listAndIndex.index,
+            options: statlist
+        };
+    }
+
+    public findAllStatusLists()
+    {
+        const statlistoptions:StatusListOptions[] = [];
+        for (const credentialId of Object.keys(this.metadata.credential_configurations_supported)) {
+            const config = this.metadata.credential_configurations_supported[credentialId];
+            if (config.statuslist) {
+                for (const slo of config.statuslist) {
+                    statlistoptions.push(slo);
+                }
+            }
+        }
+        return statlistoptions;
     }
 }

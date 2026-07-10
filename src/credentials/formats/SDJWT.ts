@@ -11,7 +11,7 @@ import { fromString } from 'uint8arrays';
 import moment from 'moment';
 import { Factory } from '@muisit/cryptokey';
 import { VCDM } from './VCDM.js';
-import { StatusListCredentialAttribute, StatusListCredentialAttributeIETF } from '#root/types/internal/statuslists';
+import { StatusListCredentialAttribute, StatusListCredentialAttributeIETF, StatusListCredentialData } from '#root/types/internal/statuslists';
 
 export class SDJWT
 {
@@ -143,7 +143,7 @@ export class SDJWT
         // ready to consume StatusListCredentialAttributes
         if (this.credential.metaData.credentialStatus) {
             // array of entries
-            let statusses:StatusListCredentialAttribute[] = this.credential.metaData.credentialStatus;
+            const statusses:StatusListCredentialData[] = this.credential.metaData.credentialStatus;
            
             // as opposed to the JOSE implementation, we retain all the available
             // status lists and add them as entries here.
@@ -157,7 +157,7 @@ export class SDJWT
                 baseCredential.status = {
                     // we cast here to pass the type check, but if it were a BitstringStatusList, it'd be fine
                     // this is very much use case driven, so application defined
-                    status_list: statusses[0] as StatusListCredentialAttributeIETF
+                    status_list: statusses[0].attribute as StatusListCredentialAttributeIETF
                 };
             }
         }

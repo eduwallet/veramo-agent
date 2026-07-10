@@ -1,5 +1,12 @@
 import { StatusList } from "#root/database/entities/StatusList";
 
+export interface StatusListCredentialData {
+    attribute:StatusListCredentialAttribute;
+    listIndex: number;
+    index: number;
+    options: StatusListOptions;
+}
+
 export interface StatusListInterface
 {
     name:string;

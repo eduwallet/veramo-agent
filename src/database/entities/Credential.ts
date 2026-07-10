@@ -62,7 +62,7 @@ export class Credential extends BaseEntity {
     claims: StringKeyedObject
 
     @Column({ type: 'simple-json', nullable: true })
-    statuslists?: StringKeyedObject
+    statuslists?: StringKeyedObject | StringKeyedObject[];
 
     @Column('timestamp')
     //@ts-expect-error has no initializer

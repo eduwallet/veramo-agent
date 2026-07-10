@@ -7,7 +7,7 @@ import { Issuer } from "#root/issuer/Issuer";
 import { getCredentialTypeFromConfig } from "#root/utils/getCredentialTypeFromConfig";
 import { HolderData } from "#root/types/internal";
 import { ExtendableCredentialConfiguration } from '#root/types/api/metadata';
-import { StatusListCredentialAttribute } from '#root/types/internal/statuslists';
+import { StatusListCredentialData } from '#root/types/internal/statuslists';
 
 export interface LanguageLabel
 {
@@ -80,7 +80,7 @@ export class Credential
     private async handleStatusLists()
     {
         // see if this credential configuration has a status list configuration
-        const statusses:StatusListCredentialAttribute[] = [];
+        const statusses:StatusListCredentialData[] = [];
         if (this.configuration?.statuslist) {
             for (const statlist of this.configuration.statuslist) {
                 const response = await this.issuer!.reserveOnStatusList(statlist, this.metaData.expirationDate);

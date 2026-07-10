@@ -1,10 +1,11 @@
 import Debug from 'debug';
 const debug = Debug('issuer:vcdm');
 
-import { LanguageObject, VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
+import { ExternalService, LanguageObject, VCDM as VCDMType} from '#root/credentials/formats/VCDMTypes';
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { HolderData } from '#root/types/internal';
+import { StatusListCredentialData } from '#root/types/internal/statuslists';
 
 export class VCDM
 {
@@ -136,7 +137,12 @@ export class VCDM
             // array of entries
             // the ietf version does not have a type attribute
             baseCredential.credentialStatus = this.credential.metaData.credentialStatus
-                .filter((el:any) => typeof(el.type) != 'undefined');
+                .filter((el:StatusListCredentialData) => typeof(el.options.type) != 'undefined')
+                .map((el:StatusListCredentialData) => el.attribute);
+
+            if (baseCredential.credentialStatus!.length == 1) {
+                baseCredential.credentialStatus = (baseCredential.credentialStatus as ExternalService[])[0];
+            }
         }
     }
 

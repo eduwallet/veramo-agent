@@ -1,6 +1,8 @@
-import { Router, Request, Response } from 'express';
+import { Issuer } from '#root/issuer/Issuer';
+import { StatusListType } from '#root/statusLists/StatusListType';
+import { StatusListOptions } from '#root/types/internal/statuslists';
+import { Request, Response } from 'express';
 import passport from 'passport';
-import { StatusListType } from 'statusLists/StatusListType';
 
 interface StatusRequest {
     list:string;
@@ -21,11 +23,13 @@ interface RevokeResponse {
  * 
  * If the requested state is already the current state, we return UNCHANGED as state value.
  */
-export function setStatus(statusList:StatusListType, router:Router) {
-    router!.post('/api/status',
-        passport.authenticate(statusList.name + '-admin', { session: false }),
+export function setStatus(issuer:Issuer, statusListOptions:StatusListOptions, path:string) {
+    issuer.router!.post(
+        path,
+        passport.authenticate(issuer.name + '-admin', { session: false }),
         async (request: Request<StatusRequest>, response: Response<RevokeResponse>) => {
             try {
+                const statusList = new StatusListType(statusListOptions, issuer);
                 const shouldStartWith = statusList.createCredentialUrl();
                 if (!request.body.list.startsWith(shouldStartWith)) {
                     throw new Error("Incorrect list combination");

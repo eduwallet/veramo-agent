@@ -1,6 +1,8 @@
-import { Router, Request, Response } from 'express';
+import { Issuer } from '#root/issuer/Issuer';
+import { StatusListType } from '#root/statusLists/StatusListType';
+import { StatusListOptions } from '#root/types/internal/statuslists';
+import { Request, Response } from 'express';
 import passport from 'passport';
-import { StatusListType } from 'statusLists/StatusListType';
 
 
 /* Request a new index from the indicated statuslist type
@@ -10,11 +12,13 @@ import { StatusListType } from 'statusLists/StatusListType';
  * This also returns a specific revoke URL, which would actually work as a toggle-url
  * and a status url to retrieve the specific status of this index
  */
-export function getStatus(statusList:StatusListType, router:Router) {
-    router!.get('/api/status/:listindex/:credindex',
-        passport.authenticate(statusList.name + '-admin', { session: false }),
+export function getStatus(issuer:Issuer, statusListOptions:StatusListOptions, path:string) {
+    issuer.router!.get(
+        path + "/:listindex/:credindex",
+        passport.authenticate(issuer.name + '-admin', { session: false }),
         async (request: Request, response: Response) => {
             try {
+                const statusList = new StatusListType(statusListOptions, issuer);
                 const list = await statusList.get(parseInt(request.params.listindex as string));
                 const state = await statusList.getState(list, parseInt(request.params.credindex as string));
                 if ((list.bitsize ?? 1) == 1) {
