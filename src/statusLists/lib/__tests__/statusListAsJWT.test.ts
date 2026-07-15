@@ -1,20 +1,25 @@
-import { vi, expect, test } from 'vitest';
+import { vi, expect, test, beforeEach } from 'vitest';
 import { Factory } from '@muisit/cryptokey';
-import { StatusListType } from '../../../statusLists/StatusListType';
-import { StatusList } from '../../../database/entities/StatusList';
-import { StatusListStatus } from '../../../types';
-import  {Bitstring} from '@digitalcredentials/bitstring';
-vi.mock('../../../database/index', () => import('../../../database/__mocks__/index'));
-let testkey:any = null;
-vi.mock('../../../utils/keymanager.ts', () => ({
-    getKey: vi.fn(() => {
-        return testkey;
-    }),
-    getDID: vi.fn(() => {
-        return "did:web:example.com";
-    })
-  }));
-import { statusListAsJWT } from '../statusListAsJWT';
+import { StatusListType } from '#root/statusLists/StatusListType';
+import { StatusList } from '#root/database/entities/StatusList';
+import { StatusListStatus } from '#root/types/internal/statuslists';
+import { getDbConnection } from '#root/database/databaseService';
+import { Issuer } from '#root/issuer/Issuer';
+import { Bitstring } from '@digitalcredentials/bitstring';
+import { statusListAsJWT } from '../statusListAsJWT.js';
+
+const mockRepo = {
+    find: vi.fn().mockResolvedValue([]),
+    save: vi.fn().mockResolvedValue(undefined),
+};
+
+beforeEach(() => {
+    mockRepo.find.mockReset().mockResolvedValue([]);
+    mockRepo.save.mockReset().mockResolvedValue(undefined);
+    vi.mocked(getDbConnection).mockResolvedValue({
+        getRepository: () => mockRepo,
+    } as any);
+});
 
 async function createBasicStatusList(bitSize:number)
 {
@@ -29,7 +34,9 @@ async function createBasicStatusList(bitSize:number)
 }
 
 test("Creating JWT", async () => {
-    testkey = await Factory.createFromType('Ed25519', "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8");
+    const testkey = await Factory.createFromType('Ed25519', "fbe04e71bce89f37e0970de16a97a80c4457250c6fe0b1e9297e6df778ae72a8");
+    const issuer = { key: testkey, did: { did: 'did:web:example.com' }, basePath: () => '/issuer' } as unknown as Issuer;
+
     const lst = await createBasicStatusList(2);
     lst.updateDate = new Date('2020-01-01 01:02:03');
     // reserve a bit
@@ -43,7 +50,7 @@ test("Creating JWT", async () => {
     // update the list content
     lst.content = await dataList.encodeBits();
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     await Stype.setState(lst, 1, 1);
     await Stype.setState(lst, 6, 2);
     await Stype.setState(lst, 21, 3);
@@ -58,7 +65,7 @@ test("Creating JWT", async () => {
         date: '2020-01-01 01:02:03'
     };
 
-    const jwt = await statusListAsJWT(status);
+    const jwt = await statusListAsJWT(status, issuer);
     expect(jwt).toBeDefined();
     expect(jwt).toBe('eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDp3ZWI6ZXhhbXBsZS5jb20jMCIsInR5cCI6InN0YXR1c2xpc3Qrand0In0.eyJpc3MiOiJkaWQ6d2ViOmV4YW1wbGUuY29tIiwiZXhwIjoxNTc3ODM3ODIzLCJpYXQiOjE1Nzc4MzY5MjMsInN1YiI6Imh0dHBzOi8vZXhhbXBsZS5jb20iLCJ0dGwiOjMwMCwic3RhdHVzX2xpc3QiOnsiYml0cyI6MSwibHN0IjoiZUp3VDRHQmdZREJnR0hEQVJIVVRIUWpJQXdCUE5nQ0wifX0.Lh8dm2M0ooaNCi1r2TBbao_UPolpdFtCyAe4mivx_hJOsPaFxhdE6p-akEWDAMaph_smwwkkxMHvUvMU8V33Ag');
 });

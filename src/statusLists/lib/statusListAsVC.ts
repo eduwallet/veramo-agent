@@ -4,7 +4,7 @@ const debug = Debug('issuer:statlistvc');
 import { StatusListStatus } from "#root/types/internal/statuslists";
 import moment from 'moment';
 import { Factory } from "@muisit/cryptokey";
-import { JWT } from "#root/jwt/JWT';
+import { JWT } from "#root/jwt/JWT";
 import { StatusListType } from "#root/statusLists/StatusListType";
 import { Issuer } from '#root/issuer/Issuer';
 

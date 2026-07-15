@@ -1,8 +1,24 @@
-import { vi, expect, test } from 'vitest';
-import { StatusListType } from '../StatusListType';
-import { StatusList } from '../../database/entities/StatusList';
-import  {Bitstring} from '@digitalcredentials/bitstring';
-vi.mock('../../database/index', () => import('../../database/__mocks__/index'));
+import { vi, expect, test, beforeEach } from 'vitest';
+import { StatusListType } from '../StatusListType.js';
+import { StatusList } from '../../database/entities/StatusList.js';
+import { getDbConnection } from '../../database/databaseService.js';
+import { Issuer } from '../../issuer/Issuer.js';
+import { Bitstring } from '@digitalcredentials/bitstring';
+
+const issuer = { basePath: () => '/test-issuer' } as unknown as Issuer;
+
+const mockRepo = {
+    find: vi.fn().mockResolvedValue([]),
+    save: vi.fn().mockResolvedValue(undefined),
+};
+
+beforeEach(() => {
+    mockRepo.find.mockReset().mockResolvedValue([]);
+    mockRepo.save.mockReset().mockResolvedValue(undefined);
+    vi.mocked(getDbConnection).mockResolvedValue({
+        getRepository: () => mockRepo,
+    } as any);
+});
 
 async function createBasicStatusList(bitSize:number)
 {
@@ -25,7 +41,7 @@ test("Setting bits", async () => {
     // update the list content
     lst.content = await dataList.encodeBits();
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     let value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
 
@@ -52,33 +68,35 @@ test("Setting bits", async () => {
 
 test("Using revoke", async () => {
     const lst = await createBasicStatusList(1);
+    lst.index = 1;
 
     // reserve a bit
     const dataList = new Bitstring({buffer: await Bitstring.decodeBits({encoded:lst.content})});
     dataList.set(1, true);
     // update the list content
     lst.content = await dataList.encodeBits();
+    mockRepo.find.mockResolvedValue([lst]);
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     let value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
 
-    let action = await Stype.revoke(lst, 1, true);
+    let action = await Stype.revoke(lst.index, 1, true);
     expect(action).toBe('REVOKED');
     value = await Stype.getState(lst, 1);
     expect(value).toBe(1);
 
-    action = await Stype.revoke(lst, 1, true);
+    action = await Stype.revoke(lst.index, 1, true);
     expect(action).toBe('UNCHANGED');
     value = await Stype.getState(lst, 1);
     expect(value).toBe(1);
 
-    action = await Stype.revoke(lst, 1, false);
+    action = await Stype.revoke(lst.index, 1, false);
     expect(action).toBe('UNREVOKED');
     value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
 
-    action = await Stype.revoke(lst, 1, false);
+    action = await Stype.revoke(lst.index, 1, false);
     expect(action).toBe('UNCHANGED');
     value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
@@ -93,7 +111,7 @@ test("Bitsize 2", async () => {
     // update the list content
     lst.content = await dataList.encodeBits();
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     let value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
 
@@ -157,7 +175,7 @@ test("Bitsize 3", async () => {
     // update the list content
     lst.content = await dataList.encodeBits();
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     let value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
 
@@ -226,7 +244,7 @@ test("Bitsize 4", async () => {
     // update the list content
     lst.content = await dataList.encodeBits();
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     let value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
     value = await Stype.getState(lst, 5);
@@ -303,7 +321,7 @@ test("Use correct index", async () => {
     // update the list content
     lst.content = await dataList.encodeBits();
 
-    const Stype = new StatusListType({});
+    const Stype = new StatusListType({name: 'test', size: 1000, purpose: 'test'}, issuer);
     let value = await Stype.getState(lst, 1);
     expect(value).toBe(0);
     value = await Stype.getState(lst, 2);
