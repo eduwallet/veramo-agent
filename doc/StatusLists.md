@@ -16,7 +16,7 @@ This application implements several types of status lists:
 - `BitstringStatusList`: see https://w3c.github.io/vc-bitstring-status-list/ for more information (the `W3C` version)
 - `statuslist+jwt`: see https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/21/ (the `IETF` version)
 
-The `W3C` version is specifically designed to work with `VCDM 2` credentials, while the `IETF` version is specifically designed to work with `SD-JWT` (`dc+sd-jwt`) credentials. This implementation allows to apply these attributes cross-wise in some way. If a `W3C` statuslist is defined for a `SD-JWT` credential, the `W3C` status list data is exported to the `status.statuslist` claim of the result. And vice versa, if an `IETF` statuslist is defined for a `VCDM` credential, the `IETF` status list data is exported as part of the `credential.credentialStatus` attribute. The `VCDM` specification allows more than 1 credential status definition, whereas `IETF` only defines one claim option, so be careful when defining the status lists in combination with credential formats.
+The `W3C` version is specifically designed to work with `VCDM 2` credentials, while the `IETF` version is specifically designed to work with `SD-JWT` (`dc+sd-jwt`) credentials. This implementation allows to apply these attributes cross-wise in some way. If a `W3C` statuslist is defined for a `SD-JWT` credential, the `W3C` status list data is exported to the `status.statuslist` claim of the result. And vice versa, if an `IETF` statuslist is defined for a `VCDM` credential, the `IETF` status list data is exported as part of the `credential.credentialStatus` attribute. As much as possible, the `IETF` status list token is exported to the `status` claim in a `JOSE` encoding. The `VCDM` specification allows more than 1 credential status definition, whereas `IETF` only defines one claim option, so be careful when defining the status lists in combination with credential formats.
 
 ## Configuration
 
@@ -264,7 +264,7 @@ Request object:
 
 ```json
 {
-    list: <statuslist credential URL>,
+    list: <statuslist credential URL, like `https://agent.dev.eduwallet.nl/mbob/sl/revocation/1`>,
     index: <element index>,
     status: <integer status value>,
     mask: <optional mask value>
@@ -283,6 +283,19 @@ The `list` value must be the `url` value from the reservation step. This must ma
 The `status` field is an integer to which the new status of the list element must be set. An optional `mask` value can be passed to only set specific bits of the list element and keep other bits unchanged. By default the `mask` will cover all bits.
 
 The response indicates if the element value has changed (`CHANGED`) or not (`UNCHANGED`).
+
+Example POST:
+
+This sets bit 3 using a 2 bit mask for bits 2 and 3.
+
+```json
+{
+    "list": "https://agent.dev.eduwallet.nl/mbob/sl/revocation/1",
+    "index": 2,
+    "status": 8,
+    "mask": 10
+}
+```
 
 Example Response:
 

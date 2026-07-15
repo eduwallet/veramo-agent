@@ -188,7 +188,7 @@ Optionally, instead of extending a credential based on the credential identifier
 
 The `extends` attribute is removed from the output if it was present.
 
-If a credential supports a status list implementation, the status list options can be configured in the metadata. Like with the `extends` attribute, this configuration is removed from the metadata output:
+If a credential supports a status list implementation, the status list options can be configured in the metadata. Like with the `extends` attribute, this configuration is removed from the metadata output. Please see `docs/StatusList.md` for more information on statuslists.
 
 ### Issuers
 
@@ -212,8 +212,6 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
 The definition is available in the `src/types/internal.ts` file, `IssuerConfiguration` interface.
 
 The `key` attribute is automatically set based on the type of the key, usually to '0'. If you have a very specific key configuration, you can override it with the `key` attribute, but it should not be necessary. The `did:jwk` keys always have a key reference of '0'. The `did:web` implementation has a key reference of '0' as well. The `did:key` specification indicates the key reference is the multibase encoded public key, but that is not known in advance if the key needs to be generated fresh.
-
-See the chapter on StatusLists below for the status list configuration options.
 
 The `usesNonces` setting is used to enforce the use of nonce values in access tokens from external authorization servers. Because it it not known in advance if such AS entities do or do not use nonce values, their presence can be enforced with this setting. Please note that there is no way for the issuer to know if this nonce value is actually correct without having a separate api to check this. For this reason, using nonce values with external AS entities does not increase security. For the `pre-authorized_code` flow, nonce values _are_ used regardless of this setting.
 
@@ -254,7 +252,6 @@ If the `access token` is a JWT, the issuer tries to retrieve the `issuer_state` 
 the session, the issuer will then determine the credential subject data. There is currently no implementation to retrieve additional data based
 on the authenticated user, like requesting a user info endpoint or further dissecting the `access token`.
 
-
 ## Endpoints
 
 Routing and endpoints are set in various places. There are two kinds of endpoints: OpenID4VC endpoints and API endpoints.
@@ -263,18 +260,21 @@ Routing and endpoints are set in various places. There are two kinds of endpoint
 
 The current setup supports the basic endpoints:
 
-- `<base URL>/<tenant>/.well-known/openid-credential-issuer`
-- `<base URL>/.well-known/openid-credential-issuer/<tenant>`
-- `<base URL>/<tenant>/.well-known/openid-configuration`
-- `<base URL>/.well-known/openid-configuration/<tenant>`
-- `<base URL>/<tenant>/.well-known/oauth-authorization-server`
-- `<base URL>/.well-known/oauth-authorization-server/<tenant>`
-- `<base URL>/<tenant>/.well-known/did.json`
 - `<base URL>/<tenant>/credentials`
 - `<base URL>/<tenant>/nonce`
 - `<base URL>/<tenant>/get-credential-offer/:id`
 
-The first and second URL serves the JSON metadata that configures the issuer tenant. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute. For historical reasons, the `credentialSubject` entry is still used in the metadata specification.
+It also supports publishing well-known metadata:
+
+- `<base URL>/<tenant>/.well-known/openid-credential-issuer`
+- `<base URL>/<tenant>/.well-known/openid-configuration`
+- `<base URL>/<tenant>/.well-known/oauth-authorization-server`
+- `<base URL>/.well-known/openid-credential-issuer/<tenant>`
+- `<base URL>/.well-known/openid-configuration/<tenant>`
+- `<base URL>/.well-known/oauth-authorization-server/<tenant>`
+- `<base URL>/<tenant>/.well-known/did.json`
+
+The 1st and 4th URL serves the JSON metadata that configures the issuer tenant. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute. For historical reasons, the `credentialSubject` entry is still used in the metadata specification.
 
 The `openid-configuration` and `oauth-authorization-server` are published to configure the token endpoint in the pre-authorized_code flow. The UniMe wallet
 requires the latter and does not read the former. Sphereon reads both. The spec does not require any of them, but then the token endpoint is undefined.
