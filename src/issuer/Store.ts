@@ -37,7 +37,6 @@ async function readFromDB()
                 adminToken: issuer.adminToken,
                 authorizationEndpoint: issuer.authorizationEndpoint,
                 tokenEndpoint: issuer.tokenEndpoint,
-                statusLists: JSON.parse(issuer.statuslists ?? '{}'),
                 did: issuer.did,
             }, JSON.parse(issuer.metadata ?? '{}'));
 
@@ -115,7 +114,6 @@ async function readFromFile()
                     dbIssuer.clientId = config.clientId;
                     dbIssuer.clientSecret = config.clientSecret;
                     dbIssuer.metadata = JSON.stringify(metadata);
-                    dbIssuer.statuslists = JSON.stringify(config.statusLists);
                     await issuerRepo.save(dbIssuer);
                 }
             }

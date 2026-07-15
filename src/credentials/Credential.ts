@@ -68,15 +68,13 @@ export class Credential
         // handle the status list information AFTER we set the expiration date, so we
         // can use this to update the last-expiration date of the status list
         const enableLists = (typeof this.metaData?.enableStatusLists === 'undefined') || (this.metaData?.enableStatusLists === true);
-        if (this.issuer!.options.statusLists && enableLists) {
+        if (this.configuration?.statuslist && enableLists) {
             await this.handleStatusLists();
         }
         debug('end of credential data resolving');
         return true;
     }
 
-    // STATLIST-TODO: store more data in the metadata, so we can more easily revoke/reset the status for this credential
-    // Look for statuslist name, listindex for example
     private async handleStatusLists()
     {
         // see if this credential configuration has a status list configuration

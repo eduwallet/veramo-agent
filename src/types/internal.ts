@@ -33,7 +33,6 @@ export interface IssuerConfiguration {
     adminToken?:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
-    statusLists?:StringKeyedObject;
     did:string;
     key?:string;
     usesNonces?:boolean;
