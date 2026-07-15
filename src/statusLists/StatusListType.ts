@@ -358,14 +358,13 @@ export class StatusListType implements StatusListInterface {
     // this routine is not used, but is here for completeness sake
     public static async fromMultibaseEncoding(data:string)
     {
-        let buffer = null;
         // these two methods are defined in the spec
         if (data[0] === 'u') {
-            buffer = fromString(data.substring(1), 'base64url');
+            return await ungzip(fromString(data.substring(1), 'base64url'));
         }
         else if(data[0] == 'z') {
-            buffer = fromString(data.substring(1), 'base58btc');
+            return await ungzip(fromString(data.substring(1), 'base58btc'));
         }
-        return await ungzip(buffer);
+        throw new Error(`Unsupported multibase prefix '${data[0]}'`);
     }
 }

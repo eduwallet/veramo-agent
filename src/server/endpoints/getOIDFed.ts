@@ -1,4 +1,4 @@
-import { getOIDFedInfo } from 'utils/getOIDFedInfo';
+import { getOIDFedInfo } from 'utils/getOIDFedInfo.js';
 import { Request, Response } from 'express'
 import { Issuer } from 'issuer/Issuer.js'
 
