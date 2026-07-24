@@ -126,7 +126,7 @@ export class StatusListType implements StatusListInterface {
     {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(StatusList);
-        this.lists = await repo.find({where:{name: this.id}, order: {index:'ASC'}});
+        this.lists = await repo.find({where:{name: this.name}, order: {index:'ASC'}});
     }
 
     public async get(index:number)
