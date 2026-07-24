@@ -23,7 +23,7 @@ export async function statusListAsJWT(data:StatusListStatus, issuer:Issuer)
         iss: did,
         exp: moment(data.date).add(15, 'minutes').unix(), // considered expired
         iat: moment(data.statusList.updateDate).unix(),
-        sub: issuer.options.baseUrl + data.basepath, // sub must specify the uri of the status list token
+        sub: data.basepath, // sub must specify the uri of the status list token
         ttl: 5 * 60, // maximum time to cache
         status_list: {
             bits: data.type.bitSize,

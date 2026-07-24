@@ -21,14 +21,14 @@ export async function statusListAsVC(data:StatusListStatus, issuer:Issuer)
 
     const statusListCredential:any = {
         "@context": ["https://www.w3.org/ns/credentials/v2"],
-        "id": issuer.options.baseUrl + data.basepath,
+        "id": data.basepath,
         "type": ["VerifiableCredential", data.type.getCredentialType()],
         "issuer": did,
         "validFrom": moment(data.statusList.updateDate).format(moment.defaultFormatUtc),
         "validUntil": moment(data.date).add(5,'minutes').format(moment.defaultFormatUtc),
         "issuedAt": moment(data.statusList.updateDate).format(moment.defaultFormatUtc),
         "credentialSubject": {
-            "id": issuer.options.baseUrl + data.basepath + "#list",
+            "id": data.basepath + "#list",
             "type": data.type.type,
             "statusPurpose": data.type.purpose
             // encodedList set below

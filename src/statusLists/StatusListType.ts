@@ -38,7 +38,7 @@ export class StatusListType implements StatusListInterface {
         this.bitSize = opts.bitSize ?? 1;
         this.messages = opts.messages;
 
-        this.id = issuer.basePath() + '/sl/' + this.name;
+        this.id = '/sl/' + this.name;
         this.lists = [];
     }
 
@@ -111,7 +111,7 @@ export class StatusListType implements StatusListInterface {
         const status:StatusListStatus = {
             type: this,
             statusList: list,
-            basepath: this.id + '/' + list.index,
+            basepath: this.createCredentialUrl(list.index),
             date: moment()
         }
 
@@ -142,7 +142,7 @@ export class StatusListType implements StatusListInterface {
 
     public createCredentialUrl(listIndex?:number)
     {
-        return getEnv('BASEURL', '') + this.id + '/' + (listIndex != undefined ? listIndex : '');
+        return this.issuer.options.baseUrl + this.id + '/' + (listIndex != undefined ? listIndex : '');
     }
 
     public pathOfIndex(listIndex:number, index:number)
