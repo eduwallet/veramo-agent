@@ -68,6 +68,7 @@ export class Credential
         // handle the status list information AFTER we set the expiration date, so we
         // can use this to update the last-expiration date of the status list
         const enableLists = (typeof this.metaData?.enableStatusLists === 'undefined') || (this.metaData?.enableStatusLists === true);
+        debug('looking for statuslists', enableLists, this.configuration?.statuslist);
         if (this.configuration?.statuslist && enableLists) {
             await this.handleStatusLists();
         }
@@ -81,12 +82,14 @@ export class Credential
         const statusses:StatusListCredentialData[] = [];
         if (this.configuration?.statuslist) {
             for (const statlist of this.configuration.statuslist) {
+                debug('reserving bit on statuslist', statlist);
                 const response = await this.issuer!.reserveOnStatusList(statlist, this.metaData.expirationDate);
                 statusses.push(response);
             }
         }
 
         if (statusses.length > 0) {
+            debug('successfully reserved statuslists', statusses);
             this.metaData.credentialStatus = statusses;
         }
     }

@@ -22,14 +22,14 @@ The `W3C` version is specifically designed to work with `VCDM 2` credentials, wh
 
 Statuslists are defined by a globally unique name, for example `abcrevoke` or `pidsuspend`. Each statuslist can have one or more sublists, depending on the size of the list. By default, a status-sublist can encode 131072 entries, which is more than will ever be used by this application. The size can be configured to be smaller or larger as needed. When the statuslist implementation detects that the status-sublist is used for more than 90%, it will automatically create an additional status-sublist with again the number of possible entries defined by the `size` attribute. This happens transparently, but as the default size is presumably never reached, chances that this will ever occur in reality are very slim.
 
-Statuslists are configured for a specific credential in the issuer metadata. The statuslist configuration lists the available status lists for this issuer for each credential available:
+Statuslists are configured for a specific credential in the issuer metadata. The `statuslist` configuration lists the available status lists for this issuer for each credential available:
 
 ```json
 {
     ...
     "CredentialId2": {
         ...
-        "statusLists": [
+        "statuslist": [
             {
                 "name": "generic name, like revoke or suspend, to be able to distinguish multiple status lists for the same credential",
                 "size": <number of entries allowed in this list, by default and at least set to 131072>,
@@ -62,7 +62,7 @@ For example, redefining the `revocation` status list:
     ...
     "CredentialId1": {
         ...
-        "statusLists": [
+        "statuslist": [
             {
                 "name": "revocation",
                 "size": 65535,
@@ -75,7 +75,7 @@ For example, redefining the `revocation` status list:
     },
     "CredentialId2": {
         ...
-        "statusLists": [
+        "statuslist": [
             {
                 "name": "revocation",
                 "size": 65535,
