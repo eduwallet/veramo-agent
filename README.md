@@ -37,7 +37,7 @@ docker run -t -i \
     postgres:16-bookworm
 ```
 
-Make sure to replace the `POSTGRES_PASSWORD` and the `<veramo-agent-path>` with proper values and in general match the vales with the `.env` or `.env.local` configuration.
+Make sure to replace the `<veramo-agent-path>` with a full filesystem path and in your `.env` file, make sure the values of `DB_PASSWORD` and `POSTGRES_PASSWORD` match.
 
 ### Docker instance
 
