@@ -107,7 +107,7 @@ test('VCDM holder binding', async () => {
 
 test('VCDM status lists', async () => {
     const issuer = new Issuer({}, {});
-      
+
     const credential = new Credential();
     credential.issuer = issuer;
     credential.type = 'CredentialTest';
@@ -115,17 +115,22 @@ test('VCDM status lists', async () => {
     issuer.did = {did: 'did:test:me'};
     issuer.keyRef = '1234';
 
-    // single status list is converted to array of length 1, which is allowed in the spec
-    // but was explicitely ruled out in DIIPv2 in the early StatusList implementations
-    credential.metaData.credentialStatus = {type:'BitstringStatusList', credentialStatus:{type: 'a'}};
+    // a single surviving entry is unwrapped from the array to a bare object
+    credential.metaData.credentialStatus = [
+        {options: {type:'BitstringStatusList'}, attribute: {type: 'a'}},
+    ];
     const vcdm = new VCDM(credential);
     let result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
-    expect(result.credentialStatus!.length).toBe(1);
-    expect(result.credentialStatus![0].type).toBe('a');
+    expect(Array.isArray(result.credentialStatus)).toBe(false);
+    expect((result.credentialStatus as any).type).toBe('a');
 
-    credential.metaData.credentialStatus = [{type:'BitstringStatusList',credentialStatus:{type:'a'}},{type:'RevocationList2021',credentialStatus:{type:'b'}}];
+    // multiple surviving entries stay an array
+    credential.metaData.credentialStatus = [
+        {options: {type:'BitstringStatusList'}, attribute: {type:'a'}},
+        {options: {type:'RevocationList2021'}, attribute: {type:'b'}},
+    ];
     result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
@@ -133,13 +138,16 @@ test('VCDM status lists', async () => {
     expect(result.credentialStatus![0].type).toBe('a');
     expect(result.credentialStatus![1].type).toBe('b');
 
-    // statuslist+jwt is filtered out
-    credential.metaData.credentialStatus = [{type:'BitstringStatusList',credentialStatus:{type:'a'}},{type:'statuslist+jwt',credentialStatus:{type:'b'}}];
+    // entries whose options carry no type (the IETF statuslist+jwt variant) are filtered out
+    credential.metaData.credentialStatus = [
+        {options: {type:'BitstringStatusList'}, attribute: {type:'a'}},
+        {options: {}, attribute: {type:'b'}},
+    ];
     result = await vcdm.build();
     expect(result).toBeDefined();
     expect(result.credentialStatus).toBeDefined();
-    expect(result.credentialStatus!.length).toBe(1);
-    expect(result.credentialStatus![0].type).toBe('a');
+    expect(Array.isArray(result.credentialStatus)).toBe(false);
+    expect((result.credentialStatus as any).type).toBe('a');
 });
 
 test('VCDM evidence', async () => {

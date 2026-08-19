@@ -18,6 +18,12 @@ import {
     getNonce,
 } from './endpoints/index.js'
 import { getOIDFed } from './endpoints/getOIDFed.js';
+import { StatusListType } from '#root/statusLists/StatusListType';
+import { revokeIndex } from './endpoints/statuslists/revokeIndex.js';
+import { getStatus } from './endpoints/statuslists/getStatus.js';
+import { setStatus } from './endpoints/statuslists/setStatus.js';
+import { StatusListOptions } from '#root/types/internal/statuslists';
+import { getStatusListCredential } from './endpoints/statuslists/getStatusListCredential.js';
 
 export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnownRouter:Router) {
     // to support internal redirections, we set up the routes on <base-url>/<tenant>/...
@@ -25,7 +31,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // The following statement makes it possible to set issuer.options.baseUrl == <app-baseUrl>/<tenant>
     // and not use the redirections.
     // However, for this to work, the name and the baseUrl should match in the configuration
-    const basePath = '/' + issuer.name;
+    const basePath = issuer.basePath();
     const tokenPath = '/token';
 
     debug('creating routes for ', issuer.name);
@@ -84,5 +90,18 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
 
     // allow the front-end issuer to revoke or unrevoke specific credentials based on an id
     revokeCredential(issuer, '/api/revoke-credential');
-}
 
+    const statusListOptions = issuer.findAllStatusLists();
+    for (const slo of statusListOptions) {
+        // add api interfaces to revoke specific indexes of a named status list
+        revokeIndex(issuer, slo, `/api/sl/${slo.name}/revoke`);
+
+        // Add endpoint to get and set the status
+        getStatus(issuer, slo, `/api/sl/${slo.name}/status`);
+        setStatus(issuer, slo, `/api/sl/${slo.name}/status`);
+
+        // get the statuslist credential, entry point for each status list
+        // this path has to match the path in the StatusListType.id
+        getStatusListCredential(issuer, slo, `/sl/${slo.name}`);
+    }
+}

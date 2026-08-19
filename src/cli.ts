@@ -5,6 +5,11 @@ import { getArgs } from "#root/utils/args";
 debug('cli.ts: importing getDbConnection');
 import { getDbConnection } from "#root/database/databaseService";
 import { Credential } from "#root/database/entities/Credential";
+import { Issuer } from "#root/database/entities/Issuer";
+import { CredentialType } from "#root/database/entities/CredentialType";
+import { Nonce } from "#root/database/entities/Nonce";
+import { Session } from "#root/database/entities/Session";
+import { VCTDocument } from "#root/database/entities/VCTDocument";
 import { determineFieldLengths, FieldSettings } from '#root/utils/cli/determineFieldLengths';
 import { printField, printHeader } from '#root/utils/cli/printField';
 
@@ -23,10 +28,30 @@ function printHelp()
     console.log('    list-credentials   List a selection of the database credentials. Add key=value options to filter');
     console.log('    migrate            Execute pending database migrations');
     console.log('    rollback           Revert the last executed migration');
+    console.log('    clear              Remove database stored configurations')
     console.log('');
     console.log('Available options:');
     console.log('--help/-?   Print this help text');
     console.log('');
+}
+
+async function clearConfiguration()
+{
+    const dataSource = await getDbConnection();
+    console.log('Clearing issuer configurations');
+    await dataSource.getRepository(Issuer).clear();
+
+    console.log('Clearing credential configurations');
+    await dataSource.getRepository(CredentialType).clear();
+
+    console.log('Clearing vct configurations');
+    await dataSource.getRepository(VCTDocument).clear();
+
+    console.log('Clearing nonce configurations');
+    await dataSource.getRepository(Nonce).clear();
+
+    console.log('Clearing session configurations');
+    await dataSource.getRepository(Session).clear();
 }
 
 async function migrate()
@@ -130,6 +155,11 @@ async function main()
 
     if (files.includes('inspect-credential')) {
         await inspectCredential(files.filter((f) => f != 'inspect-credential').join());
+        return;
+    }
+
+    if (files.includes('clear')) {
+        await clearConfiguration();
         return;
     }
 

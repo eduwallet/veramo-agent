@@ -101,23 +101,13 @@ export class JOSE
     private addStatusListData(jwt:JWT)
     {
         if (this.credential.metaData.credentialStatus) {
-            let statusses:any = [];
-
-            if (this.credential.metaData.credentialStatus.type) {
-                statusses = [this.credential.metaData.credentialStatus];
-            }
-            else {
-                statusses = this.credential.metaData.credentialStatus;
-            }
+            let statusses:any = this.credential.metaData.credentialStatus;
             
-            statusses = statusses.filter((el:any) => el.type == 'statuslist+jwt');
+            statusses = statusses.filter((el:any) => el.options.type == 'statuslist+jwt');
             if (statusses.length > 0) {
                 // IETF specifies that the status of a JWT is embedded in the status claim
                 // as a status_list entry, no matter the encoding.
-                // The statuslist agent returns a ready to use return value
-                jwt.payload.status = {
-                    status_list: statusses[0].credentialStatus
-                };
+                jwt.payload.status = statusses[0].attribute;
             }
         }
     }

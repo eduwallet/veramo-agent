@@ -44,7 +44,7 @@ export interface CredentialConfigurations {
 }
 
 export type CredentialConfiguration = CredentialConfigurationCommon & 
-    (CredentialConfigurationJwtVC | CredentialConfigurationLdpVC | CredentialConfigurationIsoMdl | CredentialConfigurationSdJwt);
+    (CredentialConfigurationJwtVC | CredentialConfigurationLdpVC | CredentialConfigurationIsoMdl | CredentialConfigurationDCSdJwt);
 export type CredentialConfigurationDCSD = CredentialConfigurationCommon & CredentialConfigurationDCSdJwt;
 export type CredentialConfigurationVCSD = CredentialConfigurationCommon & CredentialConfigurationVCSdJwt;
 export type CredentialConfigurationVCDM = CredentialConfigurationCommon & CredentialConfigurationJwtVC;

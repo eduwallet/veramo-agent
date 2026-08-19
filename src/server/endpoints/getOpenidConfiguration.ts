@@ -1,3 +1,4 @@
+import { GrantTypes } from '#root/types/specification/access_token';
 import { Request, Response, Router } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
 
@@ -17,6 +18,10 @@ function getOIDCConfig(issuer:Issuer, tokenpath:string|undefined)
         if (issuer.options.authorizationEndpoint) {
             data.authorization_endpoint = issuer.options.authorizationEndpoint;
         }
+        else {
+            data.grant_types_supported = [GrantTypes.PRE_AUTHORIZED_CODE];
+        }
+
         if (issuer.options.tokenEndpoint) {
             data.token_endpoint = issuer.options.tokenEndpoint;
         }

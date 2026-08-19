@@ -1,0 +1,43 @@
+import { Issuer } from '#root/issuer/Issuer';
+import { StatusListType } from '#root/statusLists/StatusListType';
+import { StatusListOptions } from '#root/types/internal/statuslists';
+import { Request, Response } from 'express';
+import passport from 'passport';
+
+interface RevokeRequest {
+    list:string;
+    index:number;
+    status:string;
+}
+
+interface RevokeResponse {
+    status:string;
+}
+
+/* Adjust the bit value for a specific bit in the bitstring lists
+ *
+ * The list parameter refers to the full credential URL of the bitstring credential. We
+ * need to parse this to find the proper status list number.
+ * The status list name should match that of the bitstring credential.
+ * 
+ * If the requested state is already the current state, we return UNCHANGED as state value.
+ */
+export function revokeIndex(issuer:Issuer, statusListOptions:StatusListOptions, path:string) {
+    issuer.router!.post(
+        path,
+        passport.authenticate(issuer.name + '-admin', { session: false }),
+        async (request: Request<RevokeRequest>, response: Response<RevokeResponse>) => {
+            try {
+                const statusList = new StatusListType(statusListOptions, issuer);
+                const shouldStartWith = statusList.createCredentialUrl();
+                if (!request.body.list.startsWith(shouldStartWith)) {
+                    throw new Error("Incorrect list combination");
+                }
+                const listIndex = parseInt(request.body.list.substring(shouldStartWith.length));
+                const revokeState = await statusList.revoke(listIndex, parseInt(request.body.index), request.body.status == 'revoke');
+                response.status(200).end(JSON.stringify({status:revokeState}));
+            } catch {
+                response.status(404).end('List not found');
+            }
+        });
+}

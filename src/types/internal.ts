@@ -1,6 +1,5 @@
 import { ErrorCodes } from '#root/types/api';
 import { StringKeyedObject } from '#root/types/index';
-import { StatusListsOption } from '#root/types/internal/statuslists';
 import { CredentialOffer } from '#root/types/specification/credential_offer';
 import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
 import { Session } from '#root/database/entities/index';
@@ -34,7 +33,6 @@ export interface IssuerConfiguration {
     adminToken?:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
-    statusLists?:StatusListsOption;
     did:string;
     key?:string;
     usesNonces?:boolean;

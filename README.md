@@ -158,8 +158,12 @@ The credential claim data is located in the `credential_definition` attribute. I
             "claims": [
                 {
                     "path": ["list of path elements"],
+<<<<<<< HEAD
                     "origin": [["optional list of paths (array of string arrays) to retrieve this claim from"]],
                     "value_type": "optional value, use only to indicate a claim is 'internal' and should not be published",
+=======
+                    "origin": [["optional list of path elements"], ...]
+>>>>>>> main
                     "mandatory": "optional boolean",
                     "display": <display object with attribute names>
                 },
@@ -170,6 +174,10 @@ The credential claim data is located in the `credential_definition` attribute. I
 ```
 
 Please note: for the 'w3c' type, the `vc` prefix is automatically prepended to the path specifiers, it should not be added explicitely in this claims definition.
+
+The `credentialSubject.key1.{}` way of specifying claims only supports single layered, single value claims. Use the `claims` array to specificy more complex claim structures.
+
+The optional `origin` value allows some degree of mapping external claim data to a specific credential claim. It is a list of lists, each evaluated in turn and the first valid entry is used. It can be used when the external data retrieved from an `authorisation_code` flow returns a data structure that can change for users or situations. In `pre-authorized` code flow, the data structure is assumed to be defined up front by the front-end issuing application and can be set precisely to the fields the credential requires.
 
 Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` or `dc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
 
@@ -186,7 +194,7 @@ Optionally, instead of extending a credential based on the credential identifier
 
 The `extends` attribute is removed from the output if it was present.
 
-The `format` attribute is rewritten if it is `vc+jwt` to `json_vc_jwt`. This format indicates the credential should be output as VCDM 2.0.
+If a credential supports a status list implementation, the status list options can be configured in the metadata. Like with the `extends` attribute, this configuration is removed from the metadata output. Please see `docs/StatusList.md` for more information on statuslists.
 
 Note that the `value_type` of a claim can contain the string `internal`, in which case the whole claim is filtered out in the published metadata. This is used for specific credentials to allow retrieving special data that is not exported in the credential, but kept with the internal database anyway. When claims are provided in the "modern" `claims` attribute instead of through `credentialSubject`, do __not__ provide the `value_type` attribute unless it is set to `internal`.
 
@@ -203,7 +211,6 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
     "adminToken": <string bearer token to be passed by front end agents to create credential offers>,
     "authorizationEndpoint": <optional authorization server to be used for authorized code flow>,
     "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
-    "statusLists": <optional status list specifications>,
     "did": <did alias or did name as configured in the did section above>,
     "key": "optional key reference index, like '0', depending on the identifier key format",
     "usesNonces": <boolean value that indicates if a nonce value should be generated in the access token>
@@ -213,22 +220,6 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
 The definition is available in the `src/types/internal.ts` file, `IssuerConfiguration` interface.
 
 The `key` attribute is automatically set based on the type of the key, usually to '0'. If you have a very specific key configuration, you can override it with the `key` attribute, but it should not be necessary. The `did:jwk` keys always have a key reference of '0'. The `did:web` implementation has a key reference of '0' as well. The `did:key` specification indicates the key reference is the multibase encoded public key, but that is not known in advance if the key needs to be generated fresh.
-
-The statuslist configuration lists the available status lists for this issuer:
-
-```json
-{
-    ...
-    "statusLists": {
-        "AcademicBaseCredential": {
-            "url": <endpoint of the status list reservation service>,
-            "revoke": <endpoint of the status list revoke service>,
-            "token": <string bearer token to be used to access the status list service>
-        }
-    }
-    ...
-}
-```
 
 The `usesNonces` setting is used to enforce the use of nonce values in access tokens from external authorization servers. Because it it not known in advance if such AS entities do or do not use nonce values, their presence can be enforced with this setting. Please note that there is no way for the issuer to know if this nonce value is actually correct without having a separate api to check this. For this reason, using nonce values with external AS entities does not increase security. For the `pre-authorized_code` flow, nonce values _are_ used regardless of this setting.
 
@@ -269,6 +260,7 @@ If the `access token` is a JWT, the issuer tries to retrieve the `issuer_state` 
 the session, the issuer will then determine the credential subject data. There is currently no implementation to retrieve additional data based
 on the authenticated user, like requesting a user info endpoint or further dissecting the `access token`.
 
+<<<<<<< HEAD
 ## Status Lists
 
 This application implements `StatusList2021`, which is an outdated version of `BitstringStatuslist`. See
@@ -290,6 +282,8 @@ The `OIDFED_KEY` must be configured in the `dids` configuration as a regular key
 
 The `OIDFED_ADMIN_CONTACT` is used verbatim in the OpenID Federation metadata hosted at `<base-url>/<tenant>/.well-known/openid-federation`. The `OIDFED_AUTH` url is added there as the `authority_hint` and should match the supervising entity at which this leaf is registered. The tool signs the OpenID Federation metadata with the indicated `OIDFED_KEY`.
 
+=======
+>>>>>>> main
 ## Endpoints
 
 Routing and endpoints are set in various places. There are two kinds of endpoints: OpenID4VC endpoints and API endpoints.
@@ -298,18 +292,21 @@ Routing and endpoints are set in various places. There are two kinds of endpoint
 
 The current setup supports the basic endpoints:
 
-- `<base URL>/<tenant>/.well-known/openid-credential-issuer`
-- `<base URL>/.well-known/openid-credential-issuer/<tenant>`
-- `<base URL>/<tenant>/.well-known/openid-configuration`
-- `<base URL>/.well-known/openid-configuration/<tenant>`
-- `<base URL>/<tenant>/.well-known/oauth-authorization-server`
-- `<base URL>/.well-known/oauth-authorization-server/<tenant>`
-- `<base URL>/<tenant>/.well-known/did.json`
 - `<base URL>/<tenant>/credentials`
 - `<base URL>/<tenant>/nonce`
 - `<base URL>/<tenant>/get-credential-offer/:id`
 
-The first and second URL serves the JSON metadata that configures the issuer tenant. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute. For historical reasons, the `credentialSubject` entry is still used in the metadata specification.
+It also supports publishing well-known metadata:
+
+- `<base URL>/<tenant>/.well-known/openid-credential-issuer`
+- `<base URL>/<tenant>/.well-known/openid-configuration`
+- `<base URL>/<tenant>/.well-known/oauth-authorization-server`
+- `<base URL>/.well-known/openid-credential-issuer/<tenant>`
+- `<base URL>/.well-known/openid-configuration/<tenant>`
+- `<base URL>/.well-known/oauth-authorization-server/<tenant>`
+- `<base URL>/<tenant>/.well-known/did.json`
+
+The 1st and 4th URL serves the JSON metadata that configures the issuer tenant. It publishes the available credential templates and the URI to the endpoint that issues the actual credential. The metadata is constructed from the configured `metadata` configuration and any referenced `credential` and `vct` metadata. Credential types are extended automatically to include applicable attributes. Specifically, the `credentialSubject` attribute is converted to the `claims` attribute. For historical reasons, the `credentialSubject` entry is still used in the metadata specification.
 
 The `openid-configuration` and `oauth-authorization-server` are published to configure the token endpoint in the pre-authorized_code flow. The UniMe wallet
 requires the latter and does not read the former. Sphereon reads both. The spec does not require any of them, but then the token endpoint is undefined.
@@ -331,7 +328,6 @@ The setup has the following endpoints for the back-end API:
 - POST `<base URL>/<tenant>/api/create-offer`
 - POST `<base URL>/<tenant>/api/check-offer`
 - POST `<base URL>/<tenant>/api/list-credentials`
-- POST `<base URL>/<tenant>/api/revoke-credential`
 
 #### Create Offer
 
@@ -445,29 +441,6 @@ is optional):
 
 The endpoint returns a JSON array containing all the database rows, including the database id, the uuid, claims, status-list information
 and saved-updated dates. This data can be used in further interactions.
-
-#### Revoke Credential
-
-POST `<base URL>/<tenant>/api/revoke-credential`
-
-This endpoint allows an issuer to list the credentials it has previously issued. This can be used in use cases where
-users want to revoke or re-issue/refresh credentials.:
-
-```json
-{
-    "uuid": <credential uuid>,
-    "state": <set to 'revoke' to set the bit in the statuslist, or another value to unset it>,
-    "list": <optional URI of a specific statuslist for which to set/unset the status>
-}
-```
-
-The endpoint returns a JSON object containing a `status` attribute indicating the status of the revocation:
-
-- `REVOKED`: credential was revoked (bit is set)
-- `WAS_REVOKED`: credential was already set to revoked, state has not changed
-- `UNREVOKED`: credential was unrevoked (bit not set)
-- `WAS_UNREVOKED`: credential was not revoked, state has not changed
-- `UNKNOWN`: status list cannot be determined, bit was never reserved, etc.
 
 # Changelog / Release Notes
 
