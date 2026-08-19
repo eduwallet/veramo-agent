@@ -158,12 +158,8 @@ The credential claim data is located in the `credential_definition` attribute. I
             "claims": [
                 {
                     "path": ["list of path elements"],
-<<<<<<< HEAD
                     "origin": [["optional list of paths (array of string arrays) to retrieve this claim from"]],
                     "value_type": "optional value, use only to indicate a claim is 'internal' and should not be published",
-=======
-                    "origin": [["optional list of path elements"], ...]
->>>>>>> main
                     "mandatory": "optional boolean",
                     "display": <display object with attribute names>
                 },
@@ -260,16 +256,6 @@ If the `access token` is a JWT, the issuer tries to retrieve the `issuer_state` 
 the session, the issuer will then determine the credential subject data. There is currently no implementation to retrieve additional data based
 on the authenticated user, like requesting a user info endpoint or further dissecting the `access token`.
 
-<<<<<<< HEAD
-## Status Lists
-
-This application implements `StatusList2021`, which is an outdated version of `BitstringStatuslist`. See
-https://w3c.github.io/vc-bitstring-status-list/ for more information.
-
-If a status list is configured for an issuer, the application will request the status list agent to reserve a bit
-in the bitstring. The relevant data is returned in the `credentialStatus` attribute of the credential. This information
-is also stored in the database, so it can be used for later revocation and/or suspension.
-
 ## OpenID Federation
 
 This issuer version supports OpenID Federation. Please set the relevant environment variables to fill the relevant configurations:
@@ -282,8 +268,6 @@ The `OIDFED_KEY` must be configured in the `dids` configuration as a regular key
 
 The `OIDFED_ADMIN_CONTACT` is used verbatim in the OpenID Federation metadata hosted at `<base-url>/<tenant>/.well-known/openid-federation`. The `OIDFED_AUTH` url is added there as the `authority_hint` and should match the supervising entity at which this leaf is registered. The tool signs the OpenID Federation metadata with the indicated `OIDFED_KEY`.
 
-=======
->>>>>>> main
 ## Endpoints
 
 Routing and endpoints are set in various places. There are two kinds of endpoints: OpenID4VC endpoints and API endpoints.
@@ -446,6 +430,7 @@ and saved-updated dates. This data can be used in further interactions.
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|  v1.7.0 | d7fa460 | 2026-08-19 | Implementation of status list service inside the issuer directly instead of using an external service |
 |  v1.6.0 | a185d3f | 2026-07-01 | Origin paths for credential claims to allow mixing different origins for specific credentials, only used for eduID |
 |  v1.5.0 | a4b7690 | 2026-03-26 | Support for OpenID Federation for SD-JWT and VCDM/W3C credentials using the DIIPv5 spec |
 |  v1.4.0 | dd8595b | 2026-03-03 | `credential_callback` now returns the full access token claim set |
