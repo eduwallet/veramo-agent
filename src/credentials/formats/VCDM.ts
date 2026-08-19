@@ -143,6 +143,9 @@ export class VCDM
             if (baseCredential.credentialStatus!.length == 1) {
                 baseCredential.credentialStatus = (baseCredential.credentialStatus as ExternalService[])[0];
             }
+            else if (baseCredential.credentialStatus!.length == 0) {
+                delete baseCredential.credentialStatus;
+            }
         }
     }
 
