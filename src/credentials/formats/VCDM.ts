@@ -135,9 +135,9 @@ export class VCDM
         // ready to consume StatusListCredentialAttributes
         if (this.credential.metaData.credentialStatus) {
             // array of entries
-            // the ietf version does not have a type attribute
+            // filter out ietf type status lists
             baseCredential.credentialStatus = this.credential.metaData.credentialStatus
-                .filter((el:StatusListCredentialData) => typeof(el.options.type) != 'undefined')
+                .filter((el:StatusListCredentialData) => el.options.type != 'statuslist+jwt')
                 .map((el:StatusListCredentialData) => el.attribute);
 
             if (baseCredential.credentialStatus!.length == 1) {
