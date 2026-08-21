@@ -18,12 +18,11 @@ import {
     getNonce,
 } from './endpoints/index.js'
 import { getOIDFed } from './endpoints/getOIDFed.js';
-import { StatusListType } from '#root/statusLists/StatusListType';
 import { revokeIndex } from './endpoints/statuslists/revokeIndex.js';
 import { getStatus } from './endpoints/statuslists/getStatus.js';
 import { setStatus } from './endpoints/statuslists/setStatus.js';
-import { StatusListOptions } from '#root/types/internal/statuslists';
 import { getStatusListCredential } from './endpoints/statuslists/getStatusListCredential.js';
+import { isSingleTenant } from '#root/utils/isSingleTenant';
 
 export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnownRouter:Router) {
     // to support internal redirections, we set up the routes on <base-url>/<tenant>/...
@@ -31,7 +30,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // The following statement makes it possible to set issuer.options.baseUrl == <app-baseUrl>/<tenant>
     // and not use the redirections.
     // However, for this to work, the name and the baseUrl should match in the configuration
-    const basePath = issuer.basePath();
+    const basePath = isSingleTenant() ? '/' : issuer.basePath();
     const tokenPath = '/token';
 
     debug('creating routes for ', issuer.name);
@@ -42,7 +41,8 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
      * a further metadata field that contains the metadata 'following the specs'
      */
     debug("initializing rest api using ", issuer.options);
-    issuer.router = express.Router();
+    // if this is a single-tenant configuration, use the 'wellKnownRouter' parameter, which is actually the rootRouter
+    issuer.router = isSingleTenant() ? wellKnownRouter : express.Router();
     app.use(basePath, issuer.router);
 
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
@@ -55,7 +55,7 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     }
   
     // This endpoint serves the /.well-known/openid-credential-issuer document
-    getMetadata(issuer, basePath, wellKnownRouter)
+    getMetadata(issuer, basePath, isSingleTenant() ? null : wellKnownRouter)
 
     // Serving the /.well-known/openid-federation document
     getOIDFed(issuer);
@@ -69,8 +69,8 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // only required if we act as AS
     if (!issuer.usesAuthorisedCodeFlow()) {
         // the tokenpath is an external URL, so gets prepended with the baseUrl, but not the basePath
-        getOpenidConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, wellKnownRouter);
-        getOAuthConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, wellKnownRouter);
+        getOpenidConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
+        getOAuthConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
     }
   
     // this is hard coded in the Issuer when metadata is generated

@@ -2,10 +2,12 @@ import { Request, Response, Router } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
 import { GrantTypes } from 'types/specification/access_token.js';
 
-export function getOAuthConfiguration(issuer:Issuer, basePath:string, tokenpath: string|undefined, wellKnownRouter:Router) {
+export function getOAuthConfiguration(issuer:Issuer, basePath:string, tokenpath: string|undefined, wellKnownRouter:Router|null) {
     const path = `/.well-known/oauth-authorization-server`
     issuer.router!.get(path, getOAuthConfig(issuer, tokenpath));
-    wellKnownRouter.get('/oauth-authorization-server' + basePath, getOAuthConfig(issuer, tokenpath));
+    if (wellKnownRouter) {
+        wellKnownRouter.get('/oauth-authorization-server' + basePath, getOAuthConfig(issuer, tokenpath));
+    }
 }
 
 function getOAuthConfig(issuer:Issuer, tokenpath: string|undefined) {
