@@ -18,7 +18,8 @@ export enum ErrorCodes {
     INVALID_PROOF = "invalid_proof",
     INVALID_NONCE = "invalid_nonce",
     INVALID_ENCRYPTION_PARAMETERS = "invalid_encryption_parameters",
-    CREDENTIAL_REQUEST_DENIED = "credential_request_denied"
+    CREDENTIAL_REQUEST_DENIED = "credential_request_denied",
+    INVALID_DPOP_PROOF = "invalid_dpop_proof"
 }
 
 export enum CredentialOfferStatus {

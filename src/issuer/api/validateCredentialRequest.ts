@@ -10,6 +10,7 @@ import { JWT } from '#root/jwt/JWT';
 import { getHolderKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Session } from '#root/database/entities/index';
 import moment from 'moment';
+import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -18,18 +19,20 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
     const jwt = extractBearerToken(request.header('Authorization'));
     if (!jwt) {
-        debug("invalid because the bearer token is not present");
+        debug("invalid because the bearer/DPoP token is not present");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Unauthorized";
         return error;
     }
 
     let session:Session|null = null;
+    let tokenPayload:any = null;
 
     // try to decode the access token as if it were a JWT
     try {
         // this decodes the JWT, or retrieves data from the user info endpoint
         const data  = await verifyAccessTokenJWT(jwt, issuer);
+        tokenPayload = data?.payload;
 
         if (issuer.usesAuthorisedCodeFlow()) {
             // the issuer should be one of our authorization servers
@@ -75,6 +78,30 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         error.description = "No state found";
         return error;
     }
+
+    // https://www.rfc-editor.org/rfc/rfc9449 - only self-issued access tokens can carry a
+    // cnf.jkt claim, so this only applies to the pre-authorized code flow, and only when the
+    // wallet actually used DPoP when requesting the access token.
+    const jkt = tokenPayload?.cnf?.jkt;
+    if (jkt) {
+        const dpopHeader = request.header('DPoP');
+        try {
+            const result = await validateDPoPProof(issuer, dpopHeader, 'POST', issuer.options.baseUrl + '/credentials', jwt);
+            if (!result || result.jkt !== jkt) {
+                throw new Error("DPoP proof key does not match access token");
+            }
+        }
+        catch (e) {
+            if (e instanceof DPoPNonceRequiredError) {
+                throw e;
+            }
+            debug("invalid because the DPoP proof could not be validated", e);
+            error.error = ErrorCodes.INVALID_DPOP_PROOF;
+            error.description = (e as Error).message;
+            return error;
+        }
+    }
+
     session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
     await issuer.storeSession(session);
 
@@ -296,8 +323,10 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     return error;
 }
 
-function extractBearerToken (authorizationHeader?: string): string | undefined 
+function extractBearerToken (authorizationHeader?: string): string | undefined
 {
-    return authorizationHeader ? /Bearer (.*)/i.exec(authorizationHeader)?.[1] : undefined;
+    // https://www.rfc-editor.org/rfc/rfc9449#section-7.1 - DPoP-bound access tokens are sent
+    // using the 'DPoP' auth scheme instead of 'Bearer'
+    return authorizationHeader ? /^(?:Bearer|DPoP) (.*)/i.exec(authorizationHeader)?.[1] : undefined;
 };
 

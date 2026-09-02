@@ -38,6 +38,8 @@ export class Issuer
     public router:Router|undefined;
     public sessionData:SessionStateManager;
     public nonceStates:NonceManager;
+    public dpopNonceStates:NonceManager;
+    public dpopJtiStates:NonceManager;
     public serverKeys:StringKeyedObject;
     public serverMetadata:any;
     public usesNonces:boolean;
@@ -50,6 +52,8 @@ export class Issuer
         this.name = _options.name;
         this.sessionData = new SessionStateManager(this.name);
         this.nonceStates = new NonceManager(this.name);
+        this.dpopNonceStates = new NonceManager(this.name + '#dpop-nonce');
+        this.dpopJtiStates = new NonceManager(this.name + '#dpop-jti');
         this.serverKeys = {};
         this.usesNonces = _options.usesNonces ?? true;
     }
