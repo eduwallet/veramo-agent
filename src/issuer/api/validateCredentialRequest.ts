@@ -83,7 +83,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     // cnf.jkt claim, so this only applies to the pre-authorized code flow, and only when the
     // wallet actually used DPoP when requesting the access token.
     const jkt = tokenPayload?.cnf?.jkt;
-    if (jkt) {
+    if (!issuer.usesAuthorisedCodeFlow() && jkt) {
         const dpopHeader = request.header('DPoP');
         try {
             const result = await validateDPoPProof(issuer, dpopHeader, 'POST', issuer.options.baseUrl + '/credentials', jwt);
