@@ -6,7 +6,7 @@ import { StatusListType } from '#root/statusLists/StatusListType';
 import { getEnv } from '#root/utils/getEnv';
 import { Issuer } from '#root/issuer/Issuer';
 
-const issuer = { basePath: () => '/issuer' } as unknown as Issuer;
+const issuer = { basePath: () => '/issuer', options: { baseUrl: getEnv('BASEURL', '') + '/issuer' } } as unknown as Issuer;
 
 async function createBasicStatusList(index: number, bitSize:number)
 {
