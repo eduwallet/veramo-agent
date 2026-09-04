@@ -116,7 +116,7 @@ test('registers the did:web endpoint only when the issuer did provider is did:we
     expect(getDidSpec).not.toHaveBeenCalled();
 });
 
-test('registers the AS endpoints only when the issuer acts as its own authorization server', async () => {
+test('always registers the AS endpoints, even when an external authorization server is configured', async () => {
     const selfAsIssuer = createIssuer();
     await createRoutesForIssuer(selfAsIssuer, createApp(), wellKnownRouter);
     expect(getOpenidConfiguration).toHaveBeenCalledWith(selfAsIssuer, '/acme', 'https://issuer.example.com/token', wellKnownRouter);
@@ -124,10 +124,12 @@ test('registers the AS endpoints only when the issuer acts as its own authorizat
 
     vi.clearAllMocks();
 
+    // an external AS only serves the authorization_code flow; the issuer may still act as
+    // its own AS for pre-authorized_code flow sessions, so these must still be published.
     const externalAsIssuer = createIssuer({ authorizationEndpoint: 'https://as.example.com/authorize' });
     await createRoutesForIssuer(externalAsIssuer, createApp(), wellKnownRouter);
-    expect(getOpenidConfiguration).not.toHaveBeenCalled();
-    expect(getOAuthConfiguration).not.toHaveBeenCalled();
+    expect(getOpenidConfiguration).toHaveBeenCalledWith(externalAsIssuer, '/acme', 'https://issuer.example.com/token', wellKnownRouter);
+    expect(getOAuthConfiguration).toHaveBeenCalledWith(externalAsIssuer, '/acme', 'https://issuer.example.com/token', wellKnownRouter);
 });
 
 test('creates no status list endpoints when the metadata has no status lists', async () => {

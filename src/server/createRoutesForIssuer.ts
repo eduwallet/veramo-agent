@@ -65,13 +65,12 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
         getDidSpec(issuer);
     }
   
-    // This endpoint serves the /.well-known/openid-configuration document
-    // only required if we act as AS
-    if (!issuer.usesAuthorisedCodeFlow()) {
-        // the tokenpath is an external URL, so gets prepended with the baseUrl, but not the basePath
-        getOpenidConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
-        getOAuthConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
-    }
+    // This endpoint serves the /.well-known/openid-configuration document.
+    // Always published: even when an external AS is configured for the authorization_code
+    // flow, we may still act as our own AS for pre-authorized_code flow sessions.
+    // the tokenpath is an external URL, so gets prepended with the baseUrl, but not the basePath
+    getOpenidConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
+    getOAuthConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
   
     // this is hard coded in the Issuer when metadata is generated
     getCredential(issuer, '/credentials');

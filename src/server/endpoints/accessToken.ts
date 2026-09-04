@@ -1,5 +1,3 @@
-import Debug from 'debug';
-const debug = Debug('issuer:endpoints');
 import { Request, Response} from 'express'
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { createAccessTokenResponse } from '#root/issuer/api/createAccessTokenResponse';
@@ -11,11 +9,9 @@ import { DPoPNonceRequiredError, issueDpopNonce } from '#root/issuer/lib/validat
 import { sendDpopNonceResponse } from '#root/server/sendDpopNonceResponse'
 
 export function accessToken(issuer: Issuer, tokenPath:string) {
-    if (issuer.usesAuthorisedCodeFlow()) {
-        debug(`[OID4VCI] External Authorization Server is being used. Not enabling issuer token endpoint`)
-        return;
-    }
-
+    // Always enabled: even when an external Authorization Server is configured for the
+    // authorization_code flow, the issuer may still act as its own AS for
+    // pre-authorized_code flow sessions.
     issuer.router!.post(tokenPath,
         async (request:Request<TokenRequest>, response: Response<AccessTokenResponse>) => {
             try {
