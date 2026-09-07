@@ -26,7 +26,9 @@ export const initialiseServer = async () => {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ limit: '5mb' }));
 
-  app.use(cors({origin: '*', credentials: true, optionsSuccessStatus: 204}));
+  // https://www.rfc-editor.org/rfc/rfc9449#section-9 - DPoP-Nonce is not a CORS-safelisted
+  // response header, so browser-based clients cannot read it unless it is exposed explicitly
+  app.use(cors({origin: '*', credentials: true, optionsSuccessStatus: 204, exposedHeaders: ['DPoP-Nonce']}));
 
   await createRoutesForAdmin(app);
 
