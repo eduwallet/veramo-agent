@@ -128,11 +128,14 @@ export class Issuer
 
     public async retrieveASIssuerIntrospection(token:string)
     {
+        debug("retrieving AS Authorization Introspection");
         this.retrieveASServerKeys();
         const endpoint = this.serverMetadata?.authorization_introspection_endpoint;
+        debug("endpoint is ", endpoint);
         try {
             // the client secret contains the clientId + ':' + clientSecret, allowing us to use the clientId as the id sent to the wallet for use
             // use the Buffer route here instead of toString(fromString(x,'utf-8'),'base64') because that results in missing padding
+            debug("adding client secret as base64 Basic Auth header", this.options.clientSecret);
             const basicauth = Buffer.from(this.options.clientSecret ?? '', 'utf-8').toString('base64');
             const resp = await fetch(endpoint, {
                 method: 'POST',
@@ -144,11 +147,18 @@ export class Issuer
                     'access-token': token
                 })
             });
-            const json = await resp.json();
-            return json;
+            const responseText = await resp.text();
+            debug("response is ", resp.status, resp.statusText, responseText);
+            try {
+                const json = JSON.parse(responseText);  
+                return json;
+            }
+            catch (e:any) {
+                debug("caught error parsing the response text to JSON", e);
+            }
         }
         catch (e:any) {
-            console.error("Caught error retrieving the user info endpoint", endpoint, token, e)
+            console.error("Caught error retrieving the authorisation introspection endpoint", endpoint, token, e)
         }
         return {};
     }
