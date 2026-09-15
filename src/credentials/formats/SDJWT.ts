@@ -38,17 +38,26 @@ export class SDJWT
     public async sign()
     {
         debug("signing SD JWT");
-        let vct:any = null;
-        if (this.type == 'dc+sd-jwt') {
-            vct = getVctForCredentialType(this.credential.type!);
-        }
 
         const baseCredential:SdJwtVcPayload = {
             iss: this.credential.issuer!.did!.did,
-            ...(vct && {vct: vct!.vct!}),
             fed: this.credential.issuer?.options.baseUrl,
             iat: moment().unix()
         };
+
+        let vct:any = null;
+        if (this.type == 'dc+sd-jwt') {
+            if (this.credential?.configuration?.vct) {
+                vct = await fetch(this.credential?.configuration?.vct);
+            }
+            else {
+                vct = getVctForCredentialType(this.credential.type!);
+            }
+            if (vct) {
+                baseCredential.vct = vct.vct;
+            }
+        }
+
         if (this.credential.automaticallyBindHolder && this.credential.holder) {
             // https://www.rfc-editor.org/rfc/rfc7800.html
             if (this.credential.holder.type == "kid") {
