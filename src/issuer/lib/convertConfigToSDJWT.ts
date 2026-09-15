@@ -8,7 +8,7 @@ export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCre
     const vct = getVctForCredentialType(credentialId);
     const sdjwt:CredentialConfigurationDCSD = {
         format: config.format,
-        vct: vct?.vct ?? 'unknown',
+        vct: vct?.vct ?? (config.vct ?? 'unknown'),
         // skip credential_signing_algs_supported, it is added in the issuer
         // skip cryptographic_binding_methods_supported, it is added in the issuer
         // skip proof_types_supported, it is added in the issuer
