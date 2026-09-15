@@ -47,14 +47,22 @@ export class SDJWT
 
         let vct:any = null;
         if (this.type == 'dc+sd-jwt') {
+            debug("setting vct");
             if (this.credential?.configuration?.vct) {
+                debug("getting vct based on configured value");
                 vct = await fetch(this.credential?.configuration?.vct);
+                debug("remote vct is ", vct);
             }
             else {
+                debug("using locally stored vct");
                 vct = getVctForCredentialType(this.credential.type!);
             }
             if (vct) {
+                debug("setting credential vct to ", vct.vct);
                 baseCredential.vct = vct.vct;
+            }
+            else {
+                debug("dc+sd-jwt has NO VCT set");
             }
         }
 
