@@ -1,3 +1,6 @@
+import Debug from 'debug';
+const debug = Debug("issuer:converttodcsdjwt");
+
 import { ExtendableCredentialConfiguration } from "#root/types/api/metadata";
 import { CredentialConfiguration, CredentialConfigurationClaimData, CredentialConfigurationDCSD, CredentialConfigurationVCSD } from "#root/types/specification/metadata";
 import { getVctForCredentialType } from "#root/vct/Store";
@@ -6,9 +9,10 @@ export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCre
 {
     const claims = (config?.credential_definition.claims ?? []).filter((c) => (c.value_type !== 'internal'));
     const vct = getVctForCredentialType(credentialId);
+    debug("stored vct", vct, "configured ", config.vct);
     const sdjwt:CredentialConfigurationDCSD = {
         format: config.format,
-        vct: vct?.vct ?? (config.vct ?? 'unknown'),
+        vct: config.vct ?? (vct?.vct ?? 'unknown'),
         // skip credential_signing_algs_supported, it is added in the issuer
         // skip cryptographic_binding_methods_supported, it is added in the issuer
         // skip proof_types_supported, it is added in the issuer
