@@ -9,7 +9,7 @@ export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCre
 {
     const claims = (config?.credential_definition.claims ?? []).filter((c) => (c.value_type !== 'internal'));
     const vct = getVctForCredentialType(credentialId);
-    debug("stored vct", vct, "configured ", config.vct);
+    debug("stored vct", vct, "configured ", config.vct, (config.vct ?? (vct?.vct ?? 'unknown')));
     const sdjwt:CredentialConfigurationDCSD = {
         format: config.format,
         vct: config.vct ?? (vct?.vct ?? 'unknown'),
@@ -21,7 +21,8 @@ export function convertConfigToDCSDJWT(credentialId:string, config:ExtendableCre
             ...(config.display && {display: config.display}),
             claims
         }
-    }
+    };
+    debug("initial sd-jwt is ", sdjwt);
 
     for (const key of Object.keys(config?.credential_definition?.credentialSubject ?? {})) {
         const value = config.credential_definition.credentialSubject![key];
