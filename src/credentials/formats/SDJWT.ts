@@ -49,9 +49,15 @@ export class SDJWT
         if (this.type == 'dc+sd-jwt') {
             debug("setting vct");
             if (this.credential?.configuration?.vct) {
-                debug("getting vct based on configured value");
-                vct = await fetch(this.credential?.configuration?.vct);
-                debug("remote vct is ", vct);
+                try {
+                    debug("getting vct based on configured value");
+                    const vctResponse = await fetch(this.credential?.configuration?.vct);
+                    vct = await vctResponse.json();
+                    debug("remote vct is ", vct);
+                }
+                catch (e) {
+                    debug("caught error retrieving vct", e);
+                }
             }
             else {
                 debug("using locally stored vct");
