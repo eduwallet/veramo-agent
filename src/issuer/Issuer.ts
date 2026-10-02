@@ -353,6 +353,7 @@ export class Issuer
         metadata.credential_identifiers_supported = true;
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
+        metadata.notification_endpoint = this.options.baseUrl + '/notification';
         if (this.usesNonces) {
             metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
         }

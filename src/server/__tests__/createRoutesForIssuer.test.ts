@@ -17,6 +17,7 @@ import {
     listCredentials,
     revokeCredential,
     getNonce,
+    notification,
 } from '../endpoints/index.js';
 import { getOIDFed } from '../endpoints/getOIDFed.js';
 import { revokeIndex } from '../endpoints/statuslists/revokeIndex.js';
@@ -37,6 +38,7 @@ vi.mock('../endpoints/index.js', () => ({
     listCredentials: vi.fn(),
     revokeCredential: vi.fn(),
     getNonce: vi.fn(),
+    notification: vi.fn(),
 }));
 vi.mock('../endpoints/getOIDFed.js', () => ({ getOIDFed: vi.fn() }));
 vi.mock('../endpoints/statuslists/revokeIndex.js', () => ({ revokeIndex: vi.fn() }));
@@ -76,6 +78,7 @@ test('creates the always-on endpoints with the right paths', async () => {
     expect(getMetadata).toHaveBeenCalledWith(issuer, '/acme', wellKnownRouter);
     expect(getOIDFed).toHaveBeenCalledWith(issuer);
     expect(getCredential).toHaveBeenCalledWith(issuer, '/credentials');
+    expect(notification).toHaveBeenCalledWith(issuer, '/notification');
     expect(createCredentialOfferResponse).toHaveBeenCalledWith(issuer, '/api/create-offer', '/get-credential-offer');
     expect(getCredentialOffer).toHaveBeenCalledWith(issuer, '/get-credential-offer/:id');
     expect(getIssueStatus).toHaveBeenCalledWith(issuer, '/api/check-offer');

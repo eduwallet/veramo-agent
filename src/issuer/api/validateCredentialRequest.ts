@@ -333,7 +333,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     return error;
 }
 
-function extractBearerToken (authorizationHeader?: string): string | undefined
+export function extractBearerToken (authorizationHeader?: string): string | undefined
 {
     // https://www.rfc-editor.org/rfc/rfc9449#section-7.1 - DPoP-bound access tokens are sent
     // using the 'DPoP' auth scheme instead of 'Bearer'

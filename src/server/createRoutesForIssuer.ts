@@ -16,6 +16,7 @@ import {
     listCredentials,
     revokeCredential,
     getNonce,
+    notification,
 } from './endpoints/index.js'
 import { getOIDFed } from './endpoints/getOIDFed.js';
 import { revokeIndex } from './endpoints/statuslists/revokeIndex.js';
@@ -74,7 +75,10 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
   
     // this is hard coded in the Issuer when metadata is generated
     getCredential(issuer, '/credentials');
-  
+
+    // this is hard coded in the Issuer when metadata is generated
+    notification(issuer, '/notification');
+
     // Enable the back channel interface to create a new credential offer
     createCredentialOfferResponse(issuer, '/api/create-offer', '/get-credential-offer');
   
