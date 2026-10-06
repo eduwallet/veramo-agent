@@ -138,10 +138,10 @@ test('VCDM status lists', async () => {
     expect(result.credentialStatus![0].type).toBe('a');
     expect(result.credentialStatus![1].type).toBe('b');
 
-    // entries whose options carry no type (the IETF statuslist+jwt variant) are filtered out
+    // entries of the IETF statuslist+jwt variant are filtered out
     credential.metaData.credentialStatus = [
         {options: {type:'BitstringStatusList'}, attribute: {type:'a'}},
-        {options: {}, attribute: {type:'b'}},
+        {options: {type:'statuslist+jwt'}, attribute: {type:'b'}},
     ];
     result = await vcdm.build();
     expect(result).toBeDefined();

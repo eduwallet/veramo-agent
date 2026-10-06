@@ -2,10 +2,12 @@ import { GrantTypes } from '#root/types/specification/access_token';
 import { Request, Response, Router } from 'express'
 import { Issuer } from 'issuer/Issuer.js';
 
-export function getOpenidConfiguration(issuer:Issuer, basePath:string, tokenpath: string|undefined, wellKnownRouter:Router) {
+export function getOpenidConfiguration(issuer:Issuer, basePath:string, tokenpath: string|undefined, wellKnownRouter:Router|null) {
     const path = `/.well-known/openid-configuration`
     issuer.router!.get(path, getOIDCConfig(issuer, tokenpath));
-    wellKnownRouter.get('/openid-configuration' + basePath, getOIDCConfig(issuer, tokenpath));
+    if (wellKnownRouter) {
+        wellKnownRouter.get('/openid-configuration' + basePath, getOIDCConfig(issuer, tokenpath));
+    }
 }
 
 function getOIDCConfig(issuer:Issuer, tokenpath:string|undefined)

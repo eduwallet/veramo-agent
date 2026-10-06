@@ -6,8 +6,9 @@ import { ErrorCodes } from "types/api.js";
 import { ApiState } from "types/internal.js";
 import { GrantTypes, TokenRequest } from "types/specification/access_token.js";
 import { Session } from '#root/database/entities/index';
+import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
 
-export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest): Promise<ApiState> {
+export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest, dpopHeader?:string): Promise<ApiState> {
     debug("validating access token request", tokenRequest);
     const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
     // this method only handles access token requests for pre-authorized code flows. In authorization code flows,
@@ -104,8 +105,29 @@ export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:Tok
     }
     // else disregard the authorization_details
 
+    // https://www.rfc-editor.org/rfc/rfc9449 - DPoP is optional per wallet: if no DPoP proof is
+    // sent, we fall back to a regular bearer token. If one is sent, it must be valid and bound
+    // to the token endpoint, and the resulting key thumbprint is embedded in the access token.
+    let jkt:string|undefined;
+    if (dpopHeader) {
+        try {
+            const result = await validateDPoPProof(issuer, dpopHeader, 'POST', issuer.options.baseUrl + '/token');
+            jkt = result?.jkt;
+        }
+        catch (e) {
+            if (e instanceof DPoPNonceRequiredError) {
+                throw e;
+            }
+            debug("invalid because the DPoP proof could not be validated", e);
+            error.error = ErrorCodes.INVALID_DPOP_PROOF;
+            error.description = (e as Error).message;
+            return error;
+        }
+    }
+
     error.data = {
-      session      
+      session,
+      jkt
     };
     debug("access token request is valid");
     return error;

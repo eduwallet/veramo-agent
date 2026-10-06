@@ -77,6 +77,7 @@ The Docker setup installs all dependencies inside the container, so there's no n
 - `OIDFED_KEY`: alias of the identifier key to use for OID Federation purposes
 - `OIDFED_ADMIN_CONTACT`: contact e-mail address for administrative purposes
 - `OIDFED_AUTH`: base url of the directly supervising authority (the authority hint)
+- `SINGLE_TENANT`: set this to a non-empty value to simplify configuration for a single-tenant, domain driven setup
 
 ### File based configuration
 
@@ -237,6 +238,12 @@ Upon reading the metadata configuration, the `document` is extended automaticall
 There is currently no support for serving `schema` metadata directly.
 
 Please see https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-08.html for more information about the VCT metadata.
+
+### Single Tenant
+
+The code base is setup to serve several issuer tenants, each under a specific subpath. This is a convenient setup to allow a small use of resources for a large collection of issuing services. However, under certain circumstances it may be more convenient to have the agent serve only one specific issuer setup and just spawn more different agent containers.
+
+In that case, set the `SINGLE_TENANT` environment variable. This will force the (single) tenant configuration to be served using the `root` Router instance and prevent the tenant-based `.well-known` paths to be generated. Please note that the basic configuration setup does not change much, but it is expected (not enforced!) that only a single entry is available in the `/conf/issuers` configuration path. The name of that issuer is no longer important for generating the subpath (everything is on the root now), but the `baseUrl` setting should match the correct url of the single tenant service. 
 
 ## Basic Code Setup
 
@@ -430,6 +437,9 @@ and saved-updated dates. This data can be used in further interactions.
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|  v1.8.0 | 7a78779 | 2026-10-02 | Implementation of notification endpoint according to the spec |
+|         | e210777 | 2026-09-19 | Serving static VCT documents allowing multiple credentials to use the same VCT |
+|         | f4cbb55 | 2026-09-12 | Implementation of DPoP headers according to RFC9449 needed for Siros ID wallet |
 |  v1.7.0 | d7fa460 | 2026-08-19 | Implementation of status list service inside the issuer directly instead of using an external service |
 |  v1.6.0 | a185d3f | 2026-07-01 | Origin paths for credential claims to allow mixing different origins for specific credentials, only used for eduID |
 |  v1.5.0 | a4b7690 | 2026-03-26 | Support for OpenID Federation for SD-JWT and VCDM/W3C credentials using the DIIPv5 spec |

@@ -10,6 +10,8 @@ import { JWT } from '#root/jwt/JWT';
 import { getHolderKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
 import { Session } from '#root/database/entities/index';
 import moment from 'moment';
+import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
+import { sessionUsesAuthorisationCodeFlow } from '#root/utils/sessionUsesAuthorisationCodeFlow';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -18,20 +20,30 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
     const jwt = extractBearerToken(request.header('Authorization'));
     if (!jwt) {
-        debug("invalid because the bearer token is not present");
+        debug("invalid because the bearer/DPoP token is not present");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Unauthorized";
         return error;
     }
 
     let session:Session|null = null;
+    let tokenPayload:any = null;
 
     // try to decode the access token as if it were a JWT
     try {
         // this decodes the JWT, or retrieves data from the user info endpoint
         const data  = await verifyAccessTokenJWT(jwt, issuer);
+        tokenPayload = data?.payload;
 
-        if (issuer.usesAuthorisedCodeFlow()) {
+        const stateid = data?.payload?.issuer_state;
+        session = await issuer.getSessionByState(stateid);
+
+        // which flow applies is a property of this session's credential offer, not of the
+        // issuer's overall configuration (both flows can be configured to exist simultaneously).
+        // If we could not find a session yet, fall back to the issuer-level capability check.
+        const usesAuthorisationCodeFlow = session ? sessionUsesAuthorisationCodeFlow(session) : issuer.usesAuthorisedCodeFlow();
+
+        if (usesAuthorisationCodeFlow) {
             // the issuer should be one of our authorization servers
             if (!issuer.options?.authorizationEndpoint == data?.payload?.iss) {
                 debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
@@ -49,15 +61,13 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
                 return error;
             }
         }
-    
-        const stateid = data?.payload?.issuer_state;
-        session = await issuer.getSessionByState(stateid);
+
         if (session) {
             debug('setting session access data to ', data?.payload);
             session.data.accessData = data?.payload;
         }
 
-        if (!issuer.usesAuthorisedCodeFlow() && session && session.data?.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
+        if (!usesAuthorisationCodeFlow && session && session.data?.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
             debug("invalid because we use pre-authorised code flow and did not yet create an access token");
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "No access token created";
@@ -75,6 +85,30 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         error.description = "No state found";
         return error;
     }
+
+    // https://www.rfc-editor.org/rfc/rfc9449 - only self-issued access tokens can carry a
+    // cnf.jkt claim, so this only applies to the pre-authorized code flow, and only when the
+    // wallet actually used DPoP when requesting the access token.
+    const jkt = tokenPayload?.cnf?.jkt;
+    if (!sessionUsesAuthorisationCodeFlow(session) && jkt) {
+        const dpopHeader = request.header('DPoP');
+        try {
+            const result = await validateDPoPProof(issuer, dpopHeader, 'POST', issuer.options.baseUrl + '/credentials', jwt);
+            if (!result || result.jkt !== jkt) {
+                throw new Error("DPoP proof key does not match access token");
+            }
+        }
+        catch (e) {
+            if (e instanceof DPoPNonceRequiredError) {
+                throw e;
+            }
+            debug("invalid because the DPoP proof could not be validated", e);
+            error.error = ErrorCodes.INVALID_DPOP_PROOF;
+            error.description = (e as Error).message;
+            return error;
+        }
+    }
+
     session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
     await issuer.storeSession(session);
 
@@ -258,7 +292,10 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
         return error;
     }
 
-    if (issuer.usesNonces && !issuer.usesAuthorisedCodeFlow()) {
+    // removed:  && !sessionUsesAuthorisationCodeFlow(session)
+    // It seems the nonce endpoint can be perfectly addressed by the wallet in both type of flows, there is
+    // no reason to only check this in pre-auth flow
+    if (issuer.usesNonces) {
         // nonce: optional, must be present if a c_nonce was supplied
         if (!nonce) {
             debug("Proof is invalid because the nonce is not present");
@@ -296,8 +333,10 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
     return error;
 }
 
-function extractBearerToken (authorizationHeader?: string): string | undefined 
+export function extractBearerToken (authorizationHeader?: string): string | undefined
 {
-    return authorizationHeader ? /Bearer (.*)/i.exec(authorizationHeader)?.[1] : undefined;
+    // https://www.rfc-editor.org/rfc/rfc9449#section-7.1 - DPoP-bound access tokens are sent
+    // using the 'DPoP' auth scheme instead of 'Bearer'
+    return authorizationHeader ? /^(?:Bearer|DPoP) (.*)/i.exec(authorizationHeader)?.[1] : undefined;
 };
 

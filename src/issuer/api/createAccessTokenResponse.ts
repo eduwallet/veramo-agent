@@ -9,18 +9,20 @@ import moment from 'moment';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
 
-export async function createAccessTokenResponse(issuer:Issuer, session:Session) {
+export async function createAccessTokenResponse(issuer:Issuer, session:Session, jkt?:string) {
     debug("creating access token");
     session.data.lastUpdatedAt = Date.now();
     session.data.status = CredentialOfferStatus.ACCESS_TOKEN_CREATED;
     await issuer.storeSession(session);
 
-    const access_token = await generateAccessToken(issuer, session);
+    const access_token = await generateAccessToken(issuer, session, jkt);
     debug("signed token", access_token);
     // https://www.rfc-editor.org/rfc/rfc6749.html#section-5
+    // https://www.rfc-editor.org/rfc/rfc9449#section-6 - token_type is 'DPoP' when the token
+    // request was accompanied by a valid DPoP proof, 'bearer' otherwise
     const response: AccessTokenResponse = {
         access_token,
-        token_type: 'bearer',
+        token_type: jkt ? 'DPoP' : 'bearer',
         expires_in: TOKEN_EXPIRY / 1000,
         // refresh_token is optional
     };
@@ -53,7 +55,7 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session) 
     return response
 }
   
-async function generateAccessToken(issuer:Issuer, session:Session)
+async function generateAccessToken(issuer:Issuer, session:Session, jkt?:string)
 {
     debug("generating access token");
     // JWT uses seconds for iat and exp
@@ -66,7 +68,10 @@ async function generateAccessToken(issuer:Issuer, session:Session)
             exp,
             iss: issuer.did!.did,
             issuer_state: session.state,
-            token_type: 'Bearer',
+            token_type: jkt ? 'DPoP' : 'Bearer',
+            // https://www.rfc-editor.org/rfc/rfc9449#section-6 - binds the access token to the
+            // DPoP proof key by embedding its JWK thumbprint
+            ...(jkt && { cnf: { jkt } }),
     };
     debug("access token content", jwt);
     return await issuer.signToken(jwt);

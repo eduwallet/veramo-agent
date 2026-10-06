@@ -74,7 +74,9 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         credentials: credentials.map((c) => { return {"credential": c.output}}),
         // in ID2, nonces are retrieved from a nonce endpoint
         // TODO: DIIPv4 compliance: remove the next line
-        ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {})
+        ...((issuer.usesNonces && nonce)? {c_nonce: nonce!.uuid} : {}),
+        // used by the notification endpoint to correlate a notification back to this session
+        notification_id: session.uuid,
     };
     debug("returning credential", retval);
     return retval;
