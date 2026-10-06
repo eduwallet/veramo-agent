@@ -83,7 +83,12 @@ export class CredentialFactory
                 // this is a VCDM1.1 credential as a JWT format, with or without LDP
                 {
                     const cred = new W3C(credential);
-                    const baseCredential = await cred.build();
+                    let baseCredential = await cred.build();
+                    if (credential.format == 'jwt_vc_json-ld') {
+                        // sign the whole {vc: ...} envelope: the proof must end up
+                        // as a sibling of the vc subclaim, not nested inside it
+                        baseCredential = await JSONLD.sign(credential, baseCredential);
+                    }
                     const jose = new JOSE(credential, baseCredential, credential.format);
                     await jose.sign();
                     break;
@@ -101,6 +106,8 @@ export class CredentialFactory
                 // this is a non-jwt encoded VCDM 1.1 credential with LDP
                 {
                     const vcdm = new W3C(credential);
+                    // sign the whole {vc: ...} envelope: the proof must end up
+                    // as a sibling of the vc subclaim, not nested inside it
                     const ld = await JSONLD.sign(credential, await vcdm.build());
                     credential.output = ld;
                     break;

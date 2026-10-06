@@ -21,7 +21,7 @@ export class COSE
     {
         debug("signing VCDM using COSE");
         const vcdm = new VCDM(this.credential);
-        const baseCredential = vcdm.build();
+        const baseCredential = await vcdm.build();
         this.credential.output = await this.packCredential(baseCredential);
     }
 

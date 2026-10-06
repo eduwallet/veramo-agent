@@ -2,7 +2,6 @@ import Debug from 'debug';
 const debug = Debug('issuer:jose');
 
 import { VCDM as VCDMType, W3CJWT, W3CJWT as W3CType} from '#root/credentials/formats/VCDMTypes';
-import { JSONLD } from '#root/credentials/formats/JSONLD';
 import { Credential } from '#root/credentials/Credential';
 import moment from 'moment';
 import { JWT } from '#root/jwt/JWT';
@@ -26,12 +25,8 @@ export class JOSE
     public async sign()
     {
         debug("signing VCDM using JOSE");
-        // apply filters to add proofs
-        if (this.type == 'jwt_vc_json-ld') {
-            this.baseCredential = await JSONLD.sign(this.credential, this.baseCredential);
-        }
-
-        // pack and sign the credential
+        // pack and sign the credential (any LD-proof for jwt_vc_json-ld is
+        // applied by the caller before constructing this class)
         this.credential.output = await this.packCredential(this.baseCredential);
     }
 
