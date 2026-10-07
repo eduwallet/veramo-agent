@@ -6,6 +6,7 @@ import { SDJwtVcInstance, SdJwtVcPayload } from '@sd-jwt/sd-jwt-vc'
 import { DisclosureFrame, Signer } from '@sd-jwt/types'
 import { digest, generateSalt } from '@sd-jwt/crypto-nodejs';
 import { getVctForCredentialType } from "#root/vct/Store";
+import { getLocalVctIntegrity, getRemoteVctWithIntegrity } from "#root/vct/Integrity";
 import { VctClaimPathElement } from "#root/types/specification/vct";
 import { fromString } from 'uint8arrays';
 import moment from 'moment';
@@ -46,26 +47,31 @@ export class SDJWT
         };
 
         let vct:any = null;
+        let vctIntegrity:string|null = null;
         if (this.type == 'dc+sd-jwt') {
             debug("setting vct");
             if (this.credential?.configuration?.vct) {
-                try {
-                    debug("getting vct based on configured value");
-                    const vctResponse = await fetch(this.credential?.configuration?.vct);
-                    vct = await vctResponse.json();
-                    debug("remote vct is ", vct);
+                debug("getting vct based on configured value");
+                const remote = await getRemoteVctWithIntegrity(this.credential.configuration.vct);
+                if (remote) {
+                    vct = remote.vct;
+                    vctIntegrity = remote.integrity;
                 }
-                catch (e) {
-                    debug("caught error retrieving vct", e);
-                }
+                debug("remote vct is ", vct);
             }
             else {
                 debug("using locally stored vct");
                 vct = getVctForCredentialType(this.credential.type!);
+                if (vct) {
+                    vctIntegrity = getLocalVctIntegrity(vct);
+                }
             }
             if (vct) {
                 debug("setting credential vct to ", vct.vct);
                 baseCredential.vct = vct.vct;
+                if (vctIntegrity) {
+                    (baseCredential as any)['vct#integrity'] = vctIntegrity;
+                }
             }
             else {
                 debug("dc+sd-jwt has NO VCT set");
