@@ -52,6 +52,12 @@ export class NonceManager {
     // Claims an id if, and only if, it has not been claimed before. Used for one-time
     // use identifiers (e.g. DPoP proof jti values) where re-use must be detected.
     // Returns false if the id was already claimed (replay).
+    //
+    // This relies on the unique index on (uuid, issuer): a find-then-insert pattern
+    // would let two concurrent requests for the same id both see "not claimed yet"
+    // before either writes, defeating single-use enforcement. INSERT ... ON CONFLICT
+    // DO NOTHING is Postgres-specific (not standard SQL), which matches this project's
+    // only supported database driver.
     public async claim(id: string, expirationDate: Date): Promise<boolean> {
         if (!id) {
             return false;
@@ -59,18 +65,20 @@ export class NonceManager {
 
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(Nonce);
-        const existing = await repo.findOneBy({ uuid: id, issuer: this.issuer });
-        if (existing) {
-            return false;
-        }
+        const result = await repo.createQueryBuilder()
+            .insert()
+            .into(Nonce)
+            .values({
+                issuer: this.issuer,
+                uuid: id,
+                session: '',
+                expirationDate,
+                saveDate: new Date(),
+            })
+            .orIgnore()
+            .execute();
 
-        const nonce = new Nonce();
-        nonce.issuer = this.issuer;
-        nonce.uuid = id;
-        nonce.session = '';
-        nonce.expirationDate = expirationDate;
-        await repo.save(nonce);
-        return true;
+        return (result.identifiers?.length ?? 0) > 0;
     }
 
     // Validates and atomically consumes a client-supplied c_nonce: unlike get(), this
@@ -84,18 +92,7 @@ export class NonceManager {
             return null;
         }
 
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(Nonce);
-        // DELETE ... RETURNING is Postgres-specific (not standard SQL), which matches
-        // this project's only supported database driver
-        const result = await repo.createQueryBuilder()
-            .delete()
-            .from(Nonce)
-            .where('uuid = :id and issuer = :issuer', { id, issuer: this.issuer })
-            .returning('*')
-            .execute();
-
-        const row = result.raw?.[0];
+        const row = await this.deleteAndReturnRow(id);
         if (!row) {
             return null;
         }
@@ -112,13 +109,29 @@ export class NonceManager {
             return false;
         }
 
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(Nonce);
-        const existing = await repo.findOneBy({ uuid: id, issuer: this.issuer });
-        if (!existing) {
+        const row = await this.deleteAndReturnRow(id);
+        if (!row) {
             return false;
         }
-        await repo.delete({ uuid: id, issuer: this.issuer });
-        return !existing.expirationDate || existing.expirationDate >= new Date();
+        return !row.expirationDate || new Date(row.expirationDate) >= new Date();
+    }
+
+    // Atomically deletes and returns the (single) row matching this id, or null if no
+    // such row exists. A DELETE on an existing row is inherently race-free under
+    // Postgres' row-level locking: of several concurrent deletes targeting the same
+    // row, only one can actually remove it, so only one caller ever gets it back.
+    // DELETE ... RETURNING is Postgres-specific (not standard SQL), which matches this
+    // project's only supported database driver.
+    private async deleteAndReturnRow(id: string): Promise<any | null> {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Nonce);
+        const result = await repo.createQueryBuilder()
+            .delete()
+            .from(Nonce)
+            .where('uuid = :id and issuer = :issuer', { id, issuer: this.issuer })
+            .returning('*')
+            .execute();
+
+        return result.raw?.[0] ?? null;
     }
 }

@@ -9,6 +9,10 @@ const mockDeleteBuilder = {
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     returning: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    into: vi.fn().mockReturnThis(),
+    values: vi.fn().mockReturnThis(),
+    orIgnore: vi.fn().mockReturnThis(),
     execute: vi.fn(() => Promise.resolve(executeResult)),
 };
 
@@ -24,6 +28,10 @@ beforeEach(() => {
     mockDeleteBuilder.from.mockClear();
     mockDeleteBuilder.where.mockClear();
     mockDeleteBuilder.returning.mockClear();
+    mockDeleteBuilder.insert.mockClear();
+    mockDeleteBuilder.into.mockClear();
+    mockDeleteBuilder.values.mockClear();
+    mockDeleteBuilder.orIgnore.mockClear();
     mockDeleteBuilder.execute.mockClear();
     mockRepo.save.mockClear();
     vi.mocked(getDbConnection).mockResolvedValue({
@@ -59,5 +67,43 @@ test('consumeCNonce rejects an empty id without querying the database', async ()
     const manager = new NonceManager('test-issuer');
     const result = await manager.consumeCNonce('');
     expect(result).toBeNull();
+    expect(mockDeleteBuilder.execute).not.toHaveBeenCalled();
+});
+
+test('consume accepts and atomically removes a valid, unexpired id', async () => {
+    executeResult = { raw: [{ uuid: 'jti-1', expirationDate: new Date(Date.now() + 60_000) }] };
+    const manager = new NonceManager('test-issuer');
+    const result = await manager.consume('jti-1');
+    expect(result).toBe(true);
+    expect(mockDeleteBuilder.execute).toHaveBeenCalledTimes(1);
+});
+
+test('consume rejects an id that was never issued', async () => {
+    executeResult = { raw: [] };
+    const manager = new NonceManager('test-issuer');
+    const result = await manager.consume('never-issued');
+    expect(result).toBe(false);
+});
+
+test('claim wins the race and reports success on first use (atomic insert)', async () => {
+    executeResult = { identifiers: [{ id: 1 }] };
+    const manager = new NonceManager('test-issuer');
+    const result = await manager.claim('jti-1', new Date(Date.now() + 60_000));
+    expect(result).toBe(true);
+    // a single INSERT ... ON CONFLICT DO NOTHING, not a separate find-then-insert
+    expect(mockDeleteBuilder.execute).toHaveBeenCalledTimes(1);
+});
+
+test('claim loses the race when the id was already claimed (conflict, nothing inserted)', async () => {
+    executeResult = { identifiers: [] };
+    const manager = new NonceManager('test-issuer');
+    const result = await manager.claim('jti-1', new Date(Date.now() + 60_000));
+    expect(result).toBe(false);
+});
+
+test('claim rejects an empty id without querying the database', async () => {
+    const manager = new NonceManager('test-issuer');
+    const result = await manager.claim('', new Date());
+    expect(result).toBe(false);
     expect(mockDeleteBuilder.execute).not.toHaveBeenCalled();
 });
