@@ -460,7 +460,11 @@ export class Issuer
         debug("revoking specific credential " + uuid);
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(CredentialEntity);
-        const credential = await repo.findOneBy({uuid});
+        // uuid is globally unique across all tenants, so without the issuer predicate
+        // any tenant's admin could revoke/unrevoke any other tenant's credential just
+        // by knowing its uuid (which is not treated as a secret: it shows up in
+        // list-credentials/check-offer responses and the status list linkage)
+        const credential = await repo.findOneBy({uuid, issuer: this.name});
         if (!credential) {
             debug("credential not found in database");
             throw new Error("No such credential");

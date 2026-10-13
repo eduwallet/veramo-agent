@@ -121,7 +121,8 @@ export class EduID extends CredentialType
         // they cause an error. If we have removed all expired credentials
         // and nothing remains, we can issue a new credential
         debug("looking for credentials for this holder and id");
-        let obj =  await this.getCredentialForHolderAndId(holderKey.did, uid);
+        const issuerName = credential.issuer!.name;
+        let obj =  await this.getCredentialForHolderAndId(holderKey.did, uid, issuerName);
         while (obj) {
             debug("found record", obj);
             // if this holder has an expired credential, we can forget about it.
@@ -129,7 +130,7 @@ export class EduID extends CredentialType
             if (this.credentialHasExpired(obj)) {
                 debug("previous eduID has expired, removing and looking for the next");
                 await this.deleteCredential(obj);
-                obj = await this.getCredentialForHolderAndId(holderKey.did, uid);
+                obj = await this.getCredentialForHolderAndId(holderKey.did, uid, issuerName);
             }
             else {
                 // we found a non-expired eduID for this holder and a different uid
@@ -158,11 +159,11 @@ export class EduID extends CredentialType
         await repo.createQueryBuilder('credential').delete().where("id=:id", {id: credential.id}).execute();
     }
 
-    private async getCredentialForHolderAndId(holder:string, id:string)
+    private async getCredentialForHolderAndId(holder:string, id:string, issuer:string)
     {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(DBCredential);
-        return await repo.createQueryBuilder('credential').where('holder=:holder and credpid<>:id and "credentialId"=\'eduID\'', {holder, id}).getOne();
+        return await repo.createQueryBuilder('credential').where('holder=:holder and credpid<>:id and "credentialId"=\'eduID\' and issuer=:issuer', {holder, id, issuer}).getOne();
     }
 
     private async revokePreviousCredentials(credential:Credential)
@@ -174,7 +175,7 @@ export class EduID extends CredentialType
         }
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(DBCredential);
-        const objs = await repo.createQueryBuilder('credential').where('status=\'ISSUED\' and credpid=:id and "credentialId"=\'eduID\'', {id:uid}).getMany();
+        const objs = await repo.createQueryBuilder('credential').where('status=\'ISSUED\' and credpid=:id and "credentialId"=\'eduID\' and issuer=:issuer', {id:uid, issuer: credential.issuer!.name}).getMany();
         if (objs) {
             debug("found credentials", objs.length);
             for(const obj of objs) {
