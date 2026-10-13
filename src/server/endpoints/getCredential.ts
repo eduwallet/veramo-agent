@@ -44,9 +44,12 @@ export function getCredential(issuer:Issuer, path:string)
                 if (e instanceof DPoPNonceRequiredError) {
                     return sendDpopNonceResponse(response, 401, e.nonce);
                 }
+                // never reflect the raw exception message back to the caller: it may
+                // contain internal details (dns/connection/filesystem/etc. errors) that
+                // should only be logged server-side, not disclosed to an untrusted client
                 return sendErrorResponse(response, 500, {
                         error: ErrorCodes.INTERNAL_ERROR,
-                        error_description: (e as Error).message,
+                        error_description: "Internal server error",
                     },
                     e
                 );
