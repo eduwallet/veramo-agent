@@ -6,9 +6,15 @@ import { initialiseIssuerStore } from '#root/issuer/Store';
 import { initialiseCredentialConfigurationStore } from '#root/credentials/Store';
 import { initialiseVctConfigurationStore } from '#root/vct/Store';
 import { getContextConfigurationStore } from '#root/contexts/Store';
-import { getDIDConfigurationStore } from '#root/dids/Store'; 
+import { getDIDConfigurationStore } from '#root/dids/Store';
+import { resolvePassphraseKey } from '#root/database/privateKeyPassphrase';
 
 async function main() {
+    // fail fast on a missing/misconfigured PASSPHRASE, rather than only discovering it
+    // later when a key happens to be created or decoded
+    debug('Validating PASSPHRASE configuration');
+    await resolvePassphraseKey();
+
     debug('Loading contexts');
     const contextStore = getContextConfigurationStore();
     await contextStore.init();
@@ -32,4 +38,7 @@ async function main() {
     debug("Sending initial log message");
 }
 
-main().catch(console.log);
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

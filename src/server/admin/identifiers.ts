@@ -210,7 +210,8 @@ async function saveKey(id:Identifier, ckey:CryptoKey)
     const pKey = new PrivateKey();
     pKey.alias = dbKey.kid;
     pKey.type = dbKey.type;
-    pKey.privateKeyHex = ckey.exportPrivateKey();
+    pKey.setSeed();
+    await pKey.encodeKey(ckey.exportPrivateKey());
     const prepo = dbConnection.getRepository(PrivateKey);
     await prepo.save(pKey);
 }

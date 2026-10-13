@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryColumn, BaseEntity } from 'typeorm'
 import { encrypt, decrypt } from '@futuretense/secret-box';
 import { fromString, toString } from "uint8arrays";
 import crypto from 'crypto';
+import { resolvePassphraseKey } from '#root/database/privateKeyPassphrase';
 
 @Entity('private-key')
 export class PrivateKey extends BaseEntity {
@@ -22,20 +23,23 @@ export class PrivateKey extends BaseEntity {
     seed: string
 
     async decodeKey():Promise<string> {
-        if (!this.seed || this.seed.length == 0 || (process.env.PASSPHRASE ?? '').length == 0) {
+        // a row with no seed predates encryption entirely (legacy plaintext row that was
+        // never migrated); PASSPHRASE is otherwise required, so we only resolve it when
+        // we actually need to decrypt
+        if (!this.seed || this.seed.length == 0) {
             return this.privateKeyHex;
         }
+        const passphraseKey = await resolvePassphraseKey();
         const seed = fromString(this.seed, 'hex');
         const encoded = fromString(this.privateKeyHex, 'hex');
-        return toString(await decrypt(encoded, fromString(process.env.PASSPHRASE ?? ''), seed, true), 'hex');
+        return toString(await decrypt(encoded, passphraseKey, seed, true), 'hex');
     }
 
     async encodeKey(key:string) {
-        if ((process.env.PASSPHRASE ?? '').length > 0) {
-            const seed = fromString(this.seed, 'hex');
-            const secret = fromString(key, 'hex');
-            this.privateKeyHex = toString(await encrypt(secret, fromString(process.env.PASSPHRASE ?? ''), seed, true), 'hex');
-        }
+        const passphraseKey = await resolvePassphraseKey();
+        const seed = fromString(this.seed, 'hex');
+        const secret = fromString(key, 'hex');
+        this.privateKeyHex = toString(await encrypt(secret, passphraseKey, seed, true), 'hex');
     }
 
     setSeed() {
