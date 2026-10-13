@@ -16,10 +16,9 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
 
     let nonce:Nonce|null = null;
     if (issuer.usesNonces) {
-        // remove the old nonce and create a new one
-        for (const proof of proofData.proofResults) {
-            await issuer.nonceStates.clear(proof.nonce);
-        }
+        // the nonce used for each proof was already atomically consumed during proof
+        // validation (validateCredentialRequestProof), so there is nothing left to clear
+        // here; just issue a fresh one for the next request
         // TODO: DIIPv4 compliance: remove generating the following nonce
         debug("creating a new nonce");
         nonce = await issuer.nonceStates.get('', {session: session.uuid});

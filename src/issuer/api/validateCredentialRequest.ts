@@ -304,7 +304,7 @@ async function validateCredentialRequestProof(issuer:Issuer, session:Session, pr
             return error;
         }
 
-        const cNonceState = await issuer.nonceStates.get(nonce);
+        const cNonceState = await issuer.nonceStates.consumeCNonce(nonce);
         if (!cNonceState) {
             debug("Proof is invalid because the nonce was not found", nonce);
             error.error = ErrorCodes.INVALID_REQUEST;

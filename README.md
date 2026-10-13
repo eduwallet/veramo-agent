@@ -107,11 +107,11 @@ The issuer agent reads all files in the configuration directory and serves the c
 
 The credential configuration as defined by the OpenID4VCI spec as part of the `credential_configurations_supported` array. This configuration has to follow the actual credential implementation in the source code, to avoid issues with supported formats and claims.
 
-Please note that the application assumes the credential metadata is in `vc_jwt` format, so the credential attributes are listed in the `credential_definition.credentialSubject` attribute. The content of this attribute is converted automatically if the credential has format `vc+sd-jwt`, which uses a `claims` attribute instead.
+Due to changes over time in the spec, the application supports both the old style `credentialSubject` listing as the newer `claims` listing. Both versions are accepted and converted to the proper output for each credential type.
 
-Please note that the application supports both VCDM 1.1 and VCDM 2.0 type credentials. To enable a VCDM 2.0 credential, configure it with format 'vc+jwt' instead of 'json_vc_jwt'. This is automatically rewritten in the metadata output, because the OID4VCI spec does not understand 'vc+jwt'.
+Please note that the application supports both VCDM 1.1 and VCDM 2.0 type credentials as well as IETF Verifiable Credentials in SD-JWT format. To enable a VCDM 2.0 credential, configure it with format `vc+jwt` instead of `json_vc_jwt`. This is automatically rewritten in the metadata output, because the OID4VCI spec does not understand `vc+jwt`. Use the format `vc+sd-jwt` to get a VCDM 2.0 type credential encoded as an SD-JWT. This is the default format for DIIPv5 implementations.
 
-### Dids
+### DIDs
 
 The key material configuration is stored in the `conf/dids/` directory. Each entry looks as follows:
 
@@ -296,6 +296,8 @@ The `nonce` POST endpoint serves a fresh nonce value, not linked to any session.
 
 The `get-credential-offer` endpoint serves the actual credential issuance offer, which is referenced by URI in the QR code.
 
+Please note that in case of a `SINGLE_TENANT` configured environment, alle the `<tenant>/` path elements above are removed. In this case, there is no tenant name or path element.
+
 ### API endpoints
 
 The setup has the following endpoints for the back-end API:
@@ -303,6 +305,8 @@ The setup has the following endpoints for the back-end API:
 - POST `<base URL>/<tenant>/api/create-offer`
 - POST `<base URL>/<tenant>/api/check-offer`
 - POST `<base URL>/<tenant>/api/list-credentials`
+
+See the note in the previous paragraph about `SINGLE_TENANT` configurations.
 
 #### Create Offer
 

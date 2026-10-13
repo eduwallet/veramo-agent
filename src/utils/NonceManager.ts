@@ -73,6 +73,38 @@ export class NonceManager {
         return true;
     }
 
+    // Validates and atomically consumes a client-supplied c_nonce: unlike get(), this
+    // never creates a record on a miss (a nonce that was never issued by us must be
+    // rejected, not silently accepted), and it removes the record as part of the same
+    // statement so two concurrent requests for the same nonce cannot both succeed
+    // (a separate find-then-delete would leave a race between them).
+    // Returns null if the nonce does not exist or has expired.
+    public async consumeCNonce(id: string): Promise<{ uuid: string; session: string } | null> {
+        if (!id) {
+            return null;
+        }
+
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Nonce);
+        // DELETE ... RETURNING is Postgres-specific (not standard SQL), which matches
+        // this project's only supported database driver
+        const result = await repo.createQueryBuilder()
+            .delete()
+            .from(Nonce)
+            .where('uuid = :id and issuer = :issuer', { id, issuer: this.issuer })
+            .returning('*')
+            .execute();
+
+        const row = result.raw?.[0];
+        if (!row) {
+            return null;
+        }
+        if (row.expirationDate && new Date(row.expirationDate) < new Date()) {
+            return null;
+        }
+        return { uuid: row.uuid, session: row.session };
+    }
+
     // Consumes (validates and removes) a previously issued, single-use id.
     // Returns false if the id does not exist or has expired.
     public async consume(id: string): Promise<boolean> {
