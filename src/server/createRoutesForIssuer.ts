@@ -24,6 +24,7 @@ import { getStatus } from './endpoints/statuslists/getStatus.js';
 import { setStatus } from './endpoints/statuslists/setStatus.js';
 import { getStatusListCredential } from './endpoints/statuslists/getStatusListCredential.js';
 import { isSingleTenant } from '#root/utils/isSingleTenant';
+import { adminAuthRateLimiter } from './rateLimiters.js';
 
 export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnownRouter:Router) {
     // to support internal redirections, we set up the routes on <base-url>/<tenant>/...
@@ -45,6 +46,12 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // if this is a single-tenant configuration, use the 'wellKnownRouter' parameter, which is actually the rootRouter
     issuer.router = isSingleTenant() ? wellKnownRouter : express.Router();
     app.use(basePath, issuer.router);
+
+    // all of this issuer's bearer-admin-protected back channel endpoints live under
+    // /api (create-offer, check-offer, list/revoke-credentials, status list admin);
+    // the public endpoints (token, credentials, nonce, get-credential-offer/:id,
+    // sl/<name>) live outside that prefix and are unaffected by this
+    issuer.router!.use('/api', adminAuthRateLimiter);
 
     // OAuth endpoint to handle the consumation of an authorization (pre-authorized) token
     debug("adding token path");

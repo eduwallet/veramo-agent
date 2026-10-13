@@ -7,9 +7,11 @@ import { issueCredential } from '#root/issuer/api/issueCredential';
 import { CredentialProofData } from '#root/types/internal';
 import { DPoPNonceRequiredError, issueDpopNonce } from '#root/issuer/lib/validateDPoPProof';
 import { sendDpopNonceResponse } from '#root/server/sendDpopNonceResponse';
+import { credentialEndpointRateLimiter } from '#root/server/rateLimiters';
 
 export function getCredential(issuer:Issuer, path:string)
 {
+    issuer.router!.use(path, credentialEndpointRateLimiter);
     issuer.router!.post(
         path,
         async (request: Request, response: Response) => {

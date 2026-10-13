@@ -8,6 +8,12 @@ import { GrantTypes, TokenRequest } from "types/specification/access_token.js";
 import { Session } from '#root/database/entities/index';
 import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
 
+// maximum number of failed tx_code/pin attempts allowed for a single pre-authorized
+// session before it is burned, regardless of request rate or source: this is what
+// actually bounds a pin brute-force, since the rate limiter on this endpoint only
+// slows down a single client/IP and can be sidestepped by spreading requests
+const MAX_PIN_ATTEMPTS = 5;
+
 export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:TokenRequest, dpopHeader?:string): Promise<ApiState> {
     debug("validating access token request", tokenRequest);
     const error:ApiState = {error:ErrorCodes.NO_ERROR, description: ''};
@@ -55,6 +61,17 @@ export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:Tok
         return error;
     }
 
+    // a session that already used up its attempt budget is burned: treat it the same
+    // as an expired session so a locked-out session is not distinguishable from one
+    // that simply timed out (no separate oracle for "locked" vs "expired")
+    if (session.data.pinCode && (session.data.pinAttempts || 0) >= MAX_PIN_ATTEMPTS) {
+        debug("invalid because the pin attempt budget was already exhausted", stateid);
+        await issuer.removeSession(session);
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Session expired, please try again";
+        return error;
+    }
+
     // spec ID-1: 6.1: tx_code: OPTIONAL. String value containing a Transaction Code value itself. This value MUST be present
     // if a tx_code object was present in the Credential Offer
     const txCode = tokenRequest.tx_code || tokenRequest.user_pin;
@@ -74,7 +91,17 @@ export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:Tok
         // if we happen to pass a number for a pin that starts with a '0', this may fail
         // ergo -> do not pass numbers, pass strings
         if (txCode.toString() != session.data.pinCode.toString()) {
-            debug("invalid because pin codes do not match", txCode, session.data.pinCode);
+            session.data.pinAttempts = (session.data.pinAttempts || 0) + 1;
+            debug("invalid because pin codes do not match", txCode, session.data.pinCode, session.data.pinAttempts);
+            if (session.data.pinAttempts >= MAX_PIN_ATTEMPTS) {
+                // this was the last allowed attempt: burn the session now instead of
+                // waiting for a next request, so it cannot be redeemed afterwards
+                // even with the correct pin
+                await issuer.removeSession(session);
+            }
+            else {
+                await issuer.storeSession(session);
+            }
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Pin code does not match";
             return error;

@@ -9,6 +9,7 @@ import { createVCTDocument, deleteVCTDocument, listVCTs, storeVCTDocument } from
 import { adminBearerToken, hasAdminBearerToken } from '#root/utils/adminBearerToken';
 import { getVersion } from './getVersion.js';
 import { exportConfig } from './exportConfig.js';
+import { adminAuthRateLimiter } from '#root/server/rateLimiters';
 
 type PassportCallback = (err:any, res:boolean) => void;
 
@@ -34,6 +35,10 @@ export async function createRoutesForAdmin(app:Express) {
     }
 
     bearerAdminForAPI();
+
+    // applies to every route registered below this point (all bearer-protected admin
+    // routes), but not to the public /version route registered above it
+    router.use(adminAuthRateLimiter);
 
     router.get('/exit',
         passport.authenticate('admin-api', { session: false }),

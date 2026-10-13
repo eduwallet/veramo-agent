@@ -16,6 +16,7 @@ import { getVct } from "./endpoints/getVct.js";
 import { getDIDConfigurationStore } from '#root/dids/Store';
 import { getDidWebSpec } from './endpoints/getDidSpec.js';
 import { isSingleTenant } from '#root/utils/isSingleTenant';
+import { publicMetadataRateLimiter } from './rateLimiters.js';
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'
@@ -29,6 +30,10 @@ export const initialiseServer = async () => {
   // https://www.rfc-editor.org/rfc/rfc9449#section-9 - DPoP-Nonce is not a CORS-safelisted
   // response header, so browser-based clients cannot read it unless it is exposed explicitly
   app.use(cors({origin: '*', credentials: true, optionsSuccessStatus: 204, exposedHeaders: ['DPoP-Nonce']}));
+
+  // coarse, app-wide fallback: endpoints that need a tighter limit (token, credentials,
+  // nonce, admin APIs) configure their own, more specific limiter on top of this one
+  app.use(publicMetadataRateLimiter);
 
   await createRoutesForAdmin(app);
 

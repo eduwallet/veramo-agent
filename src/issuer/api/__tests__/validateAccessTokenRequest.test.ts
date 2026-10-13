@@ -64,6 +64,83 @@ test('numeric pin code', async () => {
     expect(result.error).toBe(ErrorCodes.NO_ERROR);
 });
 
+test('wrong pin code increments the attempt counter but keeps the session alive', async () => {
+    const tokenRequest:TokenRequest = {
+        grant_type: GrantTypes.PRE_AUTHORIZED_CODE,
+        "pre-authorized_code": "aaa",
+        tx_code: "0000"
+    };
+    const issuer = new Issuer({name:'', baseUrl:"", did:''}, {credential_configurations_supported:{}, credential_issuer:'', credential_endpoint: ''});
+
+    const session = new Session();
+    session.uuid = "bbb";
+    session.data = {};
+    session.data.pinCode = '1234';
+    session.data.credentialOffer = { grants: { [GrantTypes.PRE_AUTHORIZED_CODE]: { "pre-authorized_code": "aaa" } } };
+    session.state = 'aaa';
+    vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
+    const storeSpy = vi.spyOn(issuer, 'storeSession').mockResolvedValue();
+    const removeSpy = vi.spyOn(issuer, 'removeSession').mockResolvedValue();
+
+    const result = await validateAccessTokenRequest(issuer, tokenRequest);
+    expect(result.error).toBe(ErrorCodes.INVALID_REQUEST);
+    expect(result.description).toBe('Pin code does not match');
+    expect(session.data.pinAttempts).toBe(1);
+    expect(storeSpy).toHaveBeenCalled();
+    expect(removeSpy).not.toHaveBeenCalled();
+});
+
+test('exhausting the pin attempt budget burns the session', async () => {
+    const tokenRequest:TokenRequest = {
+        grant_type: GrantTypes.PRE_AUTHORIZED_CODE,
+        "pre-authorized_code": "aaa",
+        tx_code: "0000"
+    };
+    const issuer = new Issuer({name:'', baseUrl:"", did:''}, {credential_configurations_supported:{}, credential_issuer:'', credential_endpoint: ''});
+
+    const session = new Session();
+    session.uuid = "bbb";
+    session.data = {};
+    session.data.pinCode = '1234';
+    session.data.pinAttempts = 4; // one away from the limit
+    session.data.credentialOffer = { grants: { [GrantTypes.PRE_AUTHORIZED_CODE]: { "pre-authorized_code": "aaa" } } };
+    session.state = 'aaa';
+    vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
+    const storeSpy = vi.spyOn(issuer, 'storeSession').mockResolvedValue();
+    const removeSpy = vi.spyOn(issuer, 'removeSession').mockResolvedValue();
+
+    const result = await validateAccessTokenRequest(issuer, tokenRequest);
+    expect(result.error).toBe(ErrorCodes.INVALID_REQUEST);
+    expect(result.description).toBe('Pin code does not match');
+    expect(session.data.pinAttempts).toBe(5);
+    expect(removeSpy).toHaveBeenCalledWith(session);
+    expect(storeSpy).not.toHaveBeenCalled();
+});
+
+test('a session with an exhausted attempt budget is rejected like an expired one, even with the correct pin', async () => {
+    const tokenRequest:TokenRequest = {
+        grant_type: GrantTypes.PRE_AUTHORIZED_CODE,
+        "pre-authorized_code": "aaa",
+        tx_code: "1234"
+    };
+    const issuer = new Issuer({name:'', baseUrl:"", did:''}, {credential_configurations_supported:{}, credential_issuer:'', credential_endpoint: ''});
+
+    const session = new Session();
+    session.uuid = "bbb";
+    session.data = {};
+    session.data.pinCode = '1234';
+    session.data.pinAttempts = 5; // already at the limit
+    session.data.credentialOffer = { grants: { [GrantTypes.PRE_AUTHORIZED_CODE]: { "pre-authorized_code": "aaa" } } };
+    session.state = 'aaa';
+    vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
+    const removeSpy = vi.spyOn(issuer, 'removeSession').mockResolvedValue();
+
+    const result = await validateAccessTokenRequest(issuer, tokenRequest);
+    expect(result.error).toBe(ErrorCodes.INVALID_REQUEST);
+    expect(result.description).toBe('Session expired, please try again');
+    expect(removeSpy).toHaveBeenCalledWith(session);
+});
+
 test('token request without DPoP proof yields a bearer token', async () => {
     const tokenRequest:TokenRequest = {
         grant_type: GrantTypes.PRE_AUTHORIZED_CODE,

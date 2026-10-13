@@ -33,6 +33,7 @@
     "debug": "4.3.5",
     "dotenv-flow": "^4.1.0",
     "express": "5.2.1",
+    "express-rate-limit": "^8.7.1",
     "jose": "^6.0.10",
     "jsonld": "8.3.3",
     "jsonld-signatures": "11",

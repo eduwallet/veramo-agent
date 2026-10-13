@@ -7,11 +7,13 @@ import { validateAccessTokenRequest } from '#root/issuer/api/validateAccessToken
 import { ErrorCodes } from '#root/types/api'
 import { DPoPNonceRequiredError, issueDpopNonce } from '#root/issuer/lib/validateDPoPProof'
 import { sendDpopNonceResponse } from '#root/server/sendDpopNonceResponse'
+import { tokenEndpointRateLimiter } from '#root/server/rateLimiters'
 
 export function accessToken(issuer: Issuer, tokenPath:string) {
     // Always enabled: even when an external Authorization Server is configured for the
     // authorization_code flow, the issuer may still act as its own AS for
     // pre-authorized_code flow sessions.
+    issuer.router!.use(tokenPath, tokenEndpointRateLimiter);
     issuer.router!.post(tokenPath,
         async (request:Request<TokenRequest>, response: Response<AccessTokenResponse>) => {
             try {
