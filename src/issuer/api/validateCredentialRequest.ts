@@ -45,7 +45,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (usesAuthorisationCodeFlow) {
             // the issuer should be one of our authorization servers
-            if (!issuer.options?.authorizationEndpoint == data?.payload?.iss) {
+            if (issuer.options?.authorizationEndpoint !== data?.payload?.iss) {
                 debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";

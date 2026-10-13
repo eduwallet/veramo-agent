@@ -110,7 +110,7 @@ export class Issuer
 
     public async retrieveASUserInfo(token:string)
     {
-        this.retrieveASServerKeys();
+        await this.retrieveASServerKeys();
         const endpoint = this.serverMetadata?.userinfo_endpoint;
         try {
             const json = await fetch(endpoint, {
@@ -129,7 +129,7 @@ export class Issuer
     public async retrieveASIssuerIntrospection(token:string)
     {
         debug("retrieving AS Authorization Introspection");
-        this.retrieveASServerKeys();
+        await this.retrieveASServerKeys();
         const endpoint = this.serverMetadata?.authorization_introspection_endpoint;
         debug("endpoint is ", endpoint);
         try {
