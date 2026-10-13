@@ -10,6 +10,10 @@ export const DB_PORT = process.env.DB_PORT ?? '5432'
 export const DB_USER = process.env.DB_USER ?? 'postgres'
 export const DB_PASSWORD = process.env.DB_PASSWORD ?? 'topsecret'
 export const BASEURL = process.env.BASEURL;
+// maximum number of proofs accepted in a single credential request's proofs[] array
+// (OID4VCI batch_credential_issuance.batch_size); caps the amount of signing/DB work a
+// single request can trigger
+export const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE ? parseInt(process.env.MAX_BATCH_SIZE) : 15
 
 export const CONF_PATH = process.env.CONF_PATH ? resolve(process.env.CONF_PATH) : resolve('../../conf')
 export const DID_OPTIONS_PATH = `${CONF_PATH}/dids`

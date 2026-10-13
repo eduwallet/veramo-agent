@@ -26,6 +26,7 @@ import { retrieveServerMetadata } from './lib/retrieveServerMetadata.js';
 import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
 import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertConfigToSDJWT.js';
 import { StatusListType } from '#root/statusLists/StatusListType';
+import { MAX_BATCH_SIZE } from '#root/environment';
 
 export class Issuer
 {
@@ -357,6 +358,7 @@ export class Issuer
         if (this.usesNonces) {
             metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
         }
+        metadata.batch_credential_issuance = { batch_size: MAX_BATCH_SIZE };
         // leftover from older configurations: we do not support additional encryption at this point
         if (metadata.credential_response_encryption) {
             delete metadata.credential_response_encryption;

@@ -12,6 +12,7 @@ import { Session } from '#root/database/entities/index';
 import moment from 'moment';
 import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
 import { sessionUsesAuthorisationCodeFlow } from '#root/utils/sessionUsesAuthorisationCodeFlow';
+import { MAX_BATCH_SIZE } from '#root/environment';
 
 export async function validateCredentialRequest(issuer:Issuer, request:Request)
 {
@@ -190,6 +191,16 @@ async function validateCredentialRequestProofs(issuer:Issuer, session:Session, c
         return {
             error: ErrorCodes.INVALID_REQUEST,
             description: "Proof of possession missing"
+        };
+    }
+
+    // cap the amount of signing/DB work a single request can trigger: without this,
+    // an uncapped proofs[] array lets one request materialize an unbounded number of
+    // credentials (see batch_credential_issuance.batch_size in the issuer metadata)
+    if (proofs.length > MAX_BATCH_SIZE) {
+        return {
+            error: ErrorCodes.INVALID_CREDENTIAL_REQUEST,
+            description: `Too many proofs requested: maximum is ${MAX_BATCH_SIZE}`
         };
     }
 

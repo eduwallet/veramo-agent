@@ -18,6 +18,11 @@ export interface Metadata {
     signed_metadata?:string;                   // signed JWT containing metadata as claims
     display?:CredentialIssuerDisplay[];
     credential_configurations_supported:CredentialConfigurations;
+    batch_credential_issuance?:BatchCredentialIssuance; // advertises (and we enforce) the max size of a proofs[] array
+}
+
+export interface BatchCredentialIssuance {
+    batch_size: number;
 }
 
 export interface CredentialResponseEncryptionOptions {
