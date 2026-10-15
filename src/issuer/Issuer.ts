@@ -358,7 +358,9 @@ export class Issuer
         if (this.usesNonces) {
             metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
         }
-        metadata.batch_credential_issuance = { batch_size: MAX_BATCH_SIZE };
+        // disabled: wallets (e.g. Paradym) that see batch_credential_issuance request a batch of keys
+        // and fail in getCredentialRequestOptions before sending the credential request
+        //metadata.batch_credential_issuance = { batch_size: MAX_BATCH_SIZE };
         // leftover from older configurations: we do not support additional encryption at this point
         if (metadata.credential_response_encryption) {
             delete metadata.credential_response_encryption;

@@ -79,7 +79,7 @@ The Docker setup installs all dependencies inside the container, so there's no n
 - `OIDFED_ADMIN_CONTACT`: contact e-mail address for administrative purposes
 - `OIDFED_AUTH`: base url of the directly supervising authority (the authority hint)
 - `SINGLE_TENANT`: set this to a non-empty value to simplify configuration for a single-tenant, domain driven setup
-- `MAX_BATCH_SIZE`: maximum number of proofs accepted in a single credential request's `proofs[]` array, defaults to `15`. This bounds the amount of signing and database work one request can trigger (each proof results in a separately signed credential), and is advertised to wallets as `batch_credential_issuance.batch_size` in the credential issuer metadata.
+- `MAX_BATCH_SIZE`: maximum number of proofs accepted in a single credential request's `proofs[]` array, defaults to `15`. This bounds the amount of signing and database work one request can trigger (each proof results in a separately signed credential). It is currently not advertised to wallets as `batch_credential_issuance.batch_size` in the credential issuer metadata, because wallets such as Paradym then fail (the code in `Issuer.generateMetadata` is commented out).
 
 ### File based configuration
 
