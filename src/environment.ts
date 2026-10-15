@@ -10,6 +10,17 @@ export const DB_PORT = process.env.DB_PORT ?? '5432'
 export const DB_USER = process.env.DB_USER ?? 'postgres'
 export const DB_PASSWORD = process.env.DB_PASSWORD ?? 'topsecret'
 export const BASEURL = process.env.BASEURL;
+// Express 'trust proxy' setting, needed when running behind a reverse proxy so that
+// req.ip (and therefore the rate limiters) reflect the real client address instead of
+// the proxy. Either the number of proxy hops (e.g. 1), or 'true'/'false', or an Express
+// trust proxy expression (e.g. 'loopback', a subnet). Unset means: do not trust any proxy.
+const TRUST_PROXY_RAW = process.env.TRUST_PROXY?.trim();
+export const TRUST_PROXY: boolean|number|string|undefined =
+    !TRUST_PROXY_RAW ? undefined
+    : TRUST_PROXY_RAW === 'true' ? true
+    : TRUST_PROXY_RAW === 'false' ? false
+    : /^\d+$/.test(TRUST_PROXY_RAW) ? parseInt(TRUST_PROXY_RAW)
+    : TRUST_PROXY_RAW;
 // maximum number of proofs accepted in a single credential request's proofs[] array
 // (OID4VCI batch_credential_issuance.batch_size); caps the amount of signing/DB work a
 // single request can trigger

@@ -71,6 +71,7 @@ The Docker setup installs all dependencies inside the container, so there's no n
 - `DB_SCHEMA`: name of the database schema
 - `PORT`: port for the Express server
 - `LISTEN_ADDRESS`: local bind address for the Express server
+- `TRUST_PROXY`: Express `trust proxy` setting (number of proxy hops, `loopback`, a subnet, or `true`/`false`). Set to `1` when running behind a single reverse proxy so rate limiting uses the real client IP. Unset trusts no proxy
 - `BASEURL`: base url served by the issuer agent
 - `BEARER_TOKEN`: access token for the administration api
 - `PASSPHRASE`: **required**. Passphrase used to encrypt private keys at rest; the agent refuses to start without it. Historically this had to be an exactly 32-byte raw AES-256 key, and existing installations that already use such a value keep working unchanged: that exact 32-byte value is still tried first against the already-encrypted keys in the database. Any `PASSPHRASE` of a different length is run through a KDF (scrypt) to derive the actual encryption key, so a normal passphrase of any length can be used for new installations. A 32-byte value that turns out not to match the existing encrypted keys is automatically retried as a KDF input as well, so there is no need to know in advance which of the two interpretations a given installation uses.

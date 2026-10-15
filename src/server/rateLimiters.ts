@@ -40,9 +40,11 @@ export const nonceEndpointRateLimiter = rateLimit({
 // with a plain `==`. The secret's keyspace makes this throttling rather than the
 // actual defense, but it still bounds both brute-force attempts and the number of
 // samples available to an attacker probing the non-constant-time comparison.
+// The limit is generous because the front-end polls the offer status (checkOffer) at
+// least once a minute per open offer, and can have many offers open at the same time.
 export const adminAuthRateLimiter = rateLimit({
     windowMs: 60_000,
-    limit: 20,
+    limit: 600,
     standardHeaders: true,
     legacyHeaders: false,
 });

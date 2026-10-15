@@ -17,12 +17,16 @@ import { getDIDConfigurationStore } from '#root/dids/Store';
 import { getDidWebSpec } from './endpoints/getDidSpec.js';
 import { isSingleTenant } from '#root/utils/isSingleTenant';
 import { publicMetadataRateLimiter } from './rateLimiters.js';
+import { TRUST_PROXY } from '#root/environment';
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 5000
 const LISTEN_ADDRESS = process.env.LISTEN_ADDRESS ?? '0.0.0.0'
 
 export const initialiseServer = async () => {
   const app = express();
+  if (TRUST_PROXY !== undefined) {
+    app.set('trust proxy', TRUST_PROXY);
+  }
   app.use(morgan('combined')); // use combined logging output
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ limit: '5mb' }));
