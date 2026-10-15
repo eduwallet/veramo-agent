@@ -1,4 +1,8 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { Request } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import { getIssuerStore } from '#root/issuer/Store';
+import { adminBearerToken, hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 // Shared rate limiters, grouped by threat profile rather than by endpoint. These are
 // defense in depth, not the primary protection for any of them: the real protection
@@ -36,18 +40,57 @@ export const nonceEndpointRateLimiter = rateLimit({
 });
 
 // Admin APIs (both the top-level /api/* admin API and the per-issuer /api/* back
-// channel) are guarded by a long-lived, operator-configured bearer secret compared
-// with a plain `==`. The secret's keyspace makes this throttling rather than the
-// actual defense, but it still bounds both brute-force attempts and the number of
-// samples available to an attacker probing the non-constant-time comparison.
-// The limit is generous because the front-end polls the offer status (checkOffer) at
-// least once a minute per open offer, and can have many offers open at the same time.
+// channel) are guarded by a long-lived, operator-configured bearer secret.
+// Requests that present a valid admin bearer token are never rate limited: an
+// authenticated partner can do as many calls as it needs (e.g. polling the status of
+// many open offers). Only requests without a valid token are counted, which bounds
+// brute-force attempts at the secret (and the samples available to an attacker probing
+// the comparison) to a handful per minute per client address.
+//
+// The token is validated here, ahead of passport, because this limiter is mounted
+// before the routes. Passport remains the authority: a request that is skipped here
+// but fails there simply gets a 401 without having been counted, which is harmless as
+// that can only happen for a token that was valid at the time of the check.
 export const adminAuthRateLimiter = rateLimit({
     windowMs: 60_000,
-    limit: 600,
+    limit: 5,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (request) => hasValidAdminToken(request),
 });
+
+function digest(value: string): Buffer {
+    return createHash('sha256').update(value).digest();
+}
+
+function hasValidAdminToken(request: Request): boolean {
+    const match = /^Bearer (.+)$/i.exec(request.header('Authorization') ?? '');
+    const presented = match?.[1]?.trim();
+    if (!presented) {
+        return false;
+    }
+
+    const candidates: string[] = [];
+    if (hasAdminBearerToken()) {
+        candidates.push(adminBearerToken());
+    }
+    for (const issuer of Object.values(getIssuerStore())) {
+        const token = issuer.options?.adminToken;
+        if (typeof token === 'string' && token.length > 0) {
+            candidates.push(token);
+        }
+    }
+
+    // compare digests so the comparison is constant-time regardless of token length
+    const presentedDigest = digest(presented);
+    let valid = false;
+    for (const candidate of candidates) {
+        if (timingSafeEqual(presentedDigest, digest(candidate))) {
+            valid = true;
+        }
+    }
+    return valid;
+}
 
 // Coarse, app-wide fallback for unauthenticated, low-sensitivity metadata/discovery
 // endpoints (openid-configuration, did.json, contexts, vcts, status list

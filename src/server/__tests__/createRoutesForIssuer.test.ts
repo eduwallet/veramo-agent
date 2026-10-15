@@ -59,7 +59,7 @@ function createApp() {
     return { use: vi.fn() } as unknown as Express;
 }
 
-const wellKnownRouter = {} as Router;
+const wellKnownRouter = { use: vi.fn() } as unknown as Router;
 
 beforeEach(() => {
     vi.clearAllMocks();
