@@ -1,4 +1,4 @@
-import { vi, expect, test, beforeEach } from 'vitest';
+import { vi, expect, test, beforeEach, afterEach } from 'vitest';
 import type { Express, Router } from 'express';
 import { Issuer } from '../../issuer/Issuer.js';
 import { createRoutesForIssuer } from '../createRoutesForIssuer.js';
@@ -67,6 +67,23 @@ const wellKnownRouter = { use: vi.fn() } as unknown as Router;
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // these tests describe a multi tenant setup, independent of the SINGLE_TENANT setting in .env
+    vi.stubEnv('SINGLE_TENANT', '');
+});
+
+afterEach(() => {
+    vi.unstubAllEnvs();
+});
+
+test('uses the root path and the root router in a single tenant setup', async () => {
+    vi.stubEnv('SINGLE_TENANT', 'true');
+    const issuer = createIssuer();
+    const app = createApp();
+
+    await createRoutesForIssuer(issuer, app, wellKnownRouter);
+
+    expect(app.use).toHaveBeenCalledWith('/', issuer.router);
+    expect(getMetadata).toHaveBeenCalledWith(issuer, '/', null);
 });
 
 test('creates the always-on endpoints with the right paths', async () => {

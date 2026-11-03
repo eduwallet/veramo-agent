@@ -484,6 +484,7 @@ POST `<base URL>/<tenant>/api/v2/deferred/:id` with a body `{"claims": {...}, "s
 
 | Version | Commit  | Date       | Comment             |
 | ------- | ------- | ---------- | ------------------- |
+|         | 05baee7 | 2026-11-03 | Added `/deferred` endpoint and API v2 calls to release and set credential data |
 |         | dd8595b | 2026-03-03 | `credential_callback` now returns the full access token claim set |
 |         | 55f3438 | 2026-01-27 | Added `/api/export` endpoint to export a zip archive with ready to use configuration files |
 |         | 3082911 | 2026-01-08 | Allowing the `claims` attribute in `credentialSubject` to directly set the 'new' `claims` data for metadata |
