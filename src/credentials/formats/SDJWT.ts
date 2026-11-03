@@ -40,11 +40,12 @@ export class SDJWT
     {
         debug("signing SD JWT");
 
-        const baseCredential:SdJwtVcPayload = {
+        // the vct claim is set below, for credentials that have a vct
+        const baseCredential = {
             iss: this.credential.issuer!.did!.did,
             fed: this.credential.issuer?.options.baseUrl,
             iat: moment().unix()
-        };
+        } as unknown as SdJwtVcPayload;
 
         let vct:any = null;
         let vctIntegrity:string|null = null;
