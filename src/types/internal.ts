@@ -22,6 +22,23 @@ export interface IssuerSessionData {
     preAuthorizedCode?:string;
     issuerState?:string;
     requestResponseData?:any;
+    deferred?:DeferredSessionData;
+}
+
+// State of a deferred issuance transaction, stored in the session. The status is one of
+// CredentialOfferStatus.CREDENTIAL_PENDING, CREDENTIAL_READY, CREDENTIAL_DENIED or CREDENTIAL_ISSUED
+export interface DeferredSessionData {
+    transactionId: string;
+    status: string;
+    credentialId: string;                     // the credential configuration id
+    credentialDataSet: CredentialDataSet;     // the data set as it was known at the credential request
+    holders: HolderData[];                    // the holder keys, one per proof, without the key objects
+    claims: StringKeyedObject;                // the claims supplied by the back-office
+    reason?: string;                          // the reason for denying the credential
+    ttl: number;                              // seconds
+    interval: number;                         // seconds
+    createdAt: number;                        // epoch milliseconds
+    expiresAt: number;                        // epoch milliseconds
 }
 
 export interface IssuerConfiguration {

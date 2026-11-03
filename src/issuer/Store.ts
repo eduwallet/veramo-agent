@@ -13,6 +13,7 @@ import { MetadataConfiguration } from "types/api/metadata.js";
 import { getDbConnection } from '#root/database/databaseService';
 import { Issuer as IssuerEntity } from '#root/database/entities/index';
 import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
+import { DeferredConfigurationError } from './lib/deferredConfiguration.js';
 
 export interface IssuerStore {
     [x:string]:Issuer;
@@ -44,6 +45,8 @@ async function readFromDB()
             // initialisation, do not read the file config to override this
             // (which may/would/will cause double entries)
             _issuerStore[issuer.name] = entry;
+            // an incorrect deferred configuration is fatal: do not start with it
+            entry.validateConfiguration();
             try {
                 await entry.setDid(); // do some asynchronous post-initialisation
                 await entry.retrieveASServerKeys(); // retrieve the AS server keys
@@ -55,6 +58,9 @@ async function readFromDB()
         }
     }
     catch (e) {
+        if (e instanceof DeferredConfigurationError) {
+            throw e;
+        }
         console.error("Caught error initialising issuer store", e);
     }
 }
@@ -93,6 +99,8 @@ async function readFromFile()
                     }
                     const config = issuerOptionsObjects.asObject[correlationId];
                     const issuer = new Issuer(config, metadata);
+                    // an incorrect deferred configuration is fatal: do not start with it
+                    issuer.validateConfiguration();
                     try {
                         await issuer.setDid(); // do some asynchronous post-initialisation
                         await issuer.retrieveASServerKeys(); // retrieve the AS server keys
@@ -119,10 +127,16 @@ async function readFromFile()
             }
         }
         catch (e) {
+            if (e instanceof DeferredConfigurationError) {
+                throw e;
+            }
             debug("Missing issuer configuration path", e);
         }
     }
     catch (e) {
+        if (e instanceof DeferredConfigurationError) {
+            throw e;
+        }
         console.error("Caught error initialising issuer store", e);
     }
 }

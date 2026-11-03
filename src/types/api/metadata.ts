@@ -14,6 +14,15 @@ export interface ExtendableCredentialConfiguration extends CredentialConfigurati
     extends?:string;
     vct?:string;
     statuslist?: StatusListOptions[];
+    deferred?: DeferredConfiguration;
+}
+
+// Configuration for deferred issuance of a credential. The presence of this setting
+// means that every credential request for this configuration is answered with a
+// transaction_id, after which the back-office has to supply/approve the claims.
+export interface DeferredConfiguration {
+    ttl: number;       // seconds the transaction stays open, at most 48 hours
+    interval?: number; // seconds between polls, defaults to ttl/50 within bounds
 }
 
 export interface CredentialConfigurationJwtVC {

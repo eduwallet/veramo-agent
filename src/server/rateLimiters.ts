@@ -30,6 +30,15 @@ export const credentialEndpointRateLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// /deferred: requires a valid access token and builds the credential once, but wallets poll it
+// repeatedly during the lifetime of a transaction, so keep it separate from the credential endpoint.
+export const deferredEndpointRateLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // /nonce: fully unauthenticated and persists new server-side nonce state on every
 // call, so an unthrottled client can otherwise grow that storage without bound.
 export const nonceEndpointRateLimiter = rateLimit({

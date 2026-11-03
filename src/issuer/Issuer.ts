@@ -27,6 +27,7 @@ import { convertConfigToVCDM } from './lib/convertConfigToVCDM.js';
 import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertConfigToSDJWT.js';
 import { StatusListType } from '#root/statusLists/StatusListType';
 import { MAX_BATCH_SIZE } from '#root/environment';
+import { DeferredSettings, getDeferredSettings, validateDeferredConfiguration } from './lib/deferredConfiguration.js';
 
 export class Issuer
 {
@@ -324,6 +325,31 @@ export class Issuer
         return null;
     }
 
+    /**
+     * Validate the credential configurations of this issuer. Throws a
+     * DeferredConfigurationError for incorrect deferred configurations.
+     * This needs the credential configuration store to be loaded.
+     */
+    public validateConfiguration()
+    {
+        for (const id of Object.keys(this.metadata.credential_configurations_supported ?? {})) {
+            const config = this.getCredentialConfiguration(id);
+            if (config) {
+                validateDeferredConfiguration(id, config);
+            }
+        }
+    }
+
+    public getDeferredSettings(id:string): DeferredSettings|null
+    {
+        return getDeferredSettings(this.getCredentialConfiguration(id));
+    }
+
+    public hasDeferredCredentials(): boolean
+    {
+        return Object.keys(this.metadata.credential_configurations_supported ?? {}).some((id) => this.getDeferredSettings(id) !== null);
+    }
+
     public getCredentialContext(id:string): string[]
     {
         if (this.hasCredentialConfiguration(id)) {
@@ -355,6 +381,12 @@ export class Issuer
         metadata.credential_issuer = this.options.baseUrl;
         metadata.credential_endpoint = this.options.baseUrl + '/credentials';
         metadata.notification_endpoint = this.options.baseUrl + '/notification';
+        if (this.hasDeferredCredentials()) {
+            metadata.deferred_credential_endpoint = this.options.baseUrl + '/deferred';
+        }
+        else if (metadata.deferred_credential_endpoint) {
+            delete metadata.deferred_credential_endpoint;
+        }
         if (this.usesNonces) {
             metadata.nonce_endpoint = this.options.baseUrl + '/nonce';
         }

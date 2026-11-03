@@ -176,6 +176,38 @@ The `credentialSubject.key1.{}` way of specifying claims only supports single la
 
 The optional `origin` value allows some degree of mapping external claim data to a specific credential claim. It is a list of lists, each evaluated in turn and the first valid entry is used. It can be used when the external data retrieved from an `authorisation_code` flow returns a data structure that can change for users or situations. In `pre-authorized` code flow, the data structure is assumed to be defined up front by the front-end issuing application and can be set precisely to the fields the credential requires.
 
+An `origin` path can start with a source selector:
+
+- `#offer`: the data supplied in the `credentialDataSupplierInput` of the `create-offer` call. This is also the default if no `origin` is specified for a claim, and for origins without a selector.
+- `#accessData`: the user info retrieved from the authorization server.
+- `#deferred`: the claims supplied by the back-office for a deferred credential (see below).
+- `#any`: the first available value from `#deferred`, then `#accessData`, then `#offer`, using the same path in every source.
+
+The first origin that has a value wins; values are not merged. Please note that a configuration without an `origin` for a claim only reads the offer data.
+
+#### Deferred issuance
+
+A credential configuration can be issued in a deferred manner, as specified in section 8.3 and 9 of OpenID4VCI 1.0. Add a `deferred` attribute to the credential configuration:
+
+```json
+    "GenericCredential": {
+        ...
+        "deferred": {
+            "ttl": 3600,
+            "interval": 60
+        }
+    }
+```
+
+- `ttl`: the number of seconds that the wallet can collect the credential, at most 172800 (48 hours). The session is kept for as long as the transaction can be open.
+- `interval`: optional, the number of seconds the wallet should wait between requests to the deferred endpoint. The default is `ttl / 50`, with a minimum of 10 seconds and a maximum of one hour.
+
+The credential endpoint then always answers with a `202`, a `transaction_id` and an `interval`, also if the claims were already supplied in the `create-offer` call. When creating an offer for a deferred credential, the claims in `credentialDataSupplierInput` can be incomplete. The back-office must supply the remaining claims (or just approve the credential) before the wallet can collect it at `<base URL>/<tenant>/deferred`. The `deferred_credential_endpoint` is only published in the metadata if at least one credential configuration has a `deferred` setting.
+
+The issuer refuses to start if a deferred credential configuration is incorrect: every claim of a deferred credential must specify its `origin` explicitly, and `ttl` and `interval` must be valid.
+
+The wallet is told to stop requesting a transaction (`credential_request_denied`) if the back-office denies it. The `transaction_id` is invalid after the credential has been collected, or after the `ttl`.
+
 Optionally, instead of extending a credential based on the credential identifier, an `extends` attribute can be configured that points to a specific credential identifier to extend. This can be used to allow an `vc+sd-jwt` or `dc+sd-jwt` credential to extend a regular `vc_jwt` credential. The metadata of the latter is automatically converted to the same metadata of the former:
 
 ```json
@@ -270,6 +302,7 @@ Routing and endpoints are set in various places. There are two kinds of endpoint
 The current setup supports the basic endpoints:
 
 - `<base URL>/<tenant>/credentials`
+- `<base URL>/<tenant>/deferred` (only if a credential is issued in a deferred manner)
 - `<base URL>/<tenant>/nonce`
 - `<base URL>/<tenant>/get-credential-offer/:id`
 
@@ -307,6 +340,9 @@ The setup has the following endpoints for the back-end API:
 - POST `<base URL>/<tenant>/api/create-offer`
 - POST `<base URL>/<tenant>/api/check-offer`
 - POST `<base URL>/<tenant>/api/list-credentials`
+- GET `<base URL>/<tenant>/api/v2/deferred`
+- GET `<base URL>/<tenant>/api/v2/deferred/:id`
+- POST `<base URL>/<tenant>/api/v2/deferred/:id`
 
 See the note in the previous paragraph about `SINGLE_TENANT` configurations.
 
@@ -382,9 +418,13 @@ This returns an object as follows:
     "lastUpdatedAt":1725356725408,
     "status":"CREDENTIAL_ISSUED",
     "requests": <optional request data object>,
-    "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9"
+    "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9",
+    "expiresAt": 1725360325408,
+    "reason": "optional reason for denying a deferred credential"
 }
 ```
+
+The `expiresAt` (epoch milliseconds) and `reason` attributes are only present for deferred credentials.
 
 The `requests` object contains data about the incoming and outgoing requests for this issuance state. It can be used for debugging purposes to see what kind of data flows in and out in the protocol.
 
@@ -396,6 +436,9 @@ The following statuses are currently supported:
 - OFFER_CREATED: the offer has been created, but it has not been consumed yet
 - OFFER_URI_RETRIEVED: the offer URI endpoint was called, which normally indicates the QR code was scanned
 - ACCESS_TOKEN_CREATED: the wallet requested and received an access token
+- CREDENTIAL_PENDING: (deferred) the wallet requested the credential, which waits for the back-office
+- CREDENTIAL_READY: (deferred) the back-office released the credential, waiting for the wallet to collect it
+- CREDENTIAL_DENIED: (deferred) the back-office denied the credential
 - CREDENTIAL_ISSUED: the credential offer was successfully completed
 
 The time between `ACCESS_TOKEN_CREATED` and `CREDENTIAL_ISSUED` is very short in practice. There is no manual
@@ -422,6 +465,20 @@ is optional):
 
 The endpoint returns a JSON array containing all the database rows, including the database id, the uuid, claims, status-list information
 and saved-updated dates. This data can be used in further interactions.
+
+#### Deferred credentials (v2 API)
+
+These endpoints are authenticated with the admin bearer token, like the other API endpoints. The `:id` is the `id` returned by `create-offer`.
+
+GET `<base URL>/<tenant>/api/v2/deferred` lists the transactions that wait for the back-office, with their `id`, `credential_configuration_id`, `status`, `createdAt` and `expiresAt`. Expired transactions are not listed. Use `?status=CREDENTIAL_READY` (or another status) to list transactions in another state.
+
+GET `<base URL>/<tenant>/api/v2/deferred/:id` returns the details of a transaction: the `status`, `format` and `credential_configuration_id`, the number of `proofs` (holder keys) that were supplied, the `ttl` and `interval`, the `data` already known from the offer, the `claims_supplied` so far, and a list of `claims`. Every claim has a `path`, `type`, `mandatory`, `origin` and a `supply` list. The `supply` list contains the paths that the back-office can use in the `claims` of the POST for this claim; it is empty if the claim comes from the offer or authorization server only.
+
+POST `<base URL>/<tenant>/api/v2/deferred/:id` with a body `{"claims": {...}, "status": "...", "reason": "..."}`. All attributes are optional.
+
+- Without `status`, or with `status` `CREDENTIAL_READY`, the `claims` are validated and the credential is released. Mandatory claims must be present, claims with a `value_type` of `string`, `number`, `integer`, `boolean`, `array` or `object` must have that type, and the credential type must accept the data. If the validation fails, the credential is not released and the claims are not stored; the response is a `400` with a list of `errors`. Without `claims`, the data that is already known is validated. Claims that are not read by any `#deferred` or `#any` origin, and the names `__proto__`, `constructor` and `prototype`, result in a `400` as well.
+- With `status` `CREDENTIAL_DENIED`, the credential is denied. `claims` cannot be combined with this. The `reason` is written to the log and kept with the session. The wallet gets `credential_request_denied` and the `reason` as `error_description`, limited to printable ASCII without double quotes and backslashes and at most 200 characters.
+- A transaction that was already released, denied, collected or that has expired returns `409`. An unknown `id` returns `404`.
 
 # Changelog / Release Notes
 

@@ -25,7 +25,9 @@ export function getIssueStatus(issuer:Issuer, checkPath:string) {
                     lastUpdatedAt: session.data.lastUpdatedAt,
                     status: session.data.status,
                     ...(session.data.requestResponseData && { requests: session.data.requestResponseData }),
-                    ...(session.data.uuid && { uuid: session.data.uuid })
+                    ...(session.data.uuid && { uuid: session.data.uuid }),
+                    ...(session.data.deferred && { expiresAt: session.data.deferred.expiresAt }),
+                    ...(session.data.deferred?.reason && { reason: session.data.deferred.reason })
                 }
                 return response.json(authStatusBody);
             } 

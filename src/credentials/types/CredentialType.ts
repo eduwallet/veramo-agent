@@ -97,12 +97,16 @@ export abstract class CredentialType
         // We used to use the decorated (and transformed) credentials, but these will not have the origin attribute
         // that we need here.
         const claims:CredentialConfigurationClaimData[] = [];
+        if (!credential.configuration) {
+            return claims;
+        }
         if (credential.configuration!.credential_definition?.claims) {
             // make sure every claim has an appropiate origin
             for (const claim of (credential.configuration?.credential_definition?.claims ?? [])) {
                 const newclaim = Object.assign({}, claim);
+                // old school configurations without origin only use the data from the offer
                 if (!newclaim.origin) {
-                    newclaim.origin = [newclaim.path];
+                    newclaim.origin = [['#offer', ...newclaim.path]];
                 }
                 claims.push(newclaim);
             }
@@ -113,9 +117,9 @@ export abstract class CredentialType
             // at this point we only support simple claims: single path elements
             // for more complicated claims, populate the claims attribute directly
             const path = ['credentialSubject', key];
-            // by default, the origin is the attribute in the gathered data that is named the same as the output claim
+            // by default, the origin is the attribute in the offer data that is named the same as the output claim
             // the origin is an array-of-paths
-            const origin = value.origin ?? [[key]];
+            const origin = value.origin ?? [['#offer', key]];
             const claim:CredentialConfigurationClaimData = {
                 path,
                 origin
@@ -127,7 +131,7 @@ export abstract class CredentialType
 
     public getAttributeFromPath(data:any, path:string[]): any
     {
-        if (path.length == 0) {
+        if (path.length == 0 || data === null || typeof(data) != 'object') {
             return null;
         }
         const key = path[0];
@@ -162,28 +166,57 @@ export abstract class CredentialType
         return result;
     }
 
+    /**
+     * Retrieve a value from a single origin path. The first element of the path can select the source:
+     *   #offer:       the data supplied when the offer was created
+     *   #deferred:    the data supplied by the back-office for a deferred credential
+     *   #accessData:  the data retrieved from the authorisation server
+     *   #any:         the first available value from #deferred, #accessData and #offer, in that order
+     * Without a source prefix, the (possibly already updated) credential data is used.
+     */
+    public getValueFromOrigin(credential:Credential, accessData:any, origin:string[]): any
+    {
+        const path = origin.slice(1);
+        switch (origin[0]) {
+            case '#accessData':
+                debug("getting origin from accessData");
+                return this.getAttributeFromPath(accessData, path);
+            case '#deferred':
+                debug("getting origin from deferred data");
+                return this.getAttributeFromPath(credential.deferredData, path);
+            case '#offer':
+                debug("getting origin from offer data");
+                // without a separate copy of the offer data, the credential data is the offer data
+                return this.getAttributeFromPath(credential.offerData ?? credential.data, path);
+            case '#any':
+                for (const source of ['#deferred', '#accessData', '#offer']) {
+                    const value = this.getValueFromOrigin(credential, accessData, [source, ...path]);
+                    if (typeof(value) != 'undefined' && value !== null) {
+                        return value;
+                    }
+                }
+                return null;
+            default:
+                return this.getAttributeFromPath(credential.data, origin);
+        }
+    }
+
     public copyClaimsFromOrigin(credential:Credential, accessData:any)
     {
         const pathsAndOrigins = this.convertConfigToClaimsPaths(credential);
         let result:any = credential.data;
 
         for (const path of pathsAndOrigins) {
+            // the credential data is the credential subject: skip a leading credentialSubject path element
+            // of old school configurations
+            const targetPath = (path.path.length > 1 && path.path[0] == 'credentialSubject') ? path.path.slice(1) : path.path;
             for (const origin of path.origin!) {
                 // origin is an array of strings
-                let value;
                 debug("copying value for ", path, " from ", origin);
-                switch (origin[0]) {
-                    case '#accessData':
-                        debug("getting origin from accessData");
-                        value = this.getAttributeFromPath(accessData, origin.slice(1));
-                        break;
-                    default:
-                        value = this.getAttributeFromPath(credential.data, origin);
-                        break;
-                }
+                const value = this.getValueFromOrigin(credential, accessData, origin);
                 if (typeof(value) != 'undefined' && value !== null) {
                     debug("value found, setting on result");
-                    result = this.setAttributeUsingPath(result, path.path, value);
+                    result = this.setAttributeUsingPath(result, targetPath, value);
                     break; // take the first valid value we find
                 }
             }

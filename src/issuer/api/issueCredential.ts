@@ -3,12 +3,16 @@ const debug = Debug('issuer:api');
 import { Credential } from "#root/credentials/Credential";
 import { Issuer } from "#root/issuer/Issuer";
 import { CredentialOfferStatus } from "#root/types/api";
-import { CredentialProofData } from "#root/types/internal";
+import { CredentialProofData, DeferredSessionData } from "#root/types/internal";
 import { CredentialResponse } from "#root/types/specification/credential_response";
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { Nonce } from '#root/database/entities/index';
 
-export async function issueCredential(issuer:Issuer, proofData:CredentialProofData): Promise<CredentialResponse>
+/**
+ * Issue the credential(s) for a credential request. For a deferred transaction, the claims supplied
+ * by the back-office are passed using the deferred parameter.
+ */
+export async function issueCredential(issuer:Issuer, proofData:CredentialProofData, deferred?:DeferredSessionData): Promise<CredentialResponse>
 {
     debug("issuing credential", proofData.proofResults);
     const { session } = proofData;
@@ -30,7 +34,16 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
         // format is a part of the configuration. CredentialId defines a single format
         // We can only use format if we use credentialType to indicate a type and 
         // format to indicate format, whose combination would lead to a credentialId
-        credential.data = proofData.credentialDataSet.data;
+        if (deferred) {
+            // keep the offer data apart from the claims supplied for the deferred credential. Every claim
+            // can specify its origin to select one of them
+            credential.offerData = structuredClone(proofData.credentialDataSet.data ?? {});
+            credential.data = structuredClone(proofData.credentialDataSet.data ?? {});
+            credential.deferredData = structuredClone(deferred.claims ?? {});
+        }
+        else {
+            credential.data = proofData.credentialDataSet.data;
+        }
         credential.presetCredential = proofData.credentialDataSet.credential ?? null;
         credential.callback = proofData.credentialDataSet.callback ?? null;
         credential.metaData = session.data.metaData;
@@ -52,6 +65,11 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
 
     debug("updating session status");
     session.data.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
+    if (deferred) {
+        // this invalidates the transaction_id
+        deferred.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
+        session.data.deferred = deferred;
+    }
     await issuer.storeSession(session);
 
     const retval = {

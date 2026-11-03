@@ -22,6 +22,8 @@ export class Credential
 {
     public issuer?:Issuer;
     public data:StringKeyedObject = {};
+    public offerData?:StringKeyedObject; // copy of the data supplied with the offer, when the data is updated from other sources
+    public deferredData:StringKeyedObject = {}; // data supplied by the back-office for a deferred credential
     public presetCredential:any = null; // used for passing a full-blown credential and hoping everything works out
     public callback:string|null = null; // used for retrieving a full-blowb credential over the network
     public metaData:StringKeyedObject = {};

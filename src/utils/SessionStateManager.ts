@@ -2,7 +2,7 @@ import moment from 'moment';
 import { createUniqueId } from '#root/utils/createUniqueId';
 import { getDbConnection } from '#root/database/databaseService';
 import { Session } from '#root/database/entities/index';
-import { LessThan } from 'typeorm';
+import { LessThan, MoreThan } from 'typeorm';
 
 type NotFoundCallback = (data:any) => any;
 
@@ -44,6 +44,19 @@ export class SessionStateManager {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(Session);
         return await repo.findOneBy({state: id, issuer: this.issuer});
+    }
+
+    /**
+     * All sessions of this issuer that have not expired
+     */
+    public async getActive():Promise<Session[]>
+    {
+        const dbConnection = await getDbConnection();
+        const repo = dbConnection.getRepository(Session);
+        return await repo.find({
+            where: { issuer: this.issuer, expirationDate: MoreThan(new Date()) },
+            order: { id: 'ASC' }
+        });
     }
 
     public async set(state:Session)

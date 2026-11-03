@@ -1,5 +1,6 @@
 export { accessToken }   from './accessToken.js'
 export { getCredential } from './getCredential.js'
+export { getDeferredCredential } from './getDeferredCredential.js';
 export { getCredentialOffer } from './getCredentialOffer.js';
 export { createCredentialOfferResponse } from './createCredentialOfferResponse.js';
 export { getMetadata } from './getMetadata.js';
@@ -11,3 +12,4 @@ export { listCredentials } from './listCredentials.js';
 export { revokeCredential} from './revokeCredential.js';
 export { getNonce } from './getNonce.js';
 export { notification } from './notification.js';
+export { deferredTransactions } from './v2/deferred.js';

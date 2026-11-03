@@ -46,7 +46,9 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
     // the credential ID. This allows us to (re)use credential formats with different credential
     // setups (for example: two AcademicBaseCredential's with different branding, or two
     // GenericCredential's with different VC format)        
-    if (request.grants[PRE_AUTHORIZED_CODE_GRANT]) {
+    // For deferred credentials the claims can be incomplete: the back-office supplies the
+    // (remaining) claims before the credential is released.
+    if (request.grants[PRE_AUTHORIZED_CODE_GRANT] && !issuer.getDeferredSettings(credentialConfigIds[0])) {
         if (!issuer.checkCredentialData(credentialConfigIds[0], request.credentialDataSupplierInput || {})) {
             debug("invalid because the requested credential data is incorrect", request.credentialDataSupplierInput);
             error.error = ErrorCodes.INVALID_REQUEST;

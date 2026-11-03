@@ -57,13 +57,15 @@ export async function createCredentialOffer(issuer:Issuer, request:CreateCredent
     session.data.credentialId = credentialConfigIds[0];
 
     // store the requested dataset as a credential-data-set named after the credential id
+    const deferredSettings = issuer.getDeferredSettings(credentialConfigIds[0]);
     session.data.credentialDataSets = {};
     // TODO: update this when we want to support multiple credential issuance
     // We need to loop over all the ids supplied and set the relevant configuration and data
     session.data.credentialDataSets[credentialConfigIds[0]] = {
         credentialId: credentialConfigIds[0],
         credentialConfiguration: issuer.getCredentialConfiguration(credentialConfigIds[0]),
-        data: request.credentialDataSupplierInput,
+        // a deferred credential can be created without any data, as the back-office can supply it later
+        data: deferredSettings ? (request.credentialDataSupplierInput ?? {}) : request.credentialDataSupplierInput,
         ...(request.credential && {credential: request.credential}),
         ...(request.credential_callback && {callback: request.credential_callback})
     };

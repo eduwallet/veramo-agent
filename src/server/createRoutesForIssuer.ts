@@ -7,6 +7,7 @@ import {
     accessToken,
     createCredentialOfferResponse,
     getCredential,
+    getDeferredCredential,
     getCredentialOffer,
     getIssueStatus,
     getMetadata,
@@ -17,6 +18,7 @@ import {
     revokeCredential,
     getNonce,
     notification,
+    deferredTransactions,
 } from './endpoints/index.js'
 import { getOIDFed } from './endpoints/getOIDFed.js';
 import { revokeIndex } from './endpoints/statuslists/revokeIndex.js';
@@ -83,6 +85,12 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     // this is hard coded in the Issuer when metadata is generated
     getCredential(issuer, '/credentials');
 
+    // this is hard coded in the Issuer when metadata is generated, and only published if
+    // there are credentials that are issued in a deferred manner
+    if (issuer.hasDeferredCredentials()) {
+        getDeferredCredential(issuer, '/deferred');
+    }
+
     // this is hard coded in the Issuer when metadata is generated
     notification(issuer, '/notification');
 
@@ -100,6 +108,9 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
 
     // allow the front-end issuer to revoke or unrevoke specific credentials based on an id
     revokeCredential(issuer, '/api/revoke-credential');
+
+    // back-office API (v2) to supply or deny the claims of deferred credentials
+    deferredTransactions(issuer, '/api/v2/deferred');
 
     const statusListOptions = issuer.findAllStatusLists();
     for (const slo of statusListOptions) {

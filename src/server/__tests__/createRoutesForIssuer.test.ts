@@ -8,6 +8,8 @@ import {
     accessToken,
     createCredentialOfferResponse,
     getCredential,
+    getDeferredCredential,
+    deferredTransactions,
     getCredentialOffer,
     getIssueStatus,
     getMetadata,
@@ -29,6 +31,8 @@ vi.mock('../endpoints/index.js', () => ({
     accessToken: vi.fn(),
     createCredentialOfferResponse: vi.fn(),
     getCredential: vi.fn(),
+    getDeferredCredential: vi.fn(),
+    deferredTransactions: vi.fn(),
     getCredentialOffer: vi.fn(),
     getIssueStatus: vi.fn(),
     getMetadata: vi.fn(),
@@ -84,6 +88,29 @@ test('creates the always-on endpoints with the right paths', async () => {
     expect(getIssueStatus).toHaveBeenCalledWith(issuer, '/api/check-offer');
     expect(listCredentials).toHaveBeenCalledWith(issuer, '/api/list-credentials');
     expect(revokeCredential).toHaveBeenCalledWith(issuer, '/api/revoke-credential');
+    expect(deferredTransactions).toHaveBeenCalledWith(issuer, '/api/v2/deferred');
+    // no deferred credentials configured
+    expect(getDeferredCredential).not.toHaveBeenCalled();
+});
+
+test('registers the deferred endpoint only when a credential is issued in a deferred manner', async () => {
+    const deferredIssuer = createIssuer({}, {
+        credential_configurations_supported: {
+            slow: {
+                format: 'dc+sd-jwt',
+                deferred: { ttl: 3600 },
+                credential_definition: { type: ['Slow'], claims: [{ path: ['name'], origin: [['#deferred', 'name']] }] },
+            },
+        },
+    });
+    await createRoutesForIssuer(deferredIssuer, createApp(), wellKnownRouter);
+    expect(getDeferredCredential).toHaveBeenCalledWith(deferredIssuer, '/deferred');
+
+    vi.clearAllMocks();
+
+    const plainIssuer = createIssuer();
+    await createRoutesForIssuer(plainIssuer, createApp(), wellKnownRouter);
+    expect(getDeferredCredential).not.toHaveBeenCalled();
 });
 
 test('registers the nonce endpoint only when the issuer uses nonces', async () => {

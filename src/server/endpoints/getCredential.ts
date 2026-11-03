@@ -4,6 +4,7 @@ import { Issuer } from '#root/issuer/Issuer';
 import { ErrorCodes } from '#root/types/api';
 import { validateCredentialRequest } from '#root/issuer/api/validateCredentialRequest';
 import { issueCredential } from '#root/issuer/api/issueCredential';
+import { deferCredential } from '#root/issuer/api/deferCredential';
 import { CredentialProofData } from '#root/types/internal';
 import { DPoPNonceRequiredError, issueDpopNonce } from '#root/issuer/lib/validateDPoPProof';
 import { sendDpopNonceResponse } from '#root/server/sendDpopNonceResponse';
@@ -24,8 +25,18 @@ export function getCredential(issuer:Issuer, path:string)
                 await issuer.storeRequestResponseData(proofData.session.uuid, "get_credential-request", request.body);
 
                 let credentialResponse;
+                let httpStatus = 200;
                 try {
-                    credentialResponse = await issueCredential(issuer, proofData);
+                    const deferredSettings = issuer.getDeferredSettings(proofData.credentialDataSet.credentialId);
+                    if (deferredSettings) {
+                        // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-8.3
+                        // the credential cannot be issued yet: return a transaction_id with a 202
+                        credentialResponse = await deferCredential(issuer, proofData, deferredSettings);
+                        httpStatus = 202;
+                    }
+                    else {
+                        credentialResponse = await issueCredential(issuer, proofData);
+                    }
                 }
                 catch (e) {
                     return sendErrorResponse(response, 400, {
@@ -40,7 +51,10 @@ export function getCredential(issuer:Issuer, path:string)
                     // RFC 9449 §9: rotate the nonce on every response
                     response.set('DPoP-Nonce', await issueDpopNonce(issuer));
                 }
-                return response.json(credentialResponse);
+                if (httpStatus != 200) {
+                    response.set('Cache-Control', 'no-store');
+                }
+                return response.status(httpStatus).json(credentialResponse);
             }
             catch (e) {
                 if (e instanceof DPoPNonceRequiredError) {

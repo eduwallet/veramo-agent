@@ -21,7 +21,8 @@ export enum ErrorCodes {
     CREDENTIAL_REQUEST_DENIED = "credential_request_denied",
     INVALID_DPOP_PROOF = "invalid_dpop_proof",
     INVALID_NOTIFICATION_ID = "invalid_notification_id",
-    INVALID_NOTIFICATION_REQUEST = "invalid_notification_request"
+    INVALID_NOTIFICATION_REQUEST = "invalid_notification_request",
+    INVALID_TRANSACTION_ID = "invalid_transaction_id"
 }
 
 export enum CredentialOfferStatus {
@@ -30,6 +31,9 @@ export enum CredentialOfferStatus {
     ACCESS_TOKEN_REQUESTED = 'ACCESS_TOKEN_REQUESTED',
     ACCESS_TOKEN_CREATED = 'ACCESS_TOKEN_CREATED',
     CREDENTIAL_REQUEST_RECEIVED = 'CREDENTIAL_REQUEST_RECEIVED',
+    CREDENTIAL_PENDING = 'CREDENTIAL_PENDING', // deferred: waiting for the back-office to supply/approve the claims
+    CREDENTIAL_READY = 'CREDENTIAL_READY',     // deferred: approved, waiting for the wallet to collect the credential
+    CREDENTIAL_DENIED = 'CREDENTIAL_DENIED',   // deferred: rejected by the back-office
     CREDENTIAL_ISSUED = 'CREDENTIAL_ISSUED',
     ERROR = 'ERROR',
 }
