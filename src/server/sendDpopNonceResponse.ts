@@ -9,5 +9,10 @@ export function sendDpopNonceResponse(response: Response, statusCode: number, no
     }
     response.set('DPoP-Nonce', nonce);
     response.set('Cache-Control', 'no-store');
+    if (statusCode === 401) {
+        // RFC 9449 §9: a resource server (credential and deferred endpoints) signals the nonce challenge
+        // in the WWW-Authenticate header. Wallets such as Paradym only retry on this header, not on the body.
+        response.set('WWW-Authenticate', 'DPoP error="use_dpop_nonce", error_description="Resource server requires nonce in DPoP proof"');
+    }
     return response.status(statusCode).json({ error: 'use_dpop_nonce' });
 }
