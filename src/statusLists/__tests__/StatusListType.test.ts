@@ -12,11 +12,27 @@ const mockRepo = {
     save: vi.fn().mockResolvedValue(undefined),
 };
 
+// setState()/revoke()/newIndex() now run inside a transaction and re-fetch their
+// row via the transactional EntityManager, so the mock needs to support that too.
+// findOne defaults to resolving undefined; individual tests set it to resolve the
+// specific list they are working with.
+const mockManager = {
+    query: vi.fn().mockResolvedValue(undefined),
+    find: vi.fn().mockResolvedValue([]),
+    findOne: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockImplementation(async (entity:any) => entity),
+};
+
 beforeEach(() => {
     mockRepo.find.mockReset().mockResolvedValue([]);
     mockRepo.save.mockReset().mockResolvedValue(undefined);
+    mockManager.query.mockReset().mockResolvedValue(undefined);
+    mockManager.find.mockReset().mockResolvedValue([]);
+    mockManager.findOne.mockReset().mockResolvedValue(undefined);
+    mockManager.save.mockReset().mockImplementation(async (entity:any) => entity);
     vi.mocked(getDbConnection).mockResolvedValue({
         getRepository: () => mockRepo,
+        transaction: async (cb:any) => cb(mockManager),
     } as any);
 });
 
@@ -29,6 +45,10 @@ async function createBasicStatusList(bitSize:number)
     lst.bitsize = bitSize;
     lst.content = await dataList.encodeBits();
     lst.revoked = await contentList.encodeBits();
+    // setState()/revoke() re-fetch their row via manager.findOne() within a transaction;
+    // since this returns the same object reference, later mutations to lst (e.g. .content,
+    // .index) made by the test are still visible when it is eventually "found" again.
+    mockManager.findOne.mockResolvedValue(lst);
     return lst;
 
 }

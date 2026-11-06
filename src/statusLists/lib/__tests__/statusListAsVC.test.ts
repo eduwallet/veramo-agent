@@ -13,11 +13,25 @@ const mockRepo = {
     save: vi.fn().mockResolvedValue(undefined),
 };
 
+// setState() now runs inside a transaction and re-fetches its row via the
+// transactional EntityManager, so the mock needs to support that too.
+const mockManager = {
+    query: vi.fn().mockResolvedValue(undefined),
+    find: vi.fn().mockResolvedValue([]),
+    findOne: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockImplementation(async (entity:any) => entity),
+};
+
 beforeEach(() => {
     mockRepo.find.mockReset().mockResolvedValue([]);
     mockRepo.save.mockReset().mockResolvedValue(undefined);
+    mockManager.query.mockReset().mockResolvedValue(undefined);
+    mockManager.find.mockReset().mockResolvedValue([]);
+    mockManager.findOne.mockReset().mockResolvedValue(undefined);
+    mockManager.save.mockReset().mockImplementation(async (entity:any) => entity);
     vi.mocked(getDbConnection).mockResolvedValue({
         getRepository: () => mockRepo,
+        transaction: async (cb:any) => cb(mockManager),
     } as any);
 });
 
@@ -30,6 +44,9 @@ async function createBasicStatusList(bitSize:number)
     lst.bitsize = bitSize;
     lst.content = await dataList.encodeBits();
     lst.revoked = await contentList.encodeBits();
+    // setState() re-fetches its row via manager.findOne(); since this returns the
+    // same object reference, later mutations to lst are still visible when found again.
+    mockManager.findOne.mockResolvedValue(lst);
     return lst;
 }
 

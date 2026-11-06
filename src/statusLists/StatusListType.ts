@@ -13,6 +13,8 @@ import { Issuer } from '#root/issuer/Issuer';
 import moment from 'moment';
 import { statusListAsVC } from './lib/statusListAsVC.js';
 import { statusListAsJWT } from './lib/statusListAsJWT.js';
+import { EntityManager } from 'typeorm';
+import { DB_SCHEMA } from '#root/environment';
 
 export class StatusListType implements StatusListInterface {
     public issuer:Issuer;
@@ -155,51 +157,65 @@ export class StatusListType implements StatusListInterface {
         return createStatusCredential(this, lst, index);
     }
 
+    // Serializes all allocation/revocation operations against this named status list
+    // (across its physical list rows) within the current schema, so that the
+    // read-modify-write cycle on a list's 'content'/'revoked' bitstrings cannot race
+    // with another concurrent request and lose an update (e.g. an index being handed
+    // out twice, or a freshly allocated index silently losing its reservation again).
+    // The lock is transaction-scoped (pg_advisory_xact_lock) and is released
+    // automatically when the transaction commits or rolls back.
+    private async lockForUpdate(manager:EntityManager)
+    {
+        await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [DB_SCHEMA + ':' + this.name]);
+    }
+
     public async newIndex(expirationDate:Date|null|undefined)
     {
         debug("creating new index with expiration ", expirationDate);
-        // reload the lists to ensure that we have the latest situation in a multi-user environment
-        // TODO: implement a central location or job processor to set the list values
-        // to prevent problems. Alternatively, each single-threaded issuer can have its own single-threaded
-        // statuslist agent, working around such problems.
-        await this.loadLists();
-        for (const lst of this.lists) {
-            if (lst.used < (0.9 * lst.size)) {
-                try {
-                    return await this.returnNewIndexFromList(lst, expirationDate);
-                }
-                catch (e) {
-                    // any error caught will cause us to create a new list
-                    console.log(e);
+        const dbConnection = await getDbConnection();
+        return await dbConnection.transaction(async (manager) => {
+            await this.lockForUpdate(manager);
+
+            // reload the lists now that we are guaranteed to be the only one
+            // allocating/creating lists with this name
+            this.lists = await manager.find(StatusList, {where:{name: this.name}, order: {index:'ASC'}});
+            for (const lst of this.lists) {
+                if (lst.used < (0.9 * lst.size)) {
+                    try {
+                        return await this.returnNewIndexFromList(lst, expirationDate, manager);
+                    }
+                    catch (e) {
+                        // any error caught will cause us to try the next list, or create a new one
+                        debug("could not claim an index in list, trying next", e);
+                    }
                 }
             }
-        }
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(StatusList);
-        const list = new StatusList();
-        list.name = this.name;
-        if (this.lists.length > 0) {
-            list.index = this.lists[this.lists.length - 1].index + 1;
-        }
-        else {
-            list.index = 1;
-        }
-        list.size = this.size;
-        list.used = 0;
-        list.bitsize = this.bitSize ?? 1;
-        const dataList = new Bitstring({length: list.size});
-        list.content = await dataList.encodeBits();
-        const contentList = new Bitstring({length: list.size * list.bitsize});
-        list.revoked = await contentList.encodeBits();
-        await repo.save(list); // create the list id, but this may be superfluous
 
-        this.lists.push(list);
+            const list = new StatusList();
+            list.name = this.name;
+            if (this.lists.length > 0) {
+                list.index = this.lists[this.lists.length - 1].index + 1;
+            }
+            else {
+                list.index = 1;
+            }
+            list.size = this.size;
+            list.used = 0;
+            list.bitsize = this.bitSize ?? 1;
+            const dataList = new Bitstring({length: list.size});
+            list.content = await dataList.encodeBits();
+            const contentList = new Bitstring({length: list.size * list.bitsize});
+            list.revoked = await contentList.encodeBits();
+            await manager.save(list); // create the list id, but this may be superfluous
 
-        // no try-catch: if we fail here, something else is amiss
-        return await this.returnNewIndexFromList(list, expirationDate);
+            this.lists.push(list);
+
+            // no try-catch: if we fail here, something else is amiss
+            return await this.returnNewIndexFromList(list, expirationDate, manager);
+        });
     }
 
-    private async returnNewIndexFromList(list:StatusList, expirationDate:Date|null|undefined)
+    private async returnNewIndexFromList(list:StatusList, expirationDate:Date|null|undefined, manager:EntityManager)
     {
         debug("returning new index from list");
         // look in the 'content' list to see if we have a spot available
@@ -229,9 +245,7 @@ export class StatusListType implements StatusListInterface {
             list.expirationDate = expirationDate;
         }
 
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(StatusList);
-        await repo.save(list);
+        await manager.save(list);
 
         return {
             list,
@@ -242,17 +256,24 @@ export class StatusListType implements StatusListInterface {
     public async revoke(listIndex:number, index:number, doRevoke:boolean):Promise<string>
     {
         debug("revoking index ", listIndex, index, doRevoke);
-        const statusList = await this.get(listIndex);
-        const state = await this.setState(statusList, index, doRevoke ? 1 : 0, -1);
-        if (state == 'CHANGED') {
-            if (doRevoke) {
-                return 'REVOKED';
+        const dbConnection = await getDbConnection();
+        return await dbConnection.transaction(async (manager) => {
+            await this.lockForUpdate(manager);
+            const statusList = await manager.findOne(StatusList, {where: {name: this.name, index: listIndex}});
+            if (!statusList) {
+                throw new Error("No such list");
             }
-            else {
-                return 'UNREVOKED';
+            const state = await this.setStateLocked(statusList, index, doRevoke ? 1 : 0, -1, manager);
+            if (state == 'CHANGED') {
+                if (doRevoke) {
+                    return 'REVOKED';
+                }
+                else {
+                    return 'UNREVOKED';
+                }
             }
-        }
-        return state;
+            return state;
+        });
     }
 
     private getStateValue(bitString:Bitstring, index:number, bitSize:number)
@@ -276,6 +297,26 @@ export class StatusListType implements StatusListInterface {
 
     public async setState(list:StatusList, index:number, newState:number, mask:number = -1):Promise<string>
     {
+        // the caller may have fetched 'list' well before this call (e.g. via get()), outside
+        // of any lock, so we only use it to identify the row and re-fetch/lock it here, within
+        // our own transaction, to avoid racing with a concurrent newIndex()/setState()/revoke()
+        const dbConnection = await getDbConnection();
+        return await dbConnection.transaction(async (manager) => {
+            await this.lockForUpdate(manager);
+            const freshList = await manager.findOne(StatusList, {where: {id: list.id}});
+            if (!freshList) {
+                throw new Error("No such list");
+            }
+            return await this.setStateLocked(freshList, index, newState, mask, manager);
+        });
+    }
+
+    // performs the actual read-modify-write of the 'revoked' bitstring. Must only be called
+    // while holding the advisory lock for this status list name (see lockForUpdate), with a
+    // 'list' that was fetched within that same transaction, so the save() below cannot lose
+    // a concurrent update.
+    private async setStateLocked(list:StatusList, index:number, newState:number, mask:number, manager:EntityManager):Promise<string>
+    {
         debug("setting state at index ", index, newState, mask);
         const dataList = new Bitstring({buffer:await Bitstring.decodeBits({encoded:list.content})});
         const revokeList = new Bitstring({buffer: await Bitstring.decodeBits({encoded:list.revoked})});
@@ -283,7 +324,7 @@ export class StatusListType implements StatusListInterface {
         let retval:string = 'UNKNOWN';
 
         // mask out the bits that are not relevant
-        // use the bitsize of the database entry instead of the default-size-for-new-lists defined on 
+        // use the bitsize of the database entry instead of the default-size-for-new-lists defined on
         // the overall type. In theory, we could then support lists of different sizes, but that
         // would be strange
         const bitSizeMask = (1 << (list.bitsize ?? 1)) - 1;
@@ -302,9 +343,7 @@ export class StatusListType implements StatusListInterface {
 
             if (retval != 'UNCHANGED') {
                 list.revoked = await revokeList.encodeBits();
-                const dbConnection = await getDbConnection();
-                const repo = dbConnection.getRepository(StatusList);
-                await repo.save(list);
+                await manager.save(list);
             }
         }
         else {
