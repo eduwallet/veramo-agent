@@ -75,6 +75,9 @@ export class VCDM
 
     private async convertHolderToDid(holder:HolderData):Promise<string>
     {
+        if (holder.type == "kid" && typeof(holder.data) == 'string') {
+            return holder.data.split('#')[0];
+        }
         if ((holder.type == "kid" || holder.type == "jwk") && holder.data) {
             return holder.data;
         }
