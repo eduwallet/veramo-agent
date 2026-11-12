@@ -6,6 +6,7 @@ import { Credential } from '#root/credentials/Credential';
 import { CredentialFactory } from '#root/credentials/CredentialFactory';
 import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
 import { DeferredSessionData } from '#root/types/internal';
+import { createTransactionKey, findDeferredByTransactionId, getDeferredTransactions, parseTransactionKey, storeDeferred } from '#root/issuer/lib/sessionDeferred';
 import { findUnusedClaims, getClaimDefinitions } from '#root/issuer/lib/claimDefinitions';
 
 // maximum length of the reason for denying a credential
@@ -22,18 +23,20 @@ function failure(status:number, error:ErrorCodes, description:string, extra:obje
 }
 
 /**
- * Find the deferred transaction of a session of this issuer. The session id is the uuid
- * that was returned when the offer was created.
+ * Find a deferred transaction of this issuer. A session can have multiple transactions, so the id is
+ * the session uuid (returned when the offer was created), a dot and the transaction id, as listed
+ * by listDeferredTransactions.
  */
 async function findTransaction(issuer:Issuer, id:string): Promise<{session:Session, deferred:DeferredSessionData}|null>
 {
-    if (!id || typeof(id) != 'string') {
+    const key = parseTransactionKey(id);
+    if (!key) {
         return null;
     }
-    const session = await issuer.getSessionById(id);
-    const deferred = session?.data?.deferred as DeferredSessionData|undefined;
+    const session = await issuer.getSessionById(key.sessionId);
     // getSessionById returns a new session if the id is unknown
-    if (!session || !session.id || !deferred) {
+    const deferred = session && session.id ? findDeferredByTransactionId(session, key.transactionId) : null;
+    if (!session || !deferred) {
         return null;
     }
     return { session, deferred };
@@ -55,18 +58,15 @@ export async function listDeferredTransactions(issuer:Issuer, status?:string): P
     const now = +new Date();
     // the transaction is part of the session data, so it is filtered here and not in the database
     const sessions = await issuer.sessionData.getActive();
-    const items = sessions
-        .filter((s) => s.data?.deferred && s.data.deferred.status == wanted && s.data.deferred.expiresAt >= now)
-        .map((s) => {
-            const deferred = s.data.deferred as DeferredSessionData;
-            return {
-                id: s.uuid,
-                credential_configuration_id: deferred.credentialId,
-                status: deferred.status,
-                createdAt: deferred.createdAt,
-                expiresAt: deferred.expiresAt,
-            };
-        });
+    const items = sessions.flatMap((s) => getDeferredTransactions(s)
+        .filter((d) => d.status == wanted && d.expiresAt >= now)
+        .map((d) => ({
+            id: createTransactionKey(s, d),
+            credential_configuration_id: d.credentialId,
+            status: d.status,
+            createdAt: d.createdAt,
+            expiresAt: d.expiresAt,
+        })));
     return { status: 200, body: items };
 }
 
@@ -160,14 +160,17 @@ async function denyTransaction(issuer:Issuer, session:Session, deferred:Deferred
     if (reason) {
         deferred.reason = reason;
     }
-    session.data.deferred = deferred;
-    session.data.status = CredentialOfferStatus.CREDENTIAL_DENIED;
+    storeDeferred(session, deferred);
+    // the offer is only denied as a whole if it has no other credentials
+    if (Object.keys(session.data.credentialDataSets ?? {}).length <= 1) {
+        session.data.status = CredentialOfferStatus.CREDENTIAL_DENIED;
+    }
     session.data.lastUpdatedAt = +new Date();
     // newlines are removed from the reason to keep the log lines intact
     console.info(`[deferred] issuer=${issuer.name} session=${session.uuid} transaction=${deferred.transactionId} credential=${deferred.credentialId} denied, reason: ${reason ? reason.replace(/[\r\n]+/g, ' ') : '(no reason given)'}`);
     await issuer.storeRequestResponseData(session.uuid, 'deferred-denied', { reason: reason ?? null, at: +new Date() });
     await issuer.storeSession(session);
-    return { status: 200, body: { id: session.uuid, status: deferred.status } };
+    return { status: 200, body: { id: createTransactionKey(session, deferred), status: deferred.status } };
 }
 
 async function releaseTransaction(issuer:Issuer, session:Session, deferred:DeferredSessionData, claims?:object): Promise<ApiResult>
@@ -207,9 +210,11 @@ async function releaseTransaction(issuer:Issuer, session:Session, deferred:Defer
 
     deferred.claims = newClaims;
     deferred.status = CredentialOfferStatus.CREDENTIAL_READY;
-    session.data.deferred = deferred;
-    session.data.status = CredentialOfferStatus.CREDENTIAL_READY;
+    storeDeferred(session, deferred);
+    if (Object.keys(session.data.credentialDataSets ?? {}).length <= 1) {
+        session.data.status = CredentialOfferStatus.CREDENTIAL_READY;
+    }
     session.data.lastUpdatedAt = +new Date();
     await issuer.storeSession(session);
-    return { status: 200, body: { id: session.uuid, status: deferred.status } };
+    return { status: 200, body: { id: createTransactionKey(session, deferred), status: deferred.status } };
 }

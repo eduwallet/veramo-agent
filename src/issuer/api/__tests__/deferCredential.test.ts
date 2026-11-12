@@ -32,7 +32,7 @@ function newProofData() {
     session.data = { status: CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED } as any;
     return {
         session,
-        credentialDataSet: { credentialId: 'slow', credentialConfiguration: {} as any, data: { name: 'offer' } },
+        credentialDataSet: { id: 'slow#0', credentialId: 'slow', credentialConfiguration: {} as any, data: { name: 'offer' } },
         proofResults: [{ nonce: 'n', holder: { type: 'jwk', did: 'did:x', data: { kty: 'EC' }, ckey: { secret: 'object' } as any } }],
     };
 }
@@ -51,7 +51,7 @@ test('registers a pending transaction and returns transaction_id and interval', 
     expect(response).not.toHaveProperty('credentials');
     expect(response).not.toHaveProperty('notification_id');
 
-    const deferred = proofData.session.data.deferred;
+    const deferred:any = Object.values(proofData.session.data.deferredTransactions)[0];
     expect(deferred.transactionId).toBe(response.transaction_id);
     expect(deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
     expect(proofData.session.data.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
@@ -65,7 +65,7 @@ test('extends the session lifetime to the transaction lifetime', async () => {
     const issuer = newIssuer();
     const proofData = newProofData();
     await deferCredential(issuer, proofData, issuer.getDeferredSettings('slow')!);
-    expect(proofData.session.expirationDate!.getTime()).toBe(proofData.session.data.deferred.expiresAt);
+    expect(proofData.session.expirationDate!.getTime()).toBe((Object.values(proofData.session.data.deferredTransactions)[0] as any).expiresAt);
 
     // an already longer lived session is not shortened
     const longer = newProofData();
@@ -87,7 +87,7 @@ test('a completed transaction cannot be requested again', async () => {
     const issuer = newIssuer();
     const proofData = newProofData();
     await deferCredential(issuer, proofData, issuer.getDeferredSettings('slow')!);
-    proofData.session.data.deferred.status = CredentialOfferStatus.CREDENTIAL_DENIED;
+    (Object.values(proofData.session.data.deferredTransactions)[0] as any).status = CredentialOfferStatus.CREDENTIAL_DENIED;
     await expect(deferCredential(issuer, proofData, issuer.getDeferredSettings('slow')!)).rejects.toThrow();
 });
 
@@ -96,4 +96,18 @@ test('create-offer accepts a deferred credential without claims', () => {
     const grants = { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': {} } as any;
     const deferred = validateCreateCredentialOffer(issuer, { grants, credentials: ['slow'] } as any);
     expect(deferred.error).toBe(ErrorCodes.NO_ERROR);
+});
+
+test('every deferred data set gets its own transaction, and a repeated request returns the same one', async () => {
+    const issuer = newIssuer();
+    const first = newProofData();
+    const second = { ...first, credentialDataSet: { ...first.credentialDataSet, id: 'slow#1' } };
+    const settings = issuer.getDeferredSettings('slow')!;
+
+    const r1 = await deferCredential(issuer, first, settings);
+    const r2 = await deferCredential(issuer, second, settings);
+    expect(r2.transaction_id).not.toBe(r1.transaction_id);
+    expect(Object.keys(first.session.data.deferredTransactions)).toHaveLength(2);
+
+    expect((await deferCredential(issuer, first, settings)).transaction_id).toBe(r1.transaction_id);
 });

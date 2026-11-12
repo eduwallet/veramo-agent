@@ -14,6 +14,7 @@ export interface CredentialRequestBase {
     proof?: ProofOfPossession;
     proofs?: ProofOfPossessionTypes;
     credential_identifier?: string;
+    credential_configuration_id?: string;  // REQUIRED when credential_identifiers was NOT returned from the token response
     credential_response_encryption?:CredentialResponseEncryption;
 }
 

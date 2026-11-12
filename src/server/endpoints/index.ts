@@ -13,3 +13,4 @@ export { revokeCredential} from './revokeCredential.js';
 export { getNonce } from './getNonce.js';
 export { notification } from './notification.js';
 export { deferredTransactions } from './v2/deferred.js';
+export { createCredentialOfferV2Response } from './v2/createCredentialOffer.js';

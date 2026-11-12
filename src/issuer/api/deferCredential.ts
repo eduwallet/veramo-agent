@@ -5,6 +5,7 @@ import { CredentialOfferStatus } from "#root/types/api";
 import { CredentialProofData, DeferredSessionData } from "#root/types/internal";
 import { CredentialResponse } from "#root/types/specification/credential_response";
 import { createUniqueId } from '#root/utils/createUniqueId';
+import { findDeferredByDataSet, storeDeferred } from '#root/issuer/lib/sessionDeferred';
 import { DeferredSettings } from '#root/issuer/lib/deferredConfiguration';
 
 /**
@@ -15,7 +16,8 @@ import { DeferredSettings } from '#root/issuer/lib/deferredConfiguration';
 export async function deferCredential(issuer:Issuer, proofData:CredentialProofData, settings:DeferredSettings): Promise<CredentialResponse>
 {
     const { session, credentialDataSet } = proofData;
-    const existing = session.data.deferred as DeferredSessionData|undefined;
+    // every deferred data set has its own transaction
+    const existing = findDeferredByDataSet(session, credentialDataSet.id);
     if (existing) {
         // the wallet repeats its credential request: stay with the original transaction
         if (existing.status == CredentialOfferStatus.CREDENTIAL_PENDING || existing.status == CredentialOfferStatus.CREDENTIAL_READY) {
@@ -42,7 +44,7 @@ export async function deferCredential(issuer:Issuer, proofData:CredentialProofDa
     };
     debug("creating deferred transaction", deferred.transactionId);
 
-    session.data.deferred = deferred;
+    storeDeferred(session, deferred);
     session.data.status = CredentialOfferStatus.CREDENTIAL_PENDING;
     session.data.lastUpdatedAt = now;
     // the session has to exist for as long as the transaction can be collected

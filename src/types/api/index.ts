@@ -17,6 +17,8 @@ export interface IssueStatusResponse {
     uuid?: string;
     expiresAt?: number;  // deferred credentials: epoch milliseconds when the transaction expires
     reason?: string;     // deferred credentials: the reason the credential was denied
+    // deferred credentials: the state of every deferred transaction of the offer
+    deferred?: { id: string, credential_configuration_id: string, status: string, expiresAt: number, reason?: string }[];
 }
 
 export interface RevokeCredentialRequest {

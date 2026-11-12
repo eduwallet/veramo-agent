@@ -6,6 +6,7 @@ import { Issuer } from "issuer/Issuer.js";
 import {
     accessToken,
     createCredentialOfferResponse,
+    createCredentialOfferV2Response,
     getCredential,
     getDeferredCredential,
     getCredentialOffer,
@@ -108,6 +109,9 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
 
     // allow the front-end issuer to revoke or unrevoke specific credentials based on an id
     revokeCredential(issuer, '/api/revoke-credential');
+
+    // back-office API (v2) to create a credential offer for one or more credentials
+    createCredentialOfferV2Response(issuer, '/api/v2/create-offer', '/get-credential-offer');
 
     // back-office API (v2) to supply or deny the claims of deferred credentials
     deferredTransactions(issuer, '/api/v2/deferred');

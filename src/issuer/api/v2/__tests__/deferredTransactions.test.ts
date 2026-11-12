@@ -39,20 +39,24 @@ function newSession(overrides:any = {}, offerData:any = { course: 'math' }) {
     session.data = {
         status: CredentialOfferStatus.CREDENTIAL_PENDING,
         accessData: {},
-        deferred: {
+        credentialDataSets: { 'slow#0': { id: 'slow#0', credentialId: 'slow' } },
+        deferredTransactions: { ['tx-' + counter]: {
             transactionId: 'tx-' + counter,
             status: CredentialOfferStatus.CREDENTIAL_PENDING,
             credentialId: 'slow',
-            credentialDataSet: { credentialId: 'slow', credentialConfiguration: {}, data: offerData },
+            credentialDataSet: { id: 'slow#0', credentialId: 'slow', credentialConfiguration: {}, data: offerData },
             holders: [{ type: 'jwk', data: {} }, { type: 'jwk', data: {} }],
             claims: {},
             ttl: 3600, interval: 72,
             createdAt: 1000, expiresAt: Date.now() + 3600_000,
             ...overrides,
-        },
+        } },
     } as any;
     return session;
 }
+
+const tx = (s:Session):any => Object.values(s.data.deferredTransactions)[0];
+const key = (s:Session) => s.uuid + '.' + tx(s).transactionId;
 
 beforeEach(() => { vi.restoreAllMocks(); });
 
@@ -66,21 +70,21 @@ test('lists the open transactions only', async () => {
     const result = await listDeferredTransactions(issuer);
     expect(result.status).toBe(200);
     expect(result.body).toStrictEqual([{
-        id: open.uuid, credential_configuration_id: 'slow', status: 'CREDENTIAL_PENDING',
-        createdAt: 1000, expiresAt: open.data.deferred.expiresAt,
+        id: key(open), credential_configuration_id: 'slow', status: 'CREDENTIAL_PENDING',
+        createdAt: 1000, expiresAt: tx(open).expiresAt,
     }]);
 
     const readyList = await listDeferredTransactions(issuer, CredentialOfferStatus.CREDENTIAL_READY);
-    expect(readyList.body.map((i:any) => i.id)).toStrictEqual([ready.uuid]);
+    expect(readyList.body.map((i:any) => i.id)).toStrictEqual([key(ready)]);
 });
 
 test('returns the details of a transaction', async () => {
     const session = newSession({}, { course: 'math', other: 1 });
     const issuer = newIssuer([session]);
-    const result = await getDeferredTransaction(issuer, session.uuid);
+    const result = await getDeferredTransaction(issuer, key(session));
     expect(result.status).toBe(200);
     expect(result.body).toMatchObject({
-        id: session.uuid, status: 'CREDENTIAL_PENDING', credential_configuration_id: 'slow',
+        id: key(session), status: 'CREDENTIAL_PENDING', credential_configuration_id: 'slow',
         format: 'dc+sd-jwt', proofs: 2, ttl: 3600, interval: 72,
         data: { course: 'math', other: 1 }, claims_supplied: {},
     });
@@ -99,47 +103,47 @@ test('an unknown id or a session without transaction is not found', async () => 
 test('releases the transaction with valid claims', async () => {
     const session = newSession();
     const issuer = newIssuer([session]);
-    const result = await updateDeferredTransaction(issuer, session.uuid, { claims: { name: 'Test', address: { street: 'Main' } } });
-    expect(result).toStrictEqual({ status: 200, body: { id: session.uuid, status: 'CREDENTIAL_READY' } });
-    expect(session.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_READY);
+    const result = await updateDeferredTransaction(issuer, key(session), { claims: { name: 'Test', address: { street: 'Main' } } });
+    expect(result).toStrictEqual({ status: 200, body: { id: key(session), status: 'CREDENTIAL_READY' } });
+    expect(tx(session).status).toBe(CredentialOfferStatus.CREDENTIAL_READY);
     expect(session.data.status).toBe(CredentialOfferStatus.CREDENTIAL_READY);
-    expect(session.data.deferred.claims).toStrictEqual({ name: 'Test', address: { street: 'Main' } });
+    expect(tx(session).claims).toStrictEqual({ name: 'Test', address: { street: 'Main' } });
     expect(issuer.storeSession).toHaveBeenCalled();
 });
 
 test('an explicit CREDENTIAL_READY status releases as well', async () => {
     const session = newSession();
-    const result = await updateDeferredTransaction(newIssuer([session]), session.uuid, { status: 'CREDENTIAL_READY', claims: { name: 'Test' } });
+    const result = await updateDeferredTransaction(newIssuer([session]), key(session), { status: 'CREDENTIAL_READY', claims: { name: 'Test' } });
     expect(result.status).toBe(200);
 });
 
 test('validates the existing data when no claims are supplied', async () => {
     // name is mandatory and not available: not released
     const incomplete = newSession();
-    const failed = await updateDeferredTransaction(newIssuer([incomplete]), incomplete.uuid, {});
+    const failed = await updateDeferredTransaction(newIssuer([incomplete]), key(incomplete), {});
     expect(failed.status).toBe(400);
     expect(failed.body.errors).toStrictEqual(["Missing mandatory claim 'name'"]);
-    expect(incomplete.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
+    expect(tx(incomplete).status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
 
     // all mandatory claims are known from earlier supplied claims
     const complete = newSession({ claims: { name: 'Earlier' } });
-    expect((await updateDeferredTransaction(newIssuer([complete]), complete.uuid, {})).status).toBe(200);
+    expect((await updateDeferredTransaction(newIssuer([complete]), key(complete), {})).status).toBe(200);
 });
 
 test('does not release or store claims that fail the validation', async () => {
     const session = newSession();
     const issuer = newIssuer([session]);
-    const missing = await updateDeferredTransaction(issuer, session.uuid, { claims: { email: 'a@b.c' } });
+    const missing = await updateDeferredTransaction(issuer, key(session), { claims: { email: 'a@b.c' } });
     expect(missing.status).toBe(400);
     expect(missing.body.error).toBe(ErrorCodes.INVALID_REQUEST);
     expect(missing.body.errors).toStrictEqual(["Missing mandatory claim 'name'"]);
 
-    const wrongType = await updateDeferredTransaction(issuer, session.uuid, { claims: { name: 'Test', age: 'old' } });
+    const wrongType = await updateDeferredTransaction(issuer, key(session), { claims: { name: 'Test', age: 'old' } });
     expect(wrongType.status).toBe(400);
     expect(wrongType.body.errors).toStrictEqual(["Claim 'age' must be of type number"]);
 
-    expect(session.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
-    expect(session.data.deferred.claims).toStrictEqual({});
+    expect(tx(session).status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
+    expect(tx(session).claims).toStrictEqual({});
     expect(issuer.storeSession).not.toHaveBeenCalled();
 });
 
@@ -152,24 +156,24 @@ test('uses the access data of the session for mandatory claims', async () => {
         ...configuration,
         credential_definition: { type: ['Slow'], claims: [{ path: ['email'], mandatory: true, origin: [['#any', 'email']] }] }
     } as any);
-    expect((await updateDeferredTransaction(issuer, session.uuid, {})).status).toBe(200);
+    expect((await updateDeferredTransaction(issuer, key(session), {})).status).toBe(200);
 });
 
 test('rejects claims that no claim definition uses', async () => {
     const session = newSession();
     const issuer = newIssuer([session]);
-    const result = await updateDeferredTransaction(issuer, session.uuid, { claims: { name: 'Test', surprise: 1, address: { street: 'x', zip: '1' }, course: 'other' } });
+    const result = await updateDeferredTransaction(issuer, key(session), { claims: { name: 'Test', surprise: 1, address: { street: 'x', zip: '1' }, course: 'other' } });
     expect(result.status).toBe(400);
     // course is read from the offer only, so it cannot be supplied
     expect(result.body.claims).toStrictEqual(['surprise', 'address.zip', 'course']);
-    expect(session.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
+    expect(tx(session).status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
 });
 
 test('rejects forbidden claim names', async () => {
     const session = newSession();
     const issuer = newIssuer([session]);
     const body = JSON.parse('{"claims": {"name": "Test", "__proto__": {"polluted": true}, "address": {"constructor": "x"}}}');
-    const result = await updateDeferredTransaction(issuer, session.uuid, body);
+    const result = await updateDeferredTransaction(issuer, key(session), body);
     expect(result.status).toBe(400);
     expect(result.body.claims).toStrictEqual(['__proto__', 'address.constructor']);
     expect(({} as any).polluted).toBeUndefined();
@@ -179,10 +183,10 @@ test('denies a transaction and logs the reason', async () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
     const session = newSession();
     const issuer = newIssuer([session]);
-    const result = await updateDeferredTransaction(issuer, session.uuid, { status: 'CREDENTIAL_DENIED', reason: 'Not eligible\nsecond line' });
-    expect(result).toStrictEqual({ status: 200, body: { id: session.uuid, status: 'CREDENTIAL_DENIED' } });
-    expect(session.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_DENIED);
-    expect(session.data.deferred.reason).toBe('Not eligible\nsecond line');
+    const result = await updateDeferredTransaction(issuer, key(session), { status: 'CREDENTIAL_DENIED', reason: 'Not eligible\nsecond line' });
+    expect(result).toStrictEqual({ status: 200, body: { id: key(session), status: 'CREDENTIAL_DENIED' } });
+    expect(tx(session).status).toBe(CredentialOfferStatus.CREDENTIAL_DENIED);
+    expect(tx(session).reason).toBe('Not eligible\nsecond line');
     expect(session.data.status).toBe(CredentialOfferStatus.CREDENTIAL_DENIED);
     expect(session.data.requestResponseData['deferred-denied'].reason).toBe('Not eligible\nsecond line');
     expect(info).toHaveBeenCalledTimes(1);
@@ -192,9 +196,9 @@ test('denies a transaction and logs the reason', async () => {
 test('denying without a reason is allowed and logged as such', async () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
     const session = newSession();
-    const result = await updateDeferredTransaction(newIssuer([session]), session.uuid, { status: 'CREDENTIAL_DENIED' });
+    const result = await updateDeferredTransaction(newIssuer([session]), key(session), { status: 'CREDENTIAL_DENIED' });
     expect(result.status).toBe(200);
-    expect(session.data.deferred.reason).toBeUndefined();
+    expect(tx(session).reason).toBeUndefined();
     expect(info.mock.calls[0][0]).toContain('(no reason given)');
 });
 
@@ -208,9 +212,9 @@ test.each([
     ['a body that is not an object', 'text'],
 ])('rejects %s', async (_name, body) => {
     const session = newSession();
-    const result = await updateDeferredTransaction(newIssuer([session]), session.uuid, body);
+    const result = await updateDeferredTransaction(newIssuer([session]), key(session), body);
     expect(result.status).toBe(400);
-    expect(session.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
+    expect(tx(session).status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
 });
 
 test.each([
@@ -219,13 +223,13 @@ test.each([
     [CredentialOfferStatus.CREDENTIAL_ISSUED],
 ])('answers 409 for a transaction that is %s', async (status) => {
     const session = newSession({ status });
-    const result = await updateDeferredTransaction(newIssuer([session]), session.uuid, { claims: { name: 'x' } });
+    const result = await updateDeferredTransaction(newIssuer([session]), key(session), { claims: { name: 'x' } });
     expect(result.status).toBe(409);
 });
 
 test('answers 409 for an expired transaction', async () => {
     const session = newSession({ expiresAt: Date.now() - 1 });
-    const result = await updateDeferredTransaction(newIssuer([session]), session.uuid, { claims: { name: 'x' } });
+    const result = await updateDeferredTransaction(newIssuer([session]), key(session), { claims: { name: 'x' } });
     expect(result.status).toBe(409);
 });
 
@@ -246,4 +250,22 @@ test('a claim that reads an object accepts everything inside it', () => {
     } as any);
     expect(findUnusedClaims(definitions, { address: { street: 'a', geo: { lat: 1 } } })).toStrictEqual({ unknown: [], forbidden: [] });
     expect(findUnusedClaims(definitions, { other: [1, 2] })).toStrictEqual({ unknown: ['other'], forbidden: [] });
+});
+
+test('a session with multiple deferred transactions addresses each one separately', async () => {
+    const session = newSession();
+    session.data.credentialDataSets['slow#1'] = { id: 'slow#1', credentialId: 'slow' };
+    session.data.deferredTransactions['tx-b'] = { ...tx(session), transactionId: 'tx-b', credentialDataSet: { id: 'slow#1', credentialId: 'slow', credentialConfiguration: {}, data: { course: 'art' } } };
+    const issuer = newIssuer([session]);
+
+    const list = await listDeferredTransactions(issuer);
+    expect(list.body.map((i:any) => i.id)).toStrictEqual([session.uuid + '.' + Object.keys(session.data.deferredTransactions)[0], session.uuid + '.tx-b']);
+
+    expect((await getDeferredTransaction(issuer, session.uuid + '.tx-b')).body.data).toStrictEqual({ course: 'art' });
+    const denied = await updateDeferredTransaction(issuer, session.uuid + '.tx-b', { status: 'CREDENTIAL_DENIED' });
+    expect(denied.status).toBe(200);
+    expect(session.data.deferredTransactions['tx-b'].status).toBe(CredentialOfferStatus.CREDENTIAL_DENIED);
+    // the other transaction and the session as a whole are untouched
+    expect(tx(session).status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
+    expect(session.data.status).toBe(CredentialOfferStatus.CREDENTIAL_PENDING);
 });

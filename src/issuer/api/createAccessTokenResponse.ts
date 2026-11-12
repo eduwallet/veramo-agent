@@ -6,6 +6,7 @@ import { CredentialOfferStatus } from 'types/api.js';
 import { JWT } from '#root/jwt/JWT';
 import { Session } from '#root/database/entities/index';
 import moment from 'moment';
+import { CredentialDataSet } from '#root/types/internal';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
 
@@ -29,19 +30,19 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session, 
 
     // ID-1: 6.2: authorization_details is required if it was sent earlier on, optional
     // if not.
-    // For now: we set this to the one credentialId of this interaction
-    // TODO: update this when we want to support multiple credential issuance
-    // We need to find all the datasets linked to the same credentialId and list these here,
-    // so the wallet can potentially loop through these identifiers and request multiple
-    // credentials in a row
-    // We set the credential_configuration_id to the same value for lack of better ids
+    // List every credential_configuration_id of this session, with the identifiers of its data sets,
+    // so the wallet can loop through these and request each credential in turn.
     // Please note: credential_configuration_id must be present in metadata.credential_configurations_supported
     // whereas credential_identifiers are a transaction-unique set of dataset-identifiers
-    response.authorization_details = [{
+    const identifiers:{[configId:string]:string[]} = {};
+    for (const dataSet of Object.values(session.data.credentialDataSets ?? {}) as CredentialDataSet[]) {
+        (identifiers[dataSet.credentialId] ??= []).push(dataSet.id);
+    }
+    response.authorization_details = Object.entries(identifiers).map(([configId, ids]) => ({
         "type": "openid_credential",
-        "credential_identifiers": [session.data.credentialId],
-        "credential_configuration_id": session.data.credentialId
-    }];
+        "credential_identifiers": ids,
+        "credential_configuration_id": configId
+    }));
 
     // in ID2, nonces are retrieved from a nonce endpoint
     // DIIPv4 compliance: remove this section

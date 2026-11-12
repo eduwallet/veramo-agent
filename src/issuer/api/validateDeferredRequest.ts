@@ -3,7 +3,8 @@ const debug = Debug('issuer:api');
 import { Request } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
 import { ErrorCodes } from '#root/types/api';
-import { ApiState, DeferredSessionData } from '#root/types/internal';
+import { findDeferredByTransactionId } from '#root/issuer/lib/sessionDeferred';
+import { ApiState } from '#root/types/internal';
 import { Session } from '#root/database/entities/index';
 import { extractBearerToken } from '#root/issuer/api/validateCredentialRequest';
 import { verifyAccessTokenJWT } from '#root/issuer/lib/verifyAccessTokenJWT';
@@ -95,7 +96,7 @@ export async function validateDeferredRequest(issuer:Issuer, request:Request): P
         return error;
     }
 
-    const deferred = session.data?.deferred as DeferredSessionData|undefined;
+    const deferred = findDeferredByTransactionId(session, transactionId);
     if (!deferred
         || deferred.transactionId !== transactionId
         // the transaction_id is invalid once the credential has been collected

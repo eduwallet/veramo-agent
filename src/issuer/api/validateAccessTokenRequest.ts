@@ -117,11 +117,8 @@ export async function validateAccessTokenRequest(issuer:Issuer, tokenRequest:Tok
         for (const details of authDetails) {
             if (details.type == 'openid_credential') {
                 if (details.credential_configuration_id) {
-                    // TODO: update this when we want to support multiple credential issuance
-                    // What we need to do is gather all the credential_configuration_ids, check that
-                    // they are in the list of ids as indicated in the original offer and mark only
-                    // these ids as being valid for the session
-                    if (details.credential_configuration_id !== session.data.credentialId) {
+                    // the wallet can only request credentials that are part of this session
+                    if (!Object.values(session.data.credentialDataSets ?? {}).some((ds:any) => ds.credentialId === details.credential_configuration_id)) {
                         error.error = ErrorCodes.INVALID_REQUEST;
                         error.description = "Wallet requests unavailable credential id";
                         return error;

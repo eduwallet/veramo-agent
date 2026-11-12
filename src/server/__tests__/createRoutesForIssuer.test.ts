@@ -7,6 +7,7 @@ import { MetadataConfiguration } from '#root/types/api/metadata';
 import {
     accessToken,
     createCredentialOfferResponse,
+    createCredentialOfferV2Response,
     getCredential,
     getDeferredCredential,
     deferredTransactions,
@@ -30,6 +31,7 @@ import { getStatusListCredential } from '../endpoints/statuslists/getStatusListC
 vi.mock('../endpoints/index.js', () => ({
     accessToken: vi.fn(),
     createCredentialOfferResponse: vi.fn(),
+    createCredentialOfferV2Response: vi.fn(),
     getCredential: vi.fn(),
     getDeferredCredential: vi.fn(),
     deferredTransactions: vi.fn(),
@@ -105,6 +107,7 @@ test('creates the always-on endpoints with the right paths', async () => {
     expect(getIssueStatus).toHaveBeenCalledWith(issuer, '/api/check-offer');
     expect(listCredentials).toHaveBeenCalledWith(issuer, '/api/list-credentials');
     expect(revokeCredential).toHaveBeenCalledWith(issuer, '/api/revoke-credential');
+    expect(createCredentialOfferV2Response).toHaveBeenCalledWith(issuer, '/api/v2/create-offer', '/get-credential-offer');
     expect(deferredTransactions).toHaveBeenCalledWith(issuer, '/api/v2/deferred');
     // no deferred credentials configured
     expect(getDeferredCredential).not.toHaveBeenCalled();

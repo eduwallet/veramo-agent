@@ -29,12 +29,12 @@ function newSession(status:string, overrides:any = {}) {
     session.state = 'state-1';
     session.data = {
         status,
-        credentialId: 'slow',
-        deferred: {
+        credentialDataSets: { 'slow#0': { id: 'slow#0', credentialId: 'slow' } },
+        deferredTransactions: { 'tx-1': {
             transactionId: 'tx-1',
             status,
             credentialId: 'slow',
-            credentialDataSet: { credentialId: 'slow', credentialConfiguration: {}, data: { a: 1 } },
+            credentialDataSet: { id: 'slow#0', credentialId: 'slow', credentialConfiguration: {}, data: { a: 1 } },
             holders: [{ type: 'jwk', did: 'did:x', data: {} }],
             claims: { name: 'Test' },
             ttl: 3600,
@@ -42,7 +42,7 @@ function newSession(status:string, overrides:any = {}) {
             createdAt: Date.now(),
             expiresAt: Date.now() + 3600_000,
             ...overrides,
-        },
+        } },
     } as any;
     return session;
 }
@@ -91,7 +91,7 @@ test('issues the credential when ready and invalidates the transaction', async (
     const { handler } = setup(session);
     vi.mocked(issueCredential).mockImplementation(async (_issuer, _proof, deferred) => {
         deferred!.status = CredentialOfferStatus.CREDENTIAL_ISSUED;
-        session.data.deferred = deferred;
+        session.data.deferredTransactions['tx-1'] = deferred;
         return { credentials: [{ credential: 'jwt' }], notification_id: 'sess-1' };
     });
 
@@ -135,7 +135,7 @@ test('a failing issuance is a credential_request_denied and keeps the transactio
     await handler(request({ transaction_id: 'tx-1' }), res);
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe(ErrorCodes.CREDENTIAL_REQUEST_DENIED);
-    expect(session.data.deferred.status).toBe(CredentialOfferStatus.CREDENTIAL_READY);
+    expect(session.data.deferredTransactions['tx-1'].status).toBe(CredentialOfferStatus.CREDENTIAL_READY);
 });
 
 test.each([
@@ -151,7 +151,7 @@ test.each([
 
 test('rejects a session without a deferred transaction', async () => {
     const session = newSession(CredentialOfferStatus.CREDENTIAL_PENDING);
-    delete session.data.deferred;
+    session.data.deferredTransactions = {};
     const { handler } = setup(session);
     const res = response();
     await handler(request({ transaction_id: 'tx-1' }), res);

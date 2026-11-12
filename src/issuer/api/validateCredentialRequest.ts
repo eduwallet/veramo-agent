@@ -4,7 +4,7 @@ import { verifyAccessTokenJWT } from '#root/issuer/lib/verifyAccessTokenJWT';
 import { Request } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
 import { CredentialOfferStatus, ErrorCodes } from '#root/types/api';
-import { ApiState } from '#root/types/internal';
+import { ApiState, CredentialDataSet } from '#root/types/internal';
 import { CredentialRequest } from '#root/types/specification/credential_request';
 import { JWT } from '#root/jwt/JWT';
 import { getHolderKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromProofJwt';
@@ -113,52 +113,19 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     session.data.status = CredentialOfferStatus.CREDENTIAL_REQUEST_RECEIVED;
     await issuer.storeSession(session);
 
-    let credentialDataSet:any = null;
-    // spec ID-1: 8.2: credential_identifier: REQUIRED when an Authorization Details of type
-    // openid_credential was returned from the Token Response. 
-    if (request.body.credential_identifier) {
-        credentialDataSet = session.data?.credentialDataSets[request.body.credential_identifier];
-    }
-    // spec ID-1: 8.2: credential_configuration_id: REQUIRED if a credential_identifiers
-    // parameter was not returned from the Token Response as part of the authorization_details parameter.
-    // As we return authorization_details, this should never happen for proper wallets
-    // However, for authorization_code flow, we do not control the token endpoint, so we do not know what
-    // the wallet ay decide.
-    else if(request.body.credential_configuration_id) {
-        credentialDataSet = session.data?.credentialDataSets[request.body.credential_configuration_id];
-    }
-
-    // the following overrides if the credential request refers to incorrect datasets
-    // However, this only works if we have a single credential to hand out
+    const credentialDataSet = findCredentialDataSet(session, request.body);
     if (!credentialDataSet) {
-        // TODO: update this when we want to support multiple credential issuance
-        // see if we have a set based on the session credential id
-        credentialDataSet = session.data?.credentialDataSets[session.data?.credentialId];
+        debug("invalid because no data set could be found for the request", request.body.credential_identifier, request.body.credential_configuration_id);
+        error.error = ErrorCodes.INVALID_CREDENTIAL_REQUEST;
+        error.description = "Credential type not found";
+        return error;
     }
 
-    if (!credentialDataSet) {
-    // TODO: update this when we want to support multiple credential issuance
-        // if we did not get a credentialDataSet back, we rely on the id as documented in the session
-        const credentialConfiguration = issuer.getCredentialConfiguration(session.data?.credentialId);
-        if (credentialConfiguration === null) {
-            debug("invalid because credential configuration could not be found", session.data?.credentialId);
-            error.error = ErrorCodes.INVALID_REQUEST;
-            error.description = "Credential type not found";
-            return error;
-        }
-
-        if (request.body.format && credentialConfiguration.format !== request.body.format) {
-            debug("invalid because the requested format is not supported by this credential", request.body.format);
-            error.error = ErrorCodes.INVALID_REQUEST;
-            error.description = "Requested credential format not supported";
-            return error;
-        }
-        debug("Creating request credential data set based on session data instead of request data");
-        credentialDataSet = {
-            credentialId: session.data?.credentialId,
-            credentialConfiguration,
-            data: {} // we hope the credential implementation can determine the required values itself
-        };
+    if (request.body.format && credentialDataSet.credentialConfiguration?.format !== request.body.format) {
+        debug("invalid because the requested format is not supported by this credential", request.body.format);
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Requested credential format not supported";
+        return error;
     }
 
     const proofResults = await validateCredentialRequestProofs(issuer, session, request.body);
@@ -174,6 +141,33 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     error.data = { session, credentialDataSet, proofResults: proofResults.data};
     debug("credential request is valid");
     return error;
+}
+
+/**
+ * Find the data set a credential request refers to. A session can contain multiple data sets,
+ * so we never guess when the request is ambiguous.
+ */
+function findCredentialDataSet(session:Session, body:CredentialRequest):CredentialDataSet|null
+{
+    const dataSets = Object.values(session.data?.credentialDataSets ?? {}) as CredentialDataSet[];
+
+    // spec ID-1: 8.2: credential_identifier: REQUIRED when an Authorization Details of type
+    // openid_credential was returned from the Token Response.
+    if (body.credential_identifier) {
+        return dataSets.find((ds) => ds.id === body.credential_identifier) ?? null;
+    }
+
+    // spec ID-1: 8.2: credential_configuration_id: REQUIRED if a credential_identifiers
+    // parameter was not returned from the Token Response as part of the authorization_details parameter.
+    // For authorization_code flow, we do not control the token endpoint, so we do not know what
+    // the wallet may decide. Take the first data set of this configuration that was not yet issued.
+    if (body.credential_configuration_id) {
+        const matching = dataSets.filter((ds) => ds.credentialId === body.credential_configuration_id);
+        return matching.find((ds) => !ds.issued) ?? matching[0] ?? null;
+    }
+
+    // without any reference, the request is only unambiguous for a session with a single data set
+    return dataSets.length === 1 ? dataSets[0] : null;
 }
 
 async function validateCredentialRequestProofs(issuer:Issuer, session:Session, credentialRequest:CredentialRequest): Promise<ApiState>

@@ -1,3 +1,4 @@
+import { getDeferredTransactions, createTransactionKey } from '#root/issuer/lib/sessionDeferred';
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { Request, Response } from 'express'
 import { Issuer } from '#root/issuer/Issuer';
@@ -20,14 +21,23 @@ export function getIssueStatus(issuer:Issuer, checkPath:string) {
                     });
                 }
     
+                const deferred = getDeferredTransactions(session);
+                const reason = deferred.find((d) => d.reason)?.reason;
                 const authStatusBody: IssueStatusResponse = {
                     createdAt: session.data.createdAt,
                     lastUpdatedAt: session.data.lastUpdatedAt,
                     status: session.data.status,
                     ...(session.data.requestResponseData && { requests: session.data.requestResponseData }),
                     ...(session.data.uuid && { uuid: session.data.uuid }),
-                    ...(session.data.deferred && { expiresAt: session.data.deferred.expiresAt }),
-                    ...(session.data.deferred?.reason && { reason: session.data.deferred.reason })
+                    ...(deferred.length && { expiresAt: Math.max(...deferred.map((d) => d.expiresAt)) }),
+                    ...(reason && { reason }),
+                    ...(deferred.length && { deferred: deferred.map((d) => ({
+                        id: createTransactionKey(session, d),
+                        credential_configuration_id: d.credentialId,
+                        status: d.status,
+                        expiresAt: d.expiresAt,
+                        ...(d.reason && { reason: d.reason })
+                    })) })
                 }
                 return response.json(authStatusBody);
             } 

@@ -16,16 +16,18 @@ export interface IssuerSessionData {
     credential: CredentialResult;
     principalCredentialId: string;
     credentialType: string;
-    credentialId: string;
-    credentialDataSets:StringKeyedObject;
+    // the data sets of this session, keyed by dataset identifier (see CredentialDataSet.id). A session
+    // can offer multiple credentials, each with its own data set
+    credentialDataSets:{[datasetId:string]:CredentialDataSet};
     pinCode?:string;
     preAuthorizedCode?:string;
     issuerState?:string;
     requestResponseData?:any;
-    deferred?:DeferredSessionData;
+    // deferred transactions of this session, keyed by transaction id. Every deferred data set has its own
+    deferredTransactions?:{[transactionId:string]:DeferredSessionData};
 }
 
-// State of a deferred issuance transaction, stored in the session. The status is one of
+// State of a deferred issuance transaction (one per deferred data set), stored in the session. The status is one of
 // CredentialOfferStatus.CREDENTIAL_PENDING, CREDENTIAL_READY, CREDENTIAL_DENIED or CREDENTIAL_ISSUED
 export interface DeferredSessionData {
     transactionId: string;
@@ -67,11 +69,16 @@ export interface CreateCredentialData {
 }
 
 export interface CredentialDataSet {
+    // transaction-unique identifier of this data set: <credential_configuration_id>#<index>. This is the
+    // credential_identifier the wallet receives in the token response authorization_details
+    id: string;
+    // the credential configuration id (key in the credential_configurations_supported metadata)
     credentialId: string;
     credentialConfiguration:CredentialConfiguration;
     data: StringKeyedObject;
     credential?:any;
     callback?:string|null;
+    issued?:boolean;            // set when a credential was issued for this data set
 }
 
 export interface HolderData {

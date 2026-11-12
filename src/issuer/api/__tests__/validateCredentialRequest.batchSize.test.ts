@@ -27,9 +27,8 @@ function newSession() {
     session.expirationDate = new Date(Date.now() + 60000);
     session.data = {
         status: CredentialOfferStatus.ACCESS_TOKEN_CREATED,
-        credentialId: 'cred-1',
         credentialDataSets: {
-            'cred-1': { credentialId: 'cred-1', credentialConfiguration: { format: 'jwt_vc_json' }, data: {} },
+            'cred-1#0': { id: 'cred-1#0', credentialId: 'cred-1', credentialConfiguration: { format: 'jwt_vc_json' }, data: {} },
         },
     } as any;
     return session;
