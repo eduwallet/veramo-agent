@@ -16,6 +16,9 @@ export interface IssuerSessionData {
     // the data sets of this session, keyed by dataset identifier (see CredentialDataSet.id). A session
     // can offer multiple credentials, each with its own data set
     credentialDataSets:{[datasetId:string]:CredentialDataSet};
+    // the credentials issued in this session, one entry per issued credential (a batch results in
+    // multiple entries for the same data set)
+    issuedCredentials?:IssuedCredential[];
     pinCode?:string;
     preAuthorizedCode?:string;
     issuerState?:string;
@@ -76,6 +79,12 @@ export interface CredentialDataSet {
     credential?:any;
     callback?:string|null;
     issued?:boolean;            // set when a credential was issued for this data set
+}
+
+export interface IssuedCredential {
+    uuid: string;                           // the uuid of the credential, as used by the revocation api
+    dataset_id: string;                     // the data set (credential_identifier) it was issued for
+    credential_configuration_id: string;
 }
 
 export interface HolderData {

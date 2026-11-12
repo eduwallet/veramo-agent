@@ -185,7 +185,7 @@ users want to revoke or re-issue/refresh credentials.:
 }
 ```
 
-The `uuid` value points to a specific credential issuance and is returned by the issuer to the front-end application after successful issuance. Please note that during issuance multiple credentials may be provided to the wallet. Each credential must be revoked in turn in that case, there is no support to mass revoke credentials.
+The `uuid` value points to a specific credential issuance and is returned by the issuer to the front-end application in the `credentials` attribute of the `check-offer` response after successful issuance. Please note that during issuance multiple credentials may be provided to the wallet. Each credential must be revoked in turn in that case, there is no support to mass revoke credentials.
 
 The endpoint returns a JSON object containing a `status` attribute indicating the status of the revocation:
 

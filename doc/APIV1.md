@@ -82,7 +82,13 @@ This returns an object as follows:
     "lastUpdatedAt":1725356725408,
     "status":"CREDENTIAL_ISSUED",
     "requests": <optional request data object>,
-    "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9",
+    "credentials": [
+        {
+            "uuid": "64d37ada-5671-4d6d-b74d-031b925fe2c9",
+            "dataset_id": "GenericCredential#0",
+            "credential_configuration_id": "GenericCredential"
+        }
+    ],
     "expiresAt": 1725360325408,
     "reason": "optional reason for denying a deferred credential"
 }
@@ -92,8 +98,7 @@ The `expiresAt` (epoch milliseconds) and `reason` attributes are only present fo
 
 The `requests` object contains data about the incoming and outgoing requests for this issuance state. It can be used for debugging purposes to see what kind of data flows in and out in the protocol.
 
-The `uuid` attribute is only available when an actual credential was issued to the wallet. This `uuid` can be used by the issuing front-end
-to interface with the revocation API (`POST <base URL>/<tenant>/api/revoke-credential`).
+The `credentials` attribute is only available when at least one credential was issued to the wallet. It lists every credential issued so far: an offer with multiple credentials, or a request with multiple proofs, results in multiple entries. Every entry has the `uuid` of the credential, the `dataset_id` of the offered credential it belongs to (`<credential_configuration_id>#<index>`, see [APIV2.md](./APIV2.md#create-offer)) and its `credential_configuration_id`. The `uuid` can be used by the issuing front-end to interface with the revocation API (`POST <base URL>/<tenant>/api/revoke-credential`). For an offer created with the v1 API, the `dataset_id` is `<credential_configuration_id>#0`.
 
 The `status` attribute can have the following values:
 

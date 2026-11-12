@@ -28,7 +28,7 @@ export function getIssueStatus(issuer:Issuer, checkPath:string) {
                     lastUpdatedAt: session.data.lastUpdatedAt,
                     status: session.data.status,
                     ...(session.data.requestResponseData && { requests: session.data.requestResponseData }),
-                    ...(session.data.uuid && { uuid: session.data.uuid }),
+                    ...(session.data.issuedCredentials?.length && { credentials: session.data.issuedCredentials }),
                     ...(deferred.length && { expiresAt: Math.max(...deferred.map((d) => d.expiresAt)) }),
                     ...(reason && { reason }),
                     ...(deferred.length && { deferred: deferred.map((d) => ({

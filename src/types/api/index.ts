@@ -14,7 +14,8 @@ export interface IssueStatusResponse {
     status: CredentialOfferStatus;
     error?: string;
     clientId?: string;
-    uuid?: string;
+    // the credentials issued so far, with the uuid to use for the revocation api
+    credentials?: { uuid: string, dataset_id: string, credential_configuration_id: string }[];
     expiresAt?: number;  // deferred credentials: epoch milliseconds when the transaction expires
     reason?: string;     // deferred credentials: the reason the credential was denied
     // deferred credentials: the state of every deferred transaction of the offer

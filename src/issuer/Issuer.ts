@@ -5,7 +5,7 @@ import moment from "moment";
 import { Router } from "express";
 import { StatusListCredentialData, StatusListOptions } from "#root/types/internal/statuslists";
 import { StatusListRevocationState } from '#root/types/api';
-import { IssuerConfiguration } from '#root/types/internal';
+import { CredentialDataSet, IssuerConfiguration } from '#root/types/internal';
 import { JWT } from '#root/jwt/JWT';
 import { ExtendableCredentialConfiguration, MetadataConfiguration } from '#root/types/api/metadata';
 import { CredentialConfiguration, CredentialConfigurations,  Metadata } from '#root/types/specification/metadata';
@@ -231,7 +231,7 @@ export class Issuer
         }
     }
 
-    public async storeCredential(session:Session, credential:Credential)
+    public async storeCredential(session:Session, credential:Credential, dataSet:CredentialDataSet)
     {
         const dbConnection = await getDbConnection();
         const repo = dbConnection.getRepository(CredentialEntity);
@@ -265,7 +265,11 @@ export class Issuer
         }
         dbCred.status='ISSUED'; // initial status
         await repo.save(dbCred);
-        session.data.uuid = dbCred.uuid;
+        session.data.issuedCredentials = [...(session.data.issuedCredentials ?? []), {
+            uuid: dbCred.uuid,
+            dataset_id: dataSet.id,
+            credential_configuration_id: dataSet.credentialId
+        }];
     }
 
     public async clearExpired()
