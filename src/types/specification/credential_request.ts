@@ -10,7 +10,6 @@ export type CredentialRequest = CredentialRequestBase &
     | CredentialRequestSdJwt);
 
 export interface CredentialRequestBase {
-    format?:string;  // REQUIRED when credential_identifiers was NOT returned from the token response
     proof?: ProofOfPossession;
     proofs?: ProofOfPossessionTypes;
     credential_identifier?: string;

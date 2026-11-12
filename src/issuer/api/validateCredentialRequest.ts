@@ -121,13 +121,6 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         return error;
     }
 
-    if (request.body.format && credentialDataSet.credentialConfiguration?.format !== request.body.format) {
-        debug("invalid because the requested format is not supported by this credential", request.body.format);
-        error.error = ErrorCodes.INVALID_REQUEST;
-        error.description = "Requested credential format not supported";
-        return error;
-    }
-
     const proofResults = await validateCredentialRequestProofs(issuer, session, request.body);
     // if we get a single ApiState back, it is the error on the proof that fails
     if (!Array.isArray(proofResults.data) && proofResults.error && proofResults.error != ErrorCodes.NO_ERROR) {
@@ -150,6 +143,10 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 function findCredentialDataSet(session:Session, body:CredentialRequest):CredentialDataSet|null
 {
     const dataSets = Object.values(session.data?.credentialDataSets ?? {}) as CredentialDataSet[];
+
+    // Note: spec 1.0 8.2 states that credential_identifier and credential_configuration_id MUST NOT be
+    // used together. This implementation is lenient: if both are present, the credential_identifier
+    // takes precedence and the credential_configuration_id is ignored, instead of rejecting the request.
 
     // spec ID-1: 8.2: credential_identifier: REQUIRED when an Authorization Details of type
     // openid_credential was returned from the Token Response.
