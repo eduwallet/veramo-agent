@@ -99,3 +99,18 @@ test('deferred and non-deferred credentials can be offered together, without com
     expect(validateCreateCredentialOfferV2(issuer, { grant: 'pre-authorized_code', credentials }).error).toBe(ErrorCodes.NO_ERROR);
     expect(issuer.checkCredentialData).toHaveBeenCalledTimes(1);
 });
+
+test.each([
+    ['not a string', 5],
+    ['not a url', 'callback'],
+    ['unsupported protocol', 'file:///etc/passwd'],
+    ['empty', ''],
+])('rejects a credential_callback that is %s', (_name, credential_callback) => {
+    const request = { grant: 'authorization_code', credentials: [{ credential_configuration_id: 'A', credential_callback }] };
+    expect(validateCreateCredentialOfferV2(newIssuer(), request as any).error).toBe(ErrorCodes.INVALID_REQUEST);
+});
+
+test('accepts an https credential_callback', () => {
+    const request = { grant: 'authorization_code', credentials: [{ credential_configuration_id: 'A', credential_callback: 'https://example.com/hook?x=1' }] };
+    expect(validateCreateCredentialOfferV2(newIssuer(), request as any).error).toBe(ErrorCodes.NO_ERROR);
+});

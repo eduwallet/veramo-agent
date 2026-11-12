@@ -5,6 +5,7 @@ import { ErrorCodes } from '#root/types/api';
 import { CreateCredentialOfferRequestV2 } from '#root/types/api/credentialOffer';
 import { ApiState } from '#root/types/internal';
 import { PRE_AUTHORIZED_CODE, AUTHORIZATION_CODE_GRANT } from '#root/types/specification/credential_offer';
+import { isValidCallbackUrl } from '#root/issuer/lib/isValidCallbackUrl';
 import { claimsToData, isValidClaim } from '#root/issuer/lib/claimsToData';
 
 function invalid(description:string):ApiState
@@ -54,6 +55,10 @@ export function validateCreateCredentialOfferV2(issuer:Issuer, request:CreateCre
         }
         if (credential.claims !== undefined && (!Array.isArray(credential.claims) || !credential.claims.every(isValidClaim))) {
             return invalid("Invalid claims for credential " + id);
+        }
+
+        if (credential.credential_callback !== undefined && !isValidCallbackUrl(credential.credential_callback)) {
+            return invalid("Invalid credential_callback for credential " + id + ": it must be an http(s) URL");
         }
 
         // for the pre-authorized code flow, the proper credential data should be present. For deferred

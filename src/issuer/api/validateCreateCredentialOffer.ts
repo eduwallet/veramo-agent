@@ -4,6 +4,7 @@ import { Issuer } from "#root/issuer/Issuer";
 import { ErrorCodes } from '#root/types/api';
 import { CreateCredentialOfferRequest } from "#root/types/api/credentialOffer";
 import { ApiState } from "#root/types/internal";
+import { isValidCallbackUrl } from '#root/issuer/lib/isValidCallbackUrl';
 import { PRE_AUTHORIZED_CODE_GRANT } from '#root/types/specification/credential_offer';
 
 export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):ApiState
@@ -38,6 +39,13 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
         debug("invalid because requested credential does not exists on issuer");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Credential type not supported";
+        return error;
+    }
+
+    if (request.credential_callback !== undefined && !isValidCallbackUrl(request.credential_callback)) {
+        debug("invalid because the credential callback is not an http(s) URL");
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = "Invalid credential_callback: it must be an http(s) URL";
         return error;
     }
 
