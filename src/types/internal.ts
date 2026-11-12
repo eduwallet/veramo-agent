@@ -1,7 +1,7 @@
 import { ErrorCodes } from '#root/types/api';
 import { StringKeyedObject } from '#root/types/index';
 import { CredentialOffer } from '#root/types/specification/credential_offer';
-import { CredentialConfiguration, CredentialFormat } from '#root/types/specification/metadata';
+import { CredentialConfiguration } from '#root/types/specification/metadata';
 import { Session } from '#root/database/entities/index';
 import { CryptoKey } from '@muisit/cryptokey';
 
@@ -13,9 +13,6 @@ export interface IssuerSessionData {
     status: string;
     credentialOffer:CredentialOffer;
     metaData: StringKeyedObject;
-    credential: CredentialResult;
-    principalCredentialId: string;
-    credentialType: string;
     // the data sets of this session, keyed by dataset identifier (see CredentialDataSet.id). A session
     // can offer multiple credentials, each with its own data set
     credentialDataSets:{[datasetId:string]:CredentialDataSet};
@@ -97,10 +94,4 @@ export interface CredentialProofData {
     session:Session;
     credentialDataSet:CredentialDataSet;
     proofResults:SingleProofData[];
-}
-
-export interface CredentialResult {
-    credential: any;
-    format?: CredentialFormat;
-    signCallback?: any // If the data supplier wants to actually sign directly
 }

@@ -53,9 +53,6 @@ export async function issueCredential(issuer:Issuer, proofData:CredentialProofDa
             debug("error creating actual credential");
             throw Error('Could not create a credential');
         }
-        session.data.credential = credential.credential;
-        session.data.principalCredentialId = credential.principalId || '';
-        session.data.credentialType = credential.type;
 
         debug("storing credential in the database");
         await issuer.storeCredential(session, credential);
