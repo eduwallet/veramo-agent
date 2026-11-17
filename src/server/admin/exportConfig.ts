@@ -120,6 +120,7 @@ function issuerToJson(obj:Issuer):string
         did: obj.did,
         ...(obj.authorizationEndpoint && {authorizationEndpoint: obj.authorizationEndpoint}),
         ...(obj.tokenEndpoint && {tokenEndpoint: obj.tokenEndpoint}),
+        ...(obj.embeddedAuthorizationServer && {embeddedAuthorizationServer: JSON.parse(obj.embeddedAuthorizationServer)}),
         ...(obj.clientId && {clientId: obj.clientId}),
         ...(obj.clientSecret && {clientSecret: obj.clientSecret}),
         ...(obj.statuslists && {statusLists: JSON.parse(obj.statuslists)}),

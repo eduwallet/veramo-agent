@@ -64,6 +64,7 @@ export interface IssuerScheme {
     adminToken: string;
     authorizationEndpoint?:string;
     tokenEndpoint?: string;
+    embeddedAuthorizationServer?:any;
     clientId?:string;
     clientSecret?:string;
     metadata?:any;
@@ -81,6 +82,7 @@ export async function issuerToScheme(issuer:Issuer, doFull = false) {
         adminToken: issuer.adminToken,
         authorizationEndpoint: issuer.authorizationEndpoint,
         tokenEndpoint: issuer.tokenEndpoint,
+        ...(issuer.embeddedAuthorizationServer && {embeddedAuthorizationServer: JSON.parse(issuer.embeddedAuthorizationServer)}),
         clientId: issuer.clientId,
         clientSecret: issuer.clientSecret,
         saved: moment(issuer.saveDate).format('YYYY-MM-DD HH:mm:ss'),

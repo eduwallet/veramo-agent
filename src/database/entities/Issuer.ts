@@ -49,6 +49,10 @@ export class Issuer extends BaseEntity {
     @Column({ type: 'text', nullable: true})
     statuslists?: string
 
+    // JSON encoded EmbeddedAuthorizationServerConfiguration
+    @Column({ type: 'text', nullable: true})
+    embeddedAuthorizationServer?: string
+
     @BeforeInsert()
     setSaveDate() {
         this.saveDate = new Date()

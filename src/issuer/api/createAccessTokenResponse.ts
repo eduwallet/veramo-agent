@@ -10,13 +10,13 @@ import { CredentialDataSet } from '#root/types/internal';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
 
-export async function createAccessTokenResponse(issuer:Issuer, session:Session, jkt?:string) {
+export async function createAccessTokenResponse(issuer:Issuer, session:Session, jkt?:string, tokenClaims?:{[x:string]:any}) {
     debug("creating access token");
     session.data.lastUpdatedAt = Date.now();
     session.data.status = CredentialOfferStatus.ACCESS_TOKEN_CREATED;
     await issuer.storeSession(session);
 
-    const access_token = await generateAccessToken(issuer, session, jkt);
+    const access_token = await generateAccessToken(issuer, session, jkt, tokenClaims);
     debug("signed token", access_token);
     // https://www.rfc-editor.org/rfc/rfc6749.html#section-5
     // https://www.rfc-editor.org/rfc/rfc9449#section-6 - token_type is 'DPoP' when the token
@@ -56,7 +56,7 @@ export async function createAccessTokenResponse(issuer:Issuer, session:Session, 
     return response
 }
   
-async function generateAccessToken(issuer:Issuer, session:Session, jkt?:string)
+async function generateAccessToken(issuer:Issuer, session:Session, jkt?:string, tokenClaims?:{[x:string]:any})
 {
     debug("generating access token");
     // JWT uses seconds for iat and exp
@@ -73,6 +73,8 @@ async function generateAccessToken(issuer:Issuer, session:Session, jkt?:string)
             // https://www.rfc-editor.org/rfc/rfc9449#section-6 - binds the access token to the
             // DPoP proof key by embedding its JWK thumbprint
             ...(jkt && { cnf: { jkt } }),
+            // claims of the embedded authorization server (iss, aud, exp, jti, client_id) replace the defaults
+            ...(tokenClaims ?? {}),
     };
     debug("access token content", jwt);
     return await issuer.signToken(jwt);

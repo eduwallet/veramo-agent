@@ -38,6 +38,7 @@ async function readFromDB()
                 adminToken: issuer.adminToken,
                 authorizationEndpoint: issuer.authorizationEndpoint,
                 tokenEndpoint: issuer.tokenEndpoint,
+                ...(issuer.embeddedAuthorizationServer && {embeddedAuthorizationServer: JSON.parse(issuer.embeddedAuthorizationServer)}),
                 did: issuer.did,
             }, JSON.parse(issuer.metadata ?? '{}'));
 
@@ -119,6 +120,7 @@ async function readFromFile()
                     dbIssuer.baseUrl = config.baseUrl;
                     dbIssuer.authorizationEndpoint = config.authorizationEndpoint;
                     dbIssuer.tokenEndpoint = config.tokenEndpoint;
+                    dbIssuer.embeddedAuthorizationServer = config.embeddedAuthorizationServer ? JSON.stringify(config.embeddedAuthorizationServer) : undefined;
                     dbIssuer.clientId = config.clientId;
                     dbIssuer.clientSecret = config.clientSecret;
                     dbIssuer.metadata = JSON.stringify(metadata);

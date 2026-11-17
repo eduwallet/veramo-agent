@@ -63,7 +63,10 @@ export interface TxCodeRequestV2 {
 }
 
 export interface CreateCredentialOfferRequestV2 {
-    grant: 'pre-authorized_code' | 'authorization_code';
+    // optional when a dcql query is present: that implies authorization_code
+    grant?: 'pre-authorized_code' | 'authorization_code';
+    // a DCQL query (OpenID4VP): its presence starts a verification during issuance (embedded authorization server)
+    dcql?: object;
     tx_code?: TxCodeRequestV2;              // only for the pre-authorized_code grant
     credentials: CredentialRequestV2[];
     credentialMetadata?: StringKeyedObject;

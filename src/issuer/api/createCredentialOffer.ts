@@ -21,6 +21,8 @@ export interface OfferInput {
     grants: APIGrants;
     dataSets: OfferDataSetInput[];
     credentialMetadata?: StringKeyedObject;
+    // verification during issuance: the DCQL query that the wallet has to answer before it gets an access token
+    presentation?: { dcql: object };
 }
 
 /**
@@ -91,6 +93,9 @@ export async function createCredentialOfferForDataSets(issuer:Issuer, input:Offe
     session.data.status = CredentialOfferStatus.OFFER_CREATED;
     session.data.credentialOffer = credentialOffer;
     session.data.metaData = input.credentialMetadata || {};
+    if (input.presentation) {
+        session.data.authorization = { presentation: { dcql: input.presentation.dcql } };
+    }
 
     // store the requested data sets, each with its own identifier. The wallet requests these
     // one by one using the credential_identifiers of the access token response

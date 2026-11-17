@@ -43,6 +43,24 @@ export interface DeferredSessionData {
     expiresAt: number;                        // epoch milliseconds
 }
 
+export interface EmbeddedAuthorizationServerClient {
+    clientId: string;
+    redirectUris: string[];
+}
+
+// see doc/DESIGN_PRESENTATION_DURING_ISSUANCE.md, 4.1
+export interface EmbeddedAuthorizationServerConfiguration {
+    enabled: boolean;
+    mode?: 'in-app' | 'redirect' | 'both';
+    verifier?: {
+        url?: string;
+        verifierToken?: string;
+    };
+    clients?: EmbeddedAuthorizationServerClient[];
+    authSessionTtl?: number;    // seconds
+    codeTtl?: number;           // seconds
+}
+
 export interface IssuerConfiguration {
     id?: number;
     name:string;
@@ -52,6 +70,7 @@ export interface IssuerConfiguration {
     adminToken?:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
+    embeddedAuthorizationServer?:EmbeddedAuthorizationServerConfiguration;
     did:string;
     key?:string;
     usesNonces?:boolean;

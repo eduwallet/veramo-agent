@@ -42,7 +42,7 @@ export async function validateDeferredRequest(issuer:Issuer, request:Request): P
 
         const usesAuthorisationCodeFlow = session ? sessionUsesAuthorisationCodeFlow(session) : issuer.usesAuthorisedCodeFlow();
         if (usesAuthorisationCodeFlow) {
-            if (issuer.options?.authorizationEndpoint !== tokenPayload?.iss) {
+            if (issuer.authorizationServerIdentifier() !== tokenPayload?.iss) {
                 debug("invalid because the access token issuer is not in our AS list", tokenPayload?.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
@@ -70,7 +70,7 @@ export async function validateDeferredRequest(issuer:Issuer, request:Request): P
 
     // https://www.rfc-editor.org/rfc/rfc9449: see validateCredentialRequest
     const jkt = tokenPayload?.cnf?.jkt;
-    if (!sessionUsesAuthorisationCodeFlow(session) && jkt) {
+    if ((!sessionUsesAuthorisationCodeFlow(session) || issuer.usesEmbeddedAS()) && jkt) {
         try {
             const result = await validateDPoPProof(issuer, request.header('DPoP'), 'POST', issuer.options.baseUrl + '/deferred', jwt);
             if (!result || result.jkt !== jkt) {

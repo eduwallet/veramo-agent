@@ -46,7 +46,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (usesAuthorisationCodeFlow) {
             // the issuer should be one of our authorization servers
-            if (issuer.options?.authorizationEndpoint !== data?.payload?.iss) {
+            if (issuer.authorizationServerIdentifier() !== data?.payload?.iss) {
                 debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
                 error.error = ErrorCodes.INVALID_REQUEST;
                 error.description = "Unauthorised";
@@ -65,7 +65,9 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
 
         if (session) {
             debug('setting session access data to ', data?.payload);
-            session.data.accessData = data?.payload;
+            // merge the verified claims of a presentation during issuance (keyed by DCQL credential id) with the
+            // token claims. The token claims come last: presented data can never replace them
+            session.data.accessData = { ...(session.data.presentationData ?? {}), ...(data?.payload ?? {}) };
         }
 
         if (!usesAuthorisationCodeFlow && session && session.data?.status != CredentialOfferStatus.ACCESS_TOKEN_CREATED) {
@@ -91,7 +93,7 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
     // cnf.jkt claim, so this only applies to the pre-authorized code flow, and only when the
     // wallet actually used DPoP when requesting the access token.
     const jkt = tokenPayload?.cnf?.jkt;
-    if (!sessionUsesAuthorisationCodeFlow(session) && jkt) {
+    if ((!sessionUsesAuthorisationCodeFlow(session) || issuer.usesEmbeddedAS()) && jkt) {
         const dpopHeader = request.header('DPoP');
         try {
             const result = await validateDPoPProof(issuer, dpopHeader, 'POST', issuer.options.baseUrl + '/credentials', jwt);

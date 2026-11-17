@@ -27,7 +27,7 @@ export async function verifyAccessTokenJWT(token:string, issuer:Issuer)
     catch {
         debug("access token is opaque or does not verify against the issuer key");
         // if we have any authorisation server defined, see if we can find additional data there
-        if (issuer.usesAuthorisedCodeFlow()) {
+        if (issuer.usesExternalAuthorizationServer()) {
             debug("there are authorisation servers configured, see if we can get data there");
             const userdata = await issuer.retrieveASIssuerIntrospection(token);
             debug("userdata", userdata);

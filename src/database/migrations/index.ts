@@ -11,6 +11,7 @@ import { EncKey1762521078111 } from './8. EncKey.js';
 import { OriginalHolder1769001656333 } from './10.OriginalHolder.js';
 import { Statuslists1769001656334 } from './11.Statuslists.js';
 import { NonceUniqueIndex1791902734377 } from './12.NonceUniqueIndex.js';
+import { EmbeddedAS1792000000000 } from './13.EmbeddedAS.js';
 
 export * from './migration-functions.js'
 
@@ -27,5 +28,6 @@ export const migrations = [
   EncKey1762521078111,
   OriginalHolder1769001656333,
   Statuslists1769001656334,
-  NonceUniqueIndex1791902734377
+  NonceUniqueIndex1791902734377,
+  EmbeddedAS1792000000000
 ]

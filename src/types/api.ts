@@ -31,6 +31,9 @@ export enum CredentialOfferStatus {
     ACCESS_TOKEN_REQUESTED = 'ACCESS_TOKEN_REQUESTED',
     ACCESS_TOKEN_CREATED = 'ACCESS_TOKEN_CREATED',
     CREDENTIAL_REQUEST_RECEIVED = 'CREDENTIAL_REQUEST_RECEIVED',
+    PRESENTATION_REQUESTED = 'PRESENTATION_REQUESTED', // authorization_code: waiting for the wallet to present credentials
+    PRESENTATION_VERIFIED = 'PRESENTATION_VERIFIED',   // authorization_code: presentation accepted, authorization code issued
+    AUTHORIZATION_DENIED = 'AUTHORIZATION_DENIED',     // authorization_code: presentation rejected
     CREDENTIAL_PENDING = 'CREDENTIAL_PENDING', // deferred: waiting for the back-office to supply/approve the claims
     CREDENTIAL_READY = 'CREDENTIAL_READY',     // deferred: approved, waiting for the wallet to collect the credential
     CREDENTIAL_DENIED = 'CREDENTIAL_DENIED',   // deferred: rejected by the back-office

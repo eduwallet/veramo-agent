@@ -7,6 +7,7 @@ import { ApiState } from '#root/types/internal';
 import { PRE_AUTHORIZED_CODE, AUTHORIZATION_CODE_GRANT } from '#root/types/specification/credential_offer';
 import { isValidCallbackUrl } from '#root/issuer/lib/isValidCallbackUrl';
 import { claimsToData, isValidClaim } from '#root/issuer/lib/claimsToData';
+import { applyPresentationDefaults, validatePresentationRequest } from '#root/as/dcqlOffer';
 
 function invalid(description:string):ApiState
 {
@@ -21,6 +22,8 @@ export function validateCreateCredentialOfferV2(issuer:Issuer, request:CreateCre
     if (!request || typeof(request) != 'object') {
         return invalid("Missing request");
     }
+    // a dcql query implies the authorization_code grant
+    applyPresentationDefaults(request);
     if (request.grant !== PRE_AUTHORIZED_CODE && request.grant !== AUTHORIZATION_CODE_GRANT) {
         return invalid("Invalid or missing grant");
     }
@@ -66,6 +69,11 @@ export function validateCreateCredentialOfferV2(issuer:Issuer, request:CreateCre
         if (request.grant === PRE_AUTHORIZED_CODE && !issuer.getDeferredSettings(id) && !issuer.checkCredentialData(id, claimsToData(credential.claims ?? []))) {
             return invalid("Missing required claims for credential " + id);
         }
+    }
+
+    const presentationError = validatePresentationRequest(issuer, request);
+    if (presentationError) {
+        return invalid(presentationError);
     }
 
     debug("create credential offer v2 is valid");

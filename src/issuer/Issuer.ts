@@ -28,6 +28,7 @@ import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertCon
 import { StatusListType } from '#root/statusLists/StatusListType';
 import { MAX_BATCH_SIZE } from '#root/environment';
 import { DeferredSettings, getDeferredSettings, validateDeferredConfiguration } from './lib/deferredConfiguration.js';
+import { EmbeddedASSettings, getEmbeddedASSettings, validateEmbeddedASConfiguration } from '#root/as/config';
 
 export class Issuer
 {
@@ -42,6 +43,8 @@ export class Issuer
     public nonceStates:NonceManager;
     public dpopNonceStates:NonceManager;
     public dpopJtiStates:NonceManager;
+    // atomic single-use claims of authorisation sessions and codes of the embedded authorization server
+    public asClaims:NonceManager;
     public serverKeys:StringKeyedObject;
     public serverMetadata:any;
     public usesNonces:boolean;
@@ -56,6 +59,7 @@ export class Issuer
         this.nonceStates = new NonceManager(this.name);
         this.dpopNonceStates = new NonceManager(this.name + '#dpop-nonce');
         this.dpopJtiStates = new NonceManager(this.name + '#dpop-jti');
+        this.asClaims = new NonceManager(this.name + '#as-claim');
         this.serverKeys = {};
         this.usesNonces = _options.usesNonces ?? true;
     }
@@ -72,7 +76,33 @@ export class Issuer
 
     public usesAuthorisedCodeFlow()
     {
-        return this.options.authorizationEndpoint && this.options.authorizationEndpoint.length;
+        return this.usesExternalAuthorizationServer() || this.usesEmbeddedAS();
+    }
+
+    public usesExternalAuthorizationServer():boolean
+    {
+        return !!(this.options.authorizationEndpoint && this.options.authorizationEndpoint.length);
+    }
+
+    public usesEmbeddedAS():boolean
+    {
+        return !!this.options.embeddedAuthorizationServer?.enabled;
+    }
+
+    public embeddedASSettings():EmbeddedASSettings|null
+    {
+        return getEmbeddedASSettings(this.options);
+    }
+
+    /**
+     * The identifier (issuer) of the authorization server that issues the access tokens of the authorization_code flow
+     */
+    public authorizationServerIdentifier():string|undefined
+    {
+        if (this.usesEmbeddedAS()) {
+            return this.options.baseUrl + '/as';
+        }
+        return this.options.authorizationEndpoint;
     }
 
     public async exportJWK()
@@ -174,7 +204,10 @@ export class Issuer
         if (!this.did?.did) {
             throw Error('No issuer configured for access tokens')
         }
-        jwt.payload.iss = this.did!.did;
+        // the embedded authorization server signs tokens with the issuer key, but under its own identifier
+        if (!jwt.payload.iss) {
+            jwt.payload.iss = this.did!.did;
+        }
         jwt.header.alg = this.algorithm();
         await jwt.sign(this.key!);
         return jwt.token;
@@ -336,6 +369,7 @@ export class Issuer
      */
     public validateConfiguration()
     {
+        validateEmbeddedASConfiguration(this.options);
         for (const id of Object.keys(this.metadata.credential_configurations_supported ?? {})) {
             const config = this.getCredentialConfiguration(id);
             if (config) {
@@ -404,8 +438,8 @@ export class Issuer
         if (metadata.credential_request_encryption) {
             delete metadata.credential_request_encryption;
         }
-        if (this.options.authorizationEndpoint && this.options.authorizationEndpoint.length) {
-            metadata.authorization_servers = [this.options.authorizationEndpoint];
+        if (this.authorizationServerIdentifier() && this.authorizationServerIdentifier()!.length) {
+            metadata.authorization_servers = [this.authorizationServerIdentifier()!];
         }
         else if(metadata.authorization_servers) {
             delete metadata.authorization_servers;

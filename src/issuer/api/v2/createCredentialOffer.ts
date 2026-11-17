@@ -34,6 +34,7 @@ export async function createCredentialOfferV2(issuer:Issuer, request:CreateCrede
     return createCredentialOfferForDataSets(issuer, {
         grants,
         credentialMetadata: request.credentialMetadata,
+        ...(request.dcql && { presentation: { dcql: request.dcql } }),
         dataSets: request.credentials.map((credential) => ({
             credentialId: credential.credential_configuration_id,
             data: claimsToData(credential.claims ?? []),

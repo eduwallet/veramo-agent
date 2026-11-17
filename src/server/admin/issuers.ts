@@ -61,6 +61,7 @@ interface StoreIssuerRequest {
     adminToken:string;
     authorizationEndpoint?:string;
     tokenEndpoint?:string;
+    embeddedAuthorizationServer?:any;
     clientId?:string;
     clientSecret?:string;
     metadata?:any;
@@ -75,6 +76,7 @@ async function setIssuerData(issuer:Issuer, data:StoreIssuerRequest)
     issuer.adminToken = data.adminToken;
     issuer.authorizationEndpoint = data.authorizationEndpoint;
     issuer.tokenEndpoint = data.tokenEndpoint;
+    issuer.embeddedAuthorizationServer = data.embeddedAuthorizationServer ? JSON.stringify(data.embeddedAuthorizationServer) : undefined;
     issuer.clientId = data.clientId;
     issuer.clientSecret = data.clientSecret;
     if (data.metadata) {

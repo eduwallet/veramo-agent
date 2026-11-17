@@ -28,6 +28,7 @@ import { setStatus } from './endpoints/statuslists/setStatus.js';
 import { getStatusListCredential } from './endpoints/statuslists/getStatusListCredential.js';
 import { isSingleTenant } from '#root/utils/isSingleTenant';
 import { adminAuthRateLimiter } from './rateLimiters.js';
+import { createRoutesForEmbeddedAS } from '#root/as/routes';
 
 export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnownRouter:Router) {
     // to support internal redirections, we set up the routes on <base-url>/<tenant>/...
@@ -83,6 +84,9 @@ export async function createRoutesForIssuer(issuer:Issuer, app:Express, wellKnow
     getOpenidConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
     getOAuthConfiguration(issuer, basePath, issuer.options.baseUrl + tokenPath, isSingleTenant() ? null : wellKnownRouter);
   
+    // embedded authorization server (verification during issuance), only if configured
+    createRoutesForEmbeddedAS(issuer, basePath, wellKnownRouter, !!isSingleTenant());
+
     // this is hard coded in the Issuer when metadata is generated
     getCredential(issuer, '/credentials');
 
