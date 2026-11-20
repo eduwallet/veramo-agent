@@ -1,3 +1,4 @@
+import { inflateSync } from 'zlib';
 import { vi, expect, test, beforeEach } from 'vitest';
 import { Factory } from '@muisit/cryptokey';
 import { StatusListType } from '#root/statusLists/StatusListType';
@@ -84,5 +85,23 @@ test("Creating JWT", async () => {
 
     const jwt = await statusListAsJWT(status, issuer);
     expect(jwt).toBeDefined();
-    expect(jwt).toBe('eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDp3ZWI6ZXhhbXBsZS5jb20jMCIsInR5cCI6InN0YXR1c2xpc3Qrand0In0.eyJpc3MiOiJkaWQ6d2ViOmV4YW1wbGUuY29tIiwiZXhwIjoxNTc3ODM3ODIzLCJpYXQiOjE1Nzc4MzY5MjMsInN1YiI6Imh0dHBzOi8vZXhhbXBsZS5jb20iLCJ0dGwiOjMwMCwic3RhdHVzX2xpc3QiOnsiYml0cyI6MSwibHN0IjoiZUp3VDRHQmdZREJnR0hEQVJIVVRIUWpJQXdCUE5nQ0wifX0.Lh8dm2M0ooaNCi1r2TBbao_UPolpdFtCyAe4mivx_hJOsPaFxhdE6p-akEWDAMaph_smwwkkxMHvUvMU8V33Ag');
+    const [header, payload] = jwt.split('.').slice(0, 2).map((part) => JSON.parse(Buffer.from(part, 'base64url').toString()));
+    expect(header).toEqual({ alg: 'EdDSA', kid: 'did:web:example.com#0', typ: 'statuslist+jwt' });
+    expect(payload.iss).toBe('did:web:example.com');
+    expect(payload.sub).toBe('https://example.com');
+    expect(payload.ttl).toBe(300);
+    expect(payload.status_list.bits).toBe(1);
+    // the IETF list numbers the bits of a byte from the least significant bit (draft-ietf-oauth-status-list, 4.1)
+    const raw = inflateSync(Buffer.from(payload.status_list.lst, 'base64url'));
+    const set:number[] = [];
+    for (let i = 0; i < raw.length * 8; i++) {
+        if ((raw[i >> 3] >> (i & 7)) & 1) {
+            set.push(i);
+        }
+    }
+    expect(set).toEqual([3, 12, 42, 43, 1094, 1745]);
+});
+
+test('reverseBitsPerByte', () => {
+    expect(Array.from(StatusListType.reverseBitsPerByte(new Uint8Array([0x80, 0x01, 0b10110000, 0xff, 0])))).toEqual([0x01, 0x80, 0b00001101, 0xff, 0]);
 });

@@ -367,7 +367,24 @@ export class StatusListType implements StatusListInterface {
     public static async toZlibCompression(list:StatusList)
     {
         const buffer = await Bitstring.decodeBits({encoded:list.revoked})
-        return toString(deflateSync(buffer), 'base64url');
+        // Our bitstrings number the bits of a byte from the most significant bit (W3C), an IETF Token Status List
+        // numbers them from the least significant bit (draft-ietf-oauth-status-list, 4.1), so reverse each byte
+        return toString(deflateSync(StatusListType.reverseBitsPerByte(buffer)), 'base64url');
+    }
+
+    public static reverseBitsPerByte(data:Uint8Array): Uint8Array
+    {
+        const retval = new Uint8Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+            let b = data[i];
+            let r = 0;
+            for (let j = 0; j < 8; j++) {
+                r = (r << 1) | (b & 1);
+                b >>= 1;
+            }
+            retval[i] = r;
+        }
+        return retval;
     }
 
     // this routine is not used, but it is here for completeness sake
