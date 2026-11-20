@@ -106,12 +106,20 @@ These fix the contract of the in-app flow:
   both `presentation` and `auth_session` are present. `presentation` is an OpenID4VP authorization request URL.
 - Step 6 sends `auth_session` and `presentation_during_issuance_session` only. The value comes from the JSON body of
   the verifier's direct_post response (`responseJson.presentation_during_issuance_session`).
-- **Authorization details, not scope.** The wallets (adapted for this) request the credentials with
-  `authorization_details` (type `openid_credential`, with `credential_configuration_id`) and do not use `scope`.
-  The AS supports only `authorization_details`: a challenge or authorize request without it, or with
-  configurations that are not in the offer, is `400 invalid_request` (`invalid_authorization_details`); a `scope`
-  parameter is ignored. The stored `authorization_details` (the offered configurations) are what the token
-  response returns with `credential_identifiers` (4.1 token endpoint).
+- **Authorization details or scope.** The released `@openid4vc` libraries (and so `@credo-ts/openid4vc` and
+  Paradym) send only `scope`, filled from the `scope` of the offered credential configurations, and never
+  `authorization_details`. The AS accepts both, but the offer (bound through `issuer_state`) decides what is
+  issued:
+  - `authorization_details`, if present, must be valid and may only name offered configurations, otherwise the
+    request is `400 invalid_authorization_details`;
+  - otherwise each scope value is mapped to configurations through their `scope` in the issuer metadata. A scope
+    of a configuration that is not in the offer is `400 invalid_authorization_details`; an unknown scope value
+    (for example `openid`) is ignored (RFC 6749, 3.3);
+  - without either, the offered configurations apply.
+
+  Give each credential configuration that is offered this way a `scope` in the metadata, so that the wallet can
+  send a meaningful value. The token response always returns the `authorization_details` of the offered
+  configurations with their `credential_identifiers` (4.1 token endpoint).
 - DPoP is used if the AS metadata contains `dpop_signing_alg_values_supported`. We advertise it (see 7).
 
 ## 4. Components
@@ -637,7 +645,7 @@ origins, and an enabled `embeddedAuthorizationServer`. A second variant demonstr
     request, and the AS does not evaluate them (4.3).
 13. The `issuer_state` acts as the secret of the in-app flow (like a `client_secret`); `clients` is enforced in the
     redirect flow and for a `client_id` that is sent (4.1).
-14. Only `authorization_details` is supported, no `scope` (3.3).
+14. Both `authorization_details` and `scope` are accepted; the offer decides what is issued (3.3). Originally only `authorization_details` was supported, but the released wallet libraries send only `scope`.
 15. Accepted verifier message codes: `JWT_VERIFIED`, `CREDENTIAL_OK`, `STATUS_LIST_VALID`, `NO_STATUS_LIST`,
     `VCDM1.1`, `VCDM2`, `OIDFED_OK`; all others are errors (4.3).
 16. DPoP: `ES256` only (7).
@@ -671,7 +679,8 @@ Agent (`veramo-agent`):
   (the existing pre-authorized token computes `exp` from a value in milliseconds; that is left as it is).
 - `usesAuthorisedCodeFlow()` is true for both kinds of AS; `usesExternalAuthorizationServer()` is the old
   meaning and decides on the introspection of opaque tokens in `verifyAccessTokenJWT`.
-- The `authorization_details` of the challenge request are validated against the offered configuration ids. The
+- The `authorization_details` or the `scope` of the challenge and authorize requests are validated against the
+  offered configuration ids (`validAuthorizationRequest` in `presentation.ts`, see 3.3). The
   token response lists the identifiers of all data sets of the session, as the pre-authorized flow does.
 - `src/issuer/api/validateCredentialRequest.ts` merges `presentationData` into `accessData` and now checks the
   DPoP proof for tokens of the embedded AS (also in `validateDeferredRequest.ts`).

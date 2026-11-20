@@ -53,10 +53,35 @@ export function parseAuthorizationDetails(value: any): any[] | null {
     return valid ? details : null;
 }
 
-export function validAuthorizationDetails(session: Session, value: any): boolean {
-    const details = parseAuthorizationDetails(value);
+/**
+ * Checks what the wallet asks for against the offer. The offer (bound through issuer_state) decides what is issued:
+ * - authorization_details, if present, must be valid and only name offered configurations;
+ * - otherwise a scope (the @openid4vc libraries, and so Paradym, only send scope) is mapped to configurations through
+ *   their 'scope' in the issuer metadata. A scope of a configuration that is not in the offer is refused, an unknown
+ *   scope is ignored (RFC 6749, 3.3);
+ * - without either, the offered configurations apply.
+ */
+export function validAuthorizationRequest(issuer: Issuer, session: Session, authorizationDetails: any, scope: any): boolean {
     const offered: string[] = session.data.credentialOffer?.credential_configuration_ids ?? [];
-    return !!details && details.every((d) => offered.includes(d.credential_configuration_id));
+    if (authorizationDetails !== undefined && authorizationDetails !== '') {
+        const details = parseAuthorizationDetails(authorizationDetails);
+        return !!details && details.every((d) => offered.includes(d.credential_configuration_id));
+    }
+    if (scope === undefined || scope === '') {
+        return true;
+    }
+    if (typeof scope != 'string') {
+        return false;
+    }
+    const configurations: { [id: string]: any } = issuer.metadata?.credential_configurations_supported ?? {};
+    for (const value of scope.split(' ').filter((s) => s.length)) {
+        const ids = Object.keys(configurations).filter((id) => configurations[id]?.scope === value);
+        if (ids.length && !ids.some((id) => offered.includes(id))) {
+            debug('scope', value, 'refers to configurations outside the offer', ids);
+            return false;
+        }
+    }
+    return true;
 }
 
 export interface StartParameters {

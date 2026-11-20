@@ -8,7 +8,7 @@ import { CredentialOfferStatus } from '#root/types/api';
 import { EmbeddedASSettings } from '#root/as/config';
 import { POLL_INTERVAL } from '#root/as/constants';
 import { checkDpop } from '#root/as/dpop';
-import { completePresentation, findSessionForPresentation, startPresentation, validAuthorizationDetails } from '#root/as/presentation';
+import { completePresentation, findSessionForPresentation, startPresentation, validAuthorizationRequest } from '#root/as/presentation';
 import { findSession, parseCompositeValue, remainingSeconds, safeEqual, sessionHasExpired } from '#root/as/util';
 
 // see doc/DESIGN_PRESENTATION_DURING_ISSUANCE.md, 4.1 (POST /as/authorization-challenge)
@@ -55,7 +55,7 @@ async function firstCall(issuer: Issuer, settings: EmbeddedASSettings, request: 
         return oauthError(response, 400, 'invalid_request', 'Invalid request');
     }
 
-    if (!validAuthorizationDetails(session, body.authorization_details)) {
+    if (!validAuthorizationRequest(issuer, session, body.authorization_details, body.scope)) {
         return oauthError(response, 400, 'invalid_authorization_details', 'Invalid authorization_details');
     }
 

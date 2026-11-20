@@ -45,6 +45,7 @@ function newIssuer(options: any = {}) {
     const issuer: any = {
         name: 'issuer',
         options: { baseUrl: BASE, did: 'did:example:issuer' },
+        metadata: { credential_configurations_supported: { A: { scope: 'scopeA' }, B: { scope: 'scopeB' } } },
         usesNonces: false,
         did: { did: 'did:example:issuer' },
         session,
@@ -201,16 +202,30 @@ test('a first call is refused for unknown or unsuitable sessions, without tellin
     expect(createVerifierOffer).not.toHaveBeenCalled();
 });
 
+test('scope instead of authorization_details (as the @openid4vc libraries send it)', async () => {
+    for (const extra of [
+        { authorization_details: undefined, scope: 'scopeA' },
+        { authorization_details: undefined, scope: 'openid scopeA' },
+        { authorization_details: undefined, scope: 'unknown' },
+        { authorization_details: undefined },
+        { authorization_details: '', scope: '' },
+    ]) {
+        const res = await start(newIssuer(), extra);
+        expect(res.statusCode).toBe(403);
+        expect(res.body.error).toBe('insufficient_authorization');
+    }
+});
+
 test('PKCE, authorization_details and client_id are checked on the first call', async () => {
     const issuer = newIssuer();
     expect((await start(issuer, { code_challenge: undefined })).statusCode).toBe(400);
     expect((await start(issuer, { code_challenge_method: 'plain' })).statusCode).toBe(400);
-    const noDetails = await start(issuer, { authorization_details: undefined });
-    expect(noDetails.body.error).toBe('invalid_authorization_details');
     const other = await start(issuer, { authorization_details: JSON.stringify([{ type: 'openid_credential', credential_configuration_id: 'Z' }]) });
     expect(other.body.error).toBe('invalid_authorization_details');
-    // scope alone is not enough
-    expect((await start(issuer, { authorization_details: undefined, scope: 'A' })).body.error).toBe('invalid_authorization_details');
+    expect((await start(issuer, { authorization_details: 'not json' })).body.error).toBe('invalid_authorization_details');
+    // a scope of a configuration outside the offer is refused
+    expect((await start(issuer, { authorization_details: undefined, scope: 'scopeB' })).body.error).toBe('invalid_authorization_details');
+    expect((await start(issuer, { authorization_details: undefined, scope: 'scopeA scopeB' })).body.error).toBe('invalid_authorization_details');
     const client = await start(issuer, { client_id: 'unknown' });
     expect(client.body.error).toBe('invalid_client');
     // a known client_id is accepted, and not sending one is accepted too

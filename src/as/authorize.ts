@@ -6,7 +6,7 @@ import { CredentialOfferStatus } from '#root/types/api';
 import { EmbeddedASSettings } from '#root/as/config';
 import { POLL_INTERVAL } from '#root/as/constants';
 import { contentSecurityPolicy, renderAuthorizePage, renderMessagePage } from '#root/as/authorizePage';
-import { completePresentation, findSessionForPresentation, startPresentation, validAuthorizationDetails } from '#root/as/presentation';
+import { completePresentation, findSessionForPresentation, startPresentation, validAuthorizationRequest } from '#root/as/presentation';
 import { checkVerifierOffer } from '#root/as/verifierClient';
 import { findSession, parseCompositeValue, safeEqual, sessionHasExpired } from '#root/as/util';
 
@@ -105,7 +105,7 @@ export async function authorize(issuer: Issuer, request: Request, response: Resp
         if (!session) {
             return fail('invalid_request', 'Invalid request');
         }
-        if (!validAuthorizationDetails(session, query.authorization_details)) {
+        if (!validAuthorizationRequest(issuer, session, query.authorization_details, query.scope)) {
             return fail('invalid_authorization_details', 'Invalid authorization_details');
         }
         const codeChallenge = str(query.code_challenge);

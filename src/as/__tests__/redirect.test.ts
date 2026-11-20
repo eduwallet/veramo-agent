@@ -43,6 +43,7 @@ function newIssuer(options: any = {}, uuid = 'sess1') {
     return {
         name: 'issuer',
         options: { baseUrl: BASE, did: 'did:example:issuer' },
+        metadata: { credential_configurations_supported: { A: { scope: 'scopeA' }, B: { scope: 'scopeB' } } },
         usesNonces: false,
         did: { did: 'did:example:issuer' },
         session,
@@ -132,7 +133,8 @@ test('other errors are returned to the validated redirect_uri, with the state', 
         [{ issuer_state: 'unknown' }, 'invalid_request'],
         [{ code_challenge: undefined }, 'invalid_request'],
         [{ code_challenge_method: 'plain' }, 'invalid_request'],
-        [{ authorization_details: undefined }, 'invalid_authorization_details'],
+        [{ authorization_details: 'not json' }, 'invalid_authorization_details'],
+        [{ authorization_details: undefined, scope: 'scopeB' }, 'invalid_authorization_details'],
         [{ dpop_jkt: 'not-a-thumbprint' }, 'invalid_request'],
     ] as [any, string][]) {
         const res = await start(issuer, extra);
