@@ -28,6 +28,7 @@ function newSession(status:string, overrides:any = {}) {
     session.uuid = 'sess-1';
     session.state = 'state-1';
     session.data = {
+        credentialOffer: { grants: { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': { 'pre-authorized_code': 'x', authorization_server: 'https://example.com/issuer' } } },
         status,
         credentialDataSets: { 'slow#0': { id: 'slow#0', credentialId: 'slow' } },
         deferredTransactions: { 'tx-1': {
@@ -66,7 +67,7 @@ function setup(session:Session|null) {
     vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
     vi.spyOn(issuer, 'storeSession').mockResolvedValue(undefined as any);
     vi.spyOn(issuer, 'getSessionById').mockResolvedValue(session as any);
-    vi.mocked(verifyAccessTokenJWT).mockResolvedValue({ payload: { iss: 'did:example:123', issuer_state: 'state-1' } } as any);
+    vi.mocked(verifyAccessTokenJWT).mockResolvedValue({ payload: { iss: 'https://example.com/issuer', issuer_state: 'state-1' } } as any);
     return { issuer, handler };
 }
 
@@ -178,7 +179,7 @@ test('rejects a missing transaction_id, a missing token and an unknown session',
 
 test('rejects an access token that was not issued by this issuer', async () => {
     const { handler } = setup(newSession(CredentialOfferStatus.CREDENTIAL_PENDING));
-    vi.mocked(verifyAccessTokenJWT).mockResolvedValue({ payload: { iss: 'did:example:other', issuer_state: 'state-1' } } as any);
+    vi.mocked(verifyAccessTokenJWT).mockResolvedValue({ payload: { iss: 'https://example.com/other', issuer_state: 'state-1' } } as any);
     const res = response();
     await handler(request({ transaction_id: 'tx-1' }), res);
     expect(res.statusCode).toBe(400);

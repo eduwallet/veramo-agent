@@ -7,6 +7,13 @@ import { APIGrants } from 'types/api/credentialOffer.js';
     let preAuthorizedCode: string | undefined = undefined
     let issuerState: string | undefined = undefined
     let userPin: string | undefined
+
+    // the authorization server is determined by the issuer, never by the caller
+    for (const grant of Object.values(apiGrants)) {
+        if (grant && typeof grant === 'object') {
+            delete (grant as any).authorization_server;
+        }
+    }
   
     if (apiGrants[AUTHORIZATION_CODE_GRANT]) {
         issuerState = apiGrants[AUTHORIZATION_CODE_GRANT].issuer_state;

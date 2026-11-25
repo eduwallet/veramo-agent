@@ -74,7 +74,7 @@ export async function asToken(issuer: Issuer, request: Request, response: Respon
 
         const iat = Math.floor(Date.now() / 1000);
         const tokenResponse = await createAccessTokenResponse(issuer, session, dpop.jkt ?? authorization.presentation?.dpopJkt, {
-            iss: issuer.authorizationServerIdentifier(),
+            iss: issuer.embeddedASIdentifier(),
             aud: issuer.options.baseUrl,
             iat,
             exp: iat + ACCESS_TOKEN_TTL,

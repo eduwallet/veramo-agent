@@ -66,7 +66,7 @@ export interface IssuerScheme {
     did: string;
     adminToken?: string;
     authorizationEndpoint?:string;
-    tokenEndpoint?: string;
+    preAuthorizedCode: boolean;
     embeddedAuthorizationServer?:any;
     clientSecret?:string;
     metadata?:any;
@@ -80,7 +80,7 @@ export function issuerToScheme(issuer:Issuer, doFull = false) {
         baseUrl: options.baseUrl,
         adminToken: options.adminToken,
         authorizationEndpoint: options.authorizationEndpoint,
-        tokenEndpoint: options.tokenEndpoint,
+        preAuthorizedCode: options.preAuthorizedCode !== false,
         ...(options.embeddedAuthorizationServer && {embeddedAuthorizationServer: options.embeddedAuthorizationServer}),
         clientSecret: options.clientSecret
     };

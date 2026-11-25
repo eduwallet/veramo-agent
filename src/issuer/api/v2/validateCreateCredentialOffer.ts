@@ -15,6 +15,7 @@ function invalid(description:string):ApiState
     return { error: ErrorCodes.INVALID_REQUEST, description };
 }
 
+import { checkAuthorizationServers } from '#root/issuer/lib/checkAuthorizationServers';
 export function validateCreateCredentialOfferV2(issuer:Issuer, request:CreateCredentialOfferRequestV2):ApiState
 {
     debug("validating createCredentialOffer v2", request);
@@ -74,6 +75,11 @@ export function validateCreateCredentialOfferV2(issuer:Issuer, request:CreateCre
     const presentationError = validatePresentationRequest(issuer, request);
     if (presentationError) {
         return invalid(presentationError);
+    }
+
+    const asError = checkAuthorizationServers(issuer, request.grant === AUTHORIZATION_CODE_GRANT, request.grant === PRE_AUTHORIZED_CODE, !!request.dcql);
+    if (asError) {
+        return invalid(asError);
     }
 
     debug("create credential offer v2 is valid");

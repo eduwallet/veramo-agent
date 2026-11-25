@@ -30,6 +30,7 @@ function newSession() {
     session.state = 'state-1';
     session.expirationDate = new Date(Date.now() + 60000);
     session.data = {
+        credentialOffer: { grants: { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': { 'pre-authorized_code': 'x', authorization_server: 'https://example.com/issuer' } } },
         status: CredentialOfferStatus.ACCESS_TOKEN_CREATED,
         credentialDataSets: { 'cred-1#0': { id: 'cred-1#0', credentialId: 'cred-1', credentialConfiguration: { format: 'jwt_vc_json' }, data: {} } },
     } as any;
@@ -52,7 +53,7 @@ test('rejects a DPoP-bound access token when no DPoP proof is supplied', async (
     const session = newSession();
     vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
     vi.mocked(verifyAccessTokenJWT).mockResolvedValue({
-        payload: { iss: issuer.did!.did, issuer_state: session.state, cnf: { jkt: 'the-thumbprint' } },
+        payload: { iss: issuer.options.baseUrl, issuer_state: session.state, cnf: { jkt: 'the-thumbprint' } },
     } as any);
 
     const request = newRequest('DPoP some-access-token');
@@ -66,7 +67,7 @@ test('requires a fresh nonce when the DPoP proof lacks one', async () => {
     vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
     vi.spyOn(issuer.dpopNonceStates, 'get').mockResolvedValue({ uuid: 'fresh-nonce' } as any);
     vi.mocked(verifyAccessTokenJWT).mockResolvedValue({
-        payload: { iss: issuer.did!.did, issuer_state: session.state, cnf: { jkt: 'the-thumbprint' } },
+        payload: { iss: issuer.options.baseUrl, issuer_state: session.state, cnf: { jkt: 'the-thumbprint' } },
     } as any);
 
     const key = await Factory.createFromType('Secp256r1');
@@ -98,7 +99,7 @@ test('rejects a DPoP proof bound to a different key than the access token', asyn
     vi.spyOn(issuer.dpopNonceStates, 'consume').mockResolvedValue(true);
     vi.spyOn(issuer.dpopJtiStates, 'claim').mockResolvedValue(true);
     vi.mocked(verifyAccessTokenJWT).mockResolvedValue({
-        payload: { iss: issuer.did!.did, issuer_state: session.state, cnf: { jkt: 'unrelated-thumbprint' } },
+        payload: { iss: issuer.options.baseUrl, issuer_state: session.state, cnf: { jkt: 'unrelated-thumbprint' } },
     } as any);
 
     const key = await Factory.createFromType('Secp256r1');

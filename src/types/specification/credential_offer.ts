@@ -45,5 +45,4 @@ export interface CredentialOfferData {
     credential_issuer:string;
     credential_configuration_ids:string[];
     grants?:Grants;
-    client_id?:string; // out of spec client identifier for authorized code flow (Sphereon and others)
 }

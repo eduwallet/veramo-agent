@@ -49,7 +49,7 @@ function newIssuer(options: any = {}, uuid = 'sess1') {
         session,
         signToken: vi.fn(async (jwt: any) => 'signed:' + JSON.stringify(jwt.payload)),
         usesEmbeddedAS: () => true,
-        authorizationServerIdentifier: () => BASE + '/as',
+        embeddedASIdentifier: () => BASE + '/as',
         embeddedASSettings: () => ({
             mode: 'both', authSessionTtl: 86400, codeTtl: 60,
             clients: [{ clientId: 'wallet', redirectUris: [REDIRECT, 'https://w/cb2'] }, { clientId: 'other', redirectUris: ['https://o/cb'] }],

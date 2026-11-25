@@ -5,7 +5,8 @@ import { ErrorCodes } from '#root/types/api';
 import { CreateCredentialOfferRequest } from "#root/types/api/credentialOffer";
 import { ApiState } from "#root/types/internal";
 import { isValidCallbackUrl } from '#root/issuer/lib/isValidCallbackUrl';
-import { PRE_AUTHORIZED_CODE_GRANT } from '#root/types/specification/credential_offer';
+import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE_GRANT } from '#root/types/specification/credential_offer';
+import { checkAuthorizationServers } from '#root/issuer/lib/checkAuthorizationServers';
 
 export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCredentialOfferRequest):ApiState
 {
@@ -46,6 +47,14 @@ export function validateCreateCredentialOffer(issuer:Issuer, request:CreateCrede
         debug("invalid because the credential callback is not an http(s) URL");
         error.error = ErrorCodes.INVALID_REQUEST;
         error.description = "Invalid credential_callback: it must be an http(s) URL";
+        return error;
+    }
+
+    const asError = checkAuthorizationServers(issuer, !!request.grants[AUTHORIZATION_CODE_GRANT], !!request.grants[PRE_AUTHORIZED_CODE_GRANT], false);
+    if (asError) {
+        debug("invalid because there is no suitable authorization server", asError);
+        error.error = ErrorCodes.INVALID_REQUEST;
+        error.description = asError;
         return error;
     }
 

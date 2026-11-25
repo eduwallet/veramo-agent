@@ -6,6 +6,7 @@ import { CredentialOfferStatus } from 'types/api.js';
 import { JWT } from '#root/jwt/JWT';
 import { Session } from '#root/database/entities/index';
 import moment from 'moment';
+import { createUniqueId } from '#root/utils/createUniqueId';
 import { CredentialDataSet } from '#root/types/internal';
 
 const TOKEN_EXPIRY = 30 * 60 * 1000;
@@ -63,11 +64,15 @@ async function generateAccessToken(issuer:Issuer, session:Session, jkt?:string, 
     const iat = new Date().getTime() / 1000
     const exp = iat + TOKEN_EXPIRY;
     const jwt:JWT = new JWT();
-    jwt.header = { typ: 'JWT' };
+    // RFC 9068: JWT profile for OAuth 2.0 access tokens. Pre-authorized sessions have no user or client, so
+    // sub and client_id are not set
+    jwt.header = { typ: 'at+jwt' };
     jwt.payload = {
             iat,
             exp,
-            iss: issuer.did!.did,
+            iss: issuer.options.baseUrl,   // the issuer is the authorization server of the pre-authorized_code flow
+            aud: issuer.options.baseUrl,
+            jti: createUniqueId(),
             issuer_state: session.state,
             token_type: jkt ? 'DPoP' : 'Bearer',
             // https://www.rfc-editor.org/rfc/rfc9449#section-6 - binds the access token to the

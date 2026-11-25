@@ -28,7 +28,8 @@ import { convertConfigToDCSDJWT, convertConfigToVCSDJWT } from './lib/convertCon
 import { StatusListType } from '#root/statusLists/StatusListType';
 import { MAX_BATCH_SIZE } from '#root/environment';
 import { DeferredSettings, getDeferredSettings, validateDeferredConfiguration } from './lib/deferredConfiguration.js';
-import { EmbeddedASSettings, getEmbeddedASSettings, validateEmbeddedASConfiguration } from '#root/as/config';
+import { EmbeddedASSettings, getEmbeddedASSettings, validateAuthorizationServerConfiguration, validateEmbeddedASConfiguration } from '#root/as/config';
+import { AuthorizationServerSelectionError } from './lib/AuthorizationServerSelectionError.js';
 
 export class Issuer
 {
@@ -74,6 +75,15 @@ export class Issuer
         return this.key?.algorithms()[0] || 'EdDSA';
     }
 
+    /**
+     * The issuer itself is the authorization server of the pre-authorized_code flow, unless that
+     * is disabled with the preAuthorizedCode option
+     */
+    public usesPreAuthorizedCode():boolean
+    {
+        return this.options.preAuthorizedCode !== false;
+    }
+
     public usesAuthorisedCodeFlow()
     {
         return this.usesExternalAuthorizationServer() || this.usesEmbeddedAS();
@@ -95,14 +105,64 @@ export class Issuer
     }
 
     /**
-     * The identifier (issuer) of the authorization server that issues the access tokens of the authorization_code flow
+     * The identifier of the authorization server of the pre-authorized_code flow: the issuer itself
      */
-    public authorizationServerIdentifier():string|undefined
+    public preAuthorizedASIdentifier():string
     {
-        if (this.usesEmbeddedAS()) {
-            return this.options.baseUrl + '/as';
+        return this.options.baseUrl;
+    }
+
+    public embeddedASIdentifier():string
+    {
+        return this.options.baseUrl + '/as';
+    }
+
+    /**
+     * All authorization servers of this issuer, for the authorization_servers of the issuer metadata
+     */
+    public authorizationServers():string[]
+    {
+        const servers:string[] = [];
+        if (this.usesPreAuthorizedCode()) {
+            servers.push(this.preAuthorizedASIdentifier());
         }
-        return this.options.authorizationEndpoint;
+        if (this.usesEmbeddedAS()) {
+            servers.push(this.embeddedASIdentifier());
+        }
+        if (this.usesExternalAuthorizationServer()) {
+            servers.push(this.options.authorizationEndpoint!);
+        }
+        return [...new Set(servers)];
+    }
+
+    /**
+     * The authorization server to name in the grant of a credential offer:
+     * - pre-authorized_code: the issuer itself
+     * - authorization_code with presentation during issuance: the embedded authorization server
+     * - other authorization_code: the external authorization server, or else the embedded one
+     * Throws an AuthorizationServerSelectionError if there is no suitable authorization server
+     */
+    public authorizationServerFor(flow:'pre-authorized_code'|'authorization_code', presentation:boolean):string
+    {
+        if (flow === 'pre-authorized_code') {
+            if (!this.usesPreAuthorizedCode()) {
+                throw new AuthorizationServerSelectionError('The pre-authorized_code flow is disabled for this issuer');
+            }
+            return this.preAuthorizedASIdentifier();
+        }
+        if (presentation) {
+            if (!this.usesEmbeddedAS()) {
+                throw new AuthorizationServerSelectionError('Presentation during issuance requires the embedded authorization server');
+            }
+            return this.embeddedASIdentifier();
+        }
+        if (this.usesExternalAuthorizationServer()) {
+            return this.options.authorizationEndpoint!;
+        }
+        if (this.usesEmbeddedAS()) {
+            return this.embeddedASIdentifier();
+        }
+        throw new AuthorizationServerSelectionError('No authorization server is configured for the authorization_code flow');
     }
 
     public async exportJWK()
@@ -369,6 +429,7 @@ export class Issuer
      */
     public validateConfiguration()
     {
+        validateAuthorizationServerConfiguration(this.options);
         validateEmbeddedASConfiguration(this.options);
         for (const id of Object.keys(this.metadata.credential_configurations_supported ?? {})) {
             const config = this.getCredentialConfiguration(id);
@@ -438,8 +499,9 @@ export class Issuer
         if (metadata.credential_request_encryption) {
             delete metadata.credential_request_encryption;
         }
-        if (this.authorizationServerIdentifier() && this.authorizationServerIdentifier()!.length) {
-            metadata.authorization_servers = [this.authorizationServerIdentifier()!];
+        const servers = this.authorizationServers();
+        if (servers.length) {
+            metadata.authorization_servers = servers;
         }
         else if(metadata.authorization_servers) {
             delete metadata.authorization_servers;

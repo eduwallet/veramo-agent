@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { applyPresentationDefaults, validatePresentationRequest } from '../dcqlOffer';
-import { validateEmbeddedASConfiguration, EmbeddedASConfigurationError } from '../config';
+import { validateAuthorizationServerConfiguration, validateEmbeddedASConfiguration, EmbeddedASConfigurationError } from '../config';
 import { Issuer } from '#root/issuer/Issuer';
 import { ErrorCodes } from '#root/types/api';
 import { validateCreateCredentialOfferV2 } from '#root/issuer/api/v2/validateCreateCredentialOffer';
@@ -76,8 +76,8 @@ test('configuration validation', () => {
     const verifier = { url: 'https://v', verifierToken: 't' };
     expect(() => validateEmbeddedASConfiguration(base({ enabled: false }))).not.toThrow();
     expect(() => validateEmbeddedASConfiguration(base({ enabled: true, mode: 'in-app', verifier }))).not.toThrow();
-    // enabled with an external AS
-    expect(() => validateEmbeddedASConfiguration(base({ enabled: true, mode: 'in-app', verifier }, { authorizationEndpoint: 'https://as' }))).toThrow(EmbeddedASConfigurationError);
+    // enabled together with an external AS is allowed
+    expect(() => validateEmbeddedASConfiguration(base({ enabled: true, mode: 'in-app', verifier }, { authorizationEndpoint: 'https://as' }))).not.toThrow();
     // no verifier url
     expect(() => validateEmbeddedASConfiguration(base({ enabled: true, mode: 'in-app' }))).toThrow(EmbeddedASConfigurationError);
     // redirect modes need clients
@@ -87,4 +87,18 @@ test('configuration validation', () => {
     expect(() => validateEmbeddedASConfiguration(base({ enabled: true, verifier, clients: [...clients, ...clients] }))).toThrow(/duplicate/);
     expect(() => validateEmbeddedASConfiguration(base({ enabled: true, verifier, clients: [{ clientId: 'a', redirectUris: ['https://w/cb#x'] }] }))).toThrow(EmbeddedASConfigurationError);
     expect(() => validateEmbeddedASConfiguration(base({ enabled: true, mode: 'in-app', verifier, codeTtl: 0 }))).toThrow(EmbeddedASConfigurationError);
+});
+
+
+test('authorization server configuration validation', () => {
+    const base = (extra: any = {}) => ({ name: 'i', baseUrl: 'https://i', did: '', ...extra });
+    expect(() => validateAuthorizationServerConfiguration(base())).not.toThrow();
+    expect(() => validateAuthorizationServerConfiguration(base({ authorizationEndpoint: 'https://as' }))).not.toThrow();
+    // the external AS cannot be the issuer or the embedded AS
+    expect(() => validateAuthorizationServerConfiguration(base({ authorizationEndpoint: 'https://i' }))).toThrow(EmbeddedASConfigurationError);
+    expect(() => validateAuthorizationServerConfiguration(base({ authorizationEndpoint: 'https://i/as' }))).toThrow(EmbeddedASConfigurationError);
+    // without the issuer as AS, another AS is needed
+    expect(() => validateAuthorizationServerConfiguration(base({ preAuthorizedCode: false }))).toThrow(EmbeddedASConfigurationError);
+    expect(() => validateAuthorizationServerConfiguration(base({ preAuthorizedCode: false, authorizationEndpoint: 'https://as' }))).not.toThrow();
+    expect(() => validateAuthorizationServerConfiguration(base({ preAuthorizedCode: false, embeddedAuthorizationServer: { enabled: true } }))).not.toThrow();
 });

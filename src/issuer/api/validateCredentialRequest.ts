@@ -11,6 +11,7 @@ import { getHolderKeyFromProofJwt } from '#root/issuer/lib/getSignatureKeyFromPr
 import { Session } from '#root/database/entities/index';
 import moment from 'moment';
 import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
+import { expectedTokenIssuers } from '#root/utils/expectedTokenIssuers';
 import { sessionUsesAuthorisationCodeFlow } from '#root/utils/sessionUsesAuthorisationCodeFlow';
 import { MAX_BATCH_SIZE } from '#root/environment';
 
@@ -39,29 +40,16 @@ export async function validateCredentialRequest(issuer:Issuer, request:Request)
         const stateid = data?.payload?.issuer_state;
         session = await issuer.getSessionByState(stateid);
 
-        // which flow applies is a property of this session's credential offer, not of the
-        // issuer's overall configuration (both flows can be configured to exist simultaneously).
-        // If we could not find a session yet, fall back to the issuer-level capability check.
-        const usesAuthorisationCodeFlow = session ? sessionUsesAuthorisationCodeFlow(session) : issuer.usesAuthorisedCodeFlow();
+        // the token must come from the authorization server that this session's credential offer names. We never
+        // accept a token for a session without one (fail closed)
+        if (!session || !expectedTokenIssuers(session).includes(data?.payload?.iss)) {
+            debug("invalid because the access token issuer is not the authorization server of the offer", data?.payload?.iss);
+            error.error = ErrorCodes.INVALID_REQUEST;
+            error.description = "Unauthorised";
+            return error;
+        }
 
-        if (usesAuthorisationCodeFlow) {
-            // the issuer should be one of our authorization servers
-            if (issuer.authorizationServerIdentifier() !== data?.payload?.iss) {
-                debug("invalid because the access token issuer is not in our AS list", data!.payload.iss);
-                error.error = ErrorCodes.INVALID_REQUEST;
-                error.description = "Unauthorised";
-                return error;
-            }
-        }
-        else  {
-            // we must have issued it ourselves
-            if (data?.payload?.iss != issuer.did?.did) {
-                debug("invalid because the token issuer is not our did", data?.payload?.iss);
-                error.error = ErrorCodes.INVALID_REQUEST;
-                error.description = "Unauthorised";
-                return error;
-            }
-        }
+        const usesAuthorisationCodeFlow = sessionUsesAuthorisationCodeFlow(session);
 
         if (session) {
             debug('setting session access data to ', data?.payload);

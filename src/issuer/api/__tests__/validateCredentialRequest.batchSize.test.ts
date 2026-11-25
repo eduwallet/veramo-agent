@@ -26,6 +26,7 @@ function newSession() {
     session.state = 'state-1';
     session.expirationDate = new Date(Date.now() + 60000);
     session.data = {
+        credentialOffer: { grants: { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': { 'pre-authorized_code': 'x', authorization_server: 'https://example.com/issuer' } } },
         status: CredentialOfferStatus.ACCESS_TOKEN_CREATED,
         credentialDataSets: {
             'cred-1#0': { id: 'cred-1#0', credentialId: 'cred-1', credentialConfiguration: { format: 'jwt_vc_json' }, data: {} },
@@ -47,7 +48,7 @@ test('rejects a proofs[] array larger than the configured batch size, before val
     vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
     vi.spyOn(issuer, 'storeSession').mockResolvedValue(undefined as any);
     vi.mocked(verifyAccessTokenJWT).mockResolvedValue({
-        payload: { iss: issuer.did!.did, issuer_state: session.state },
+        payload: { iss: issuer.options.baseUrl, issuer_state: session.state },
     } as any);
 
     // garbage proof strings: if the cap were not enforced first, these would fail
@@ -66,7 +67,7 @@ test('accepts a proofs[] array at exactly the configured batch size limit', asyn
     vi.spyOn(issuer, 'getSessionByState').mockResolvedValue(session);
     vi.spyOn(issuer, 'storeSession').mockResolvedValue(undefined as any);
     vi.mocked(verifyAccessTokenJWT).mockResolvedValue({
-        payload: { iss: issuer.did!.did, issuer_state: session.state },
+        payload: { iss: issuer.options.baseUrl, issuer_state: session.state },
     } as any);
 
     // at the limit, the cap itself must not reject; a garbage proof string fails later,

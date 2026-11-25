@@ -14,6 +14,7 @@ function newIssuer(deferred:string[] = []) {
         name: 'issuer',
         options: { baseUrl: 'https://example.com' },
         usesNonces: false,
+        authorizationServerFor: (flow:string) => flow === 'authorization_code' ? 'https://as' : 'https://example.com',
         did: { did: 'did:example:1' },
         signToken: vi.fn(async () => 'token'),
         session,

@@ -168,8 +168,8 @@ the agent fetch its own metadata over HTTP):
   starts (the option is optional, and the AS metadata stays available), but `create-offer` refuses every request
   that carries a `dcql` query (see 4.5), and the challenge and authorize endpoints answer `400 invalid_request`
   for a session that has a query. The AS never calls the verifier without a token.
-- Configuration validation (at startup and in `exportConfig`): `embeddedAuthorizationServer.enabled` together with
-  `authorizationEndpoint` is a configuration error; `verifier.url` is required; `clients` is required for the
+- Configuration validation (at startup): the embedded AS can be combined with an external `authorizationEndpoint` (see
+  ASREDESIGN.md), which cannot be the issuer or `<base>/as`; `verifier.url` is required; `clients` is required for the
   redirect modes; the TTLs have sane bounds.
 
 Effects on existing code (all places that use `authorizationEndpoint` or decide on the flow):
@@ -178,9 +178,9 @@ Effects on existing code (all places that use `authorizationEndpoint` or decide 
 - `Issuer.ts:97-106` fetches the keys and metadata of the external AS during initialisation. **Skip this for the
   embedded AS**; the agent would otherwise fetch its own endpoint over HTTP while starting. The AS metadata is
   built locally.
-- The issuer metadata gets `authorization_servers: [<base>/as]` (`Issuer.ts:407`).
-- Introduce `issuer.authorizationServerIdentifier()` returning the external AS or `<base>/as`, and use it in
-  `validateCredentialRequest.ts:49`, `validateDeferredRequest.ts:45` and `verifyAccessTokenJWT.ts`.
+- The issuer metadata `authorization_servers` lists the issuer, `<base>/as` and an external AS (`Issuer.authorizationServers()`).
+  The offer names the AS in its grant (`Issuer.authorizationServerFor()`); the token `iss` is checked per session
+  (`utils/expectedTokenIssuers.ts`). See ASREDESIGN.md.
 - Review the remaining users of `authorizationEndpoint`: `Store.ts`, `types/internal.ts`,
   `endpoints/getOAuthConfiguration.ts`, `endpoints/getOpenidConfiguration.ts`, `admin/exportConfig.ts` and
   `server/__tests__/createRoutesForIssuer.test.ts`. `getOAuthConfiguration.ts` and `getOpenidConfiguration.ts`
@@ -502,8 +502,8 @@ Side effects to check and handle:
   Anything else is stored and forwarded unchanged. A query that the verifier nevertheless refuses at
   `create-dcql-offer` makes the challenge or authorize call fail (`400 invalid_request` or `server_error`); this
   is logged, and the session status becomes `AUTHORIZATION_DENIED`.
-- The agent generates `issuer_state` and puts it in `grants.authorization_code`. `authorization_server` is not
-  needed (one AS in the metadata).
+- The agent generates `issuer_state` and puts it in `grants.authorization_code`. `authorization_server` is set by
+  the issuer to `<base>/as` for an offer with a `dcql` query (see ASREDESIGN.md).
 - The DCQL query comes from the admin-authenticated back-office, never from the wallet.
 - "Claims must be complete" for pre-authorized offers (APIV2.md) must **not** apply here: claims can come from
   `#accessData`. `validateCreateCredentialOffer` has to be changed for this. A claim whose origin is

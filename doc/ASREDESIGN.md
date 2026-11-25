@@ -1,6 +1,6 @@
 # Redesign: authorization server per credential offer
 
-Status: plan (nog niet geïmplementeerd). De beslissingen in sectie 5 zijn verwerkt in sectie 2 en 4.
+Status: geïmplementeerd. De beslissingen in sectie 5 zijn verwerkt in sectie 2 en 4.
 
 Voorwaarde: de database-opruiming is gedaan. Issuer-, credential-, context- en vct-configuratie staat niet meer in de
 database en wordt alleen uit bestanden gelezen (`issuer/Store.ts`, migratie `14.DropConfiguration`). De
@@ -102,7 +102,7 @@ AS-identifier. Met meerdere AS'en moet dat **per sessie** op basis van het offer
   fout geworden: `baseUrl` is nu uitsluitend de AS voor pre-authorized_code. Altijd
   `grant_types_supported = [pre-authorized_code]` en nooit `authorization_endpoint` van de externe AS (een wallet die
   `baseUrl` als AS kiest zou anders naar de verkeerde AS gaan). Het `token_endpoint`-override
-  (`options.tokenEndpoint`) controleren op dezelfde manier.
+  (`options.tokenEndpoint`) is verwijderd uit de configuratie: het token endpoint op `baseUrl` is altijd het eigen endpoint.
 - Embedded AS metadata (`as/metadata.ts`) blijft ongewijzigd.
 
 ### 2.6 Documentatie en tests

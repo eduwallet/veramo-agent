@@ -232,11 +232,11 @@ The issuer configurations are specified in the `conf/issuer/` directory. Each en
 {
     "name": "human readable name for the issuer",
     "baseUrl": <base path for this issuer service>,
-    "clientId": <optional string client id to be used for authorization code flow>,
     "clientSecret": <optional string client secret to be used for authorization code flow>,
     "adminToken": <string bearer token to be passed by front end agents to create credential offers>,
-    "authorizationEndpoint": <optional authorization server to be used for authorized code flow>,
-    "tokenEndpoint": <optional token endpoint to be used for authorized code flow>,
+    "authorizationEndpoint": <optional external authorization server to be used for authorized code flow>,
+    "embeddedAuthorizationServer": <optional embedded authorization server, see doc/DESIGN_PRESENTATION_DURING_ISSUANCE.md>,
+    "preAuthorizedCode": <optional boolean, default true. false: the issuer is not an authorization server for the pre-authorized_code flow>,
     "did": <did alias or did name as configured in the did section above>,
     "key": "optional key reference index, like '0', depending on the identifier key format",
     "usesNonces": <boolean value that indicates if a nonce value should be generated in the access token>
@@ -280,7 +280,21 @@ Main entry script is `src/main.ts`. It reads the json configurations, instantiat
 
 ## Authorization Code Flow
 
-The Issuer application does _not_ implement an AS server. Instead, it allows configuration of an external authorization server using the `authorizationEndpoint` configuration parameter. This value is automatically transferred to the correct `metadata` parameter.
+The issuer can use several authorization servers (AS) at the same time. The `authorization_servers` of the issuer metadata lists:
+
+1. the issuer itself (`baseUrl`), the AS of the `pre-authorized_code` flow (unless `preAuthorizedCode` is `false`);
+2. the embedded authorization server (`baseUrl/as`), if `embeddedAuthorizationServer.enabled`;
+3. the external authorization server, if `authorizationEndpoint` is configured.
+
+Every credential offer names the AS that the wallet has to use in the `authorization_server` of its grant. The issuer chooses it, a caller of the API cannot:
+
+| Offer | `authorization_server` |
+|---|---|
+| `pre-authorized_code` | the issuer (`baseUrl`) |
+| `authorization_code` with a `dcql` query (presentation during issuance) | the embedded AS; an error if it is not enabled |
+| other `authorization_code` | the external AS; else the embedded AS; else an error |
+
+The access token has to be issued by the AS of the offer of its session (`iss`). The pre-authorized access token is a RFC 9068 token with `iss` and `aud` set to the `baseUrl`, but without `sub` and `client_id`.
 
 The issuer tries to decode the `access token` returned by the AS to see if it implements RFC 9068: https://datatracker.ietf.org/doc/html/rfc9068
 This RFC describes how to encode the `access token` as a `JWT` so that the consumer RP can both establish the authenticity and does not need to

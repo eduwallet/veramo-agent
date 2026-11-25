@@ -65,12 +65,12 @@ export interface IssuerConfiguration {
     id?: number;
     name:string;
     baseUrl: string
-    clientId?:string;
     clientSecret?:string;
     adminToken?:string;
     authorizationEndpoint?:string;
-    tokenEndpoint?:string;
     embeddedAuthorizationServer?:EmbeddedAuthorizationServerConfiguration;
+    // the issuer is the authorization server of the pre-authorized_code flow, unless this is false (default true)
+    preAuthorizedCode?:boolean;
     did:string;
     key?:string;
     usesNonces?:boolean;

@@ -54,6 +54,21 @@ function isValidRedirectUri(uri: any): boolean {
 }
 
 /**
+ * Startup validation of the authorization servers of an issuer: the issuer (pre-authorized_code), the
+ * embedded authorization server and an external one can be combined, but need distinct identifiers
+ */
+export function validateAuthorizationServerConfiguration(options: IssuerConfiguration) {
+    const external = options.authorizationEndpoint;
+    const hasExternal = !!(external && external.length);
+    if (hasExternal && (external === options.baseUrl || external === options.baseUrl + '/as')) {
+        throw new EmbeddedASConfigurationError(`Issuer ${options.name}: authorizationEndpoint cannot be the issuer itself or its embedded authorization server`);
+    }
+    if (options.preAuthorizedCode === false && !hasExternal && !options.embeddedAuthorizationServer?.enabled) {
+        throw new EmbeddedASConfigurationError(`Issuer ${options.name}: preAuthorizedCode false requires an authorizationEndpoint or an embeddedAuthorizationServer`);
+    }
+}
+
+/**
  * Startup validation of the embedded authorization server configuration. Throws an
  * EmbeddedASConfigurationError, which is fatal for the issuer store.
  */
@@ -63,9 +78,6 @@ export function validateEmbeddedASConfiguration(options: IssuerConfiguration) {
         return;
     }
     const name = options.name;
-    if (options.authorizationEndpoint && options.authorizationEndpoint.length) {
-        throw new EmbeddedASConfigurationError(`Issuer ${name}: embeddedAuthorizationServer and authorizationEndpoint cannot be used together`);
-    }
     if (cfg.mode !== undefined && !['in-app', 'redirect', 'both'].includes(cfg.mode)) {
         throw new EmbeddedASConfigurationError(`Issuer ${name}: invalid embeddedAuthorizationServer mode`);
     }

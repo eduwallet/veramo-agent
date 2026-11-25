@@ -1,5 +1,4 @@
 import { StringKeyedObject } from "#root/types/index";
-import { AuthorizationCodeGrant } from "#root/types/specification/credential_offer";
 
 
 export interface TxCodeRequest {
@@ -15,11 +14,15 @@ export interface APIPreAuthGrant {
     'pre-authorized_code'?: string;
     tx_code?: TxCodeRequest|boolean;
     interval?: number;
-    authorization_server?: string;
+}
+
+// the authorization server is chosen by the issuer, based on the type of offer
+export interface APIAuthorizationCodeGrant {
+    issuer_state?: string;
 }
 
 export interface APIGrants {
-    authorization_code?: AuthorizationCodeGrant;
+    authorization_code?: APIAuthorizationCodeGrant;
     'urn:ietf:params:oauth:grant-type:pre-authorized_code'?: APIPreAuthGrant;
 }
 

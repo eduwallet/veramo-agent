@@ -17,20 +17,12 @@ function getOIDCConfig(issuer:Issuer, tokenpath:string|undefined)
             "issuer": issuer.options.baseUrl
         };
 
-        if (issuer.options.authorizationEndpoint) {
-            data.authorization_endpoint = issuer.options.authorizationEndpoint;
-        }
-        else {
-            data.grant_types_supported = [GrantTypes.PRE_AUTHORIZED_CODE];
-        }
+        // the issuer is only the authorization server of the pre-authorized_code flow: the embedded
+        // and external authorization servers have their own metadata
+        data.grant_types_supported = [GrantTypes.PRE_AUTHORIZED_CODE];
 
-        if (issuer.options.tokenEndpoint) {
-            data.token_endpoint = issuer.options.tokenEndpoint;
-        }
-        else {
-            // token endpoint is an external URL, prepend it with the issuer base url
-            data.token_endpoint = tokenpath ?? issuer.options.baseUrl + '/token';
-        }
+        // token endpoint is an external URL, prepend it with the issuer base url
+        data.token_endpoint = tokenpath ?? issuer.options.baseUrl + '/token';
 
         return response.json(data)
     };

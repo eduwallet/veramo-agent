@@ -4,6 +4,7 @@ import { validateCreateCredentialOffer } from '../validateCreateCredentialOffer'
 
 const issuer:any = {
     name: 'issuer',
+    authorizationServerFor: () => 'https://as',
     hasCredentialConfiguration: () => ({}),
     getDeferredSettings: () => null,
     checkCredentialData: vi.fn(() => true),

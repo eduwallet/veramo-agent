@@ -2,7 +2,7 @@ import Debug from 'debug';
 const debug = Debug('issuer:api');
 import { Issuer } from '../Issuer.js';
 import { normalizeGrants } from '../../protocol/normalizeGrants.js';
-import { AUTHORIZATION_CODE_GRANT } from 'types/specification/credential_offer.js';
+import { AUTHORIZATION_CODE_GRANT, PRE_AUTHORIZED_CODE_GRANT } from 'types/specification/credential_offer.js';
 import { APIGrants, CreateCredentialOfferRequest } from 'types/api/credentialOffer.js';
 import { StringKeyedObject } from 'types/index.js';
 import { CredentialOfferData } from 'types/specification/credential_offer.js';
@@ -69,21 +69,13 @@ export async function createCredentialOfferForDataSets(issuer:Issuer, input:Offe
         credential_issuer: issuer.options.baseUrl,
     };
 
-    // If we use Authorized Code flow, pass the OAuth2 client_id in the offer
-    // This is an out-of-spec implementation of Sphereon, but not supported in
-    // the open source versions of the VcIssuer. 
+    // spec ID-1:4.1.1 -> authorization_server: the Wallet MUST use this authorization server for the
+    // grant. The issuer selects it, depending on the flow
     if (grants[AUTHORIZATION_CODE_GRANT]) {
-        debug("offer for authorisation_code flow");
-        if (issuer.options.clientId) {
-            credentialOffer.client_id = issuer.options.clientId;
-        }
-        else {
-            // EBSI stipulates that the credential_issuer is to be taken as client-id
-            // Although the wallet can decide on this client_id itself, we pass it
-            // along as out-of-spec data anyway
-            credentialOffer.client_id = credentialOffer.credential_issuer;
-        }
-        debug("client id is ", credentialOffer.client_id);
+        grants[AUTHORIZATION_CODE_GRANT].authorization_server = issuer.authorizationServerFor('authorization_code', !!input.presentation);
+    }
+    if (grants[PRE_AUTHORIZED_CODE_GRANT]) {
+        grants[PRE_AUTHORIZED_CODE_GRANT].authorization_server = issuer.authorizationServerFor('pre-authorized_code', false);
     }
 
     // before we create a new session, clear out the old ones

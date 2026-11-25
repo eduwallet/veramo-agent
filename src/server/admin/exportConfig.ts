@@ -103,10 +103,9 @@ function issuerToJson(issuer:Issuer):string
         ...(obj.adminToken && {adminToken: obj.adminToken}),
         did: obj.did,
         ...(obj.authorizationEndpoint && {authorizationEndpoint: obj.authorizationEndpoint}),
-        ...(obj.tokenEndpoint && {tokenEndpoint: obj.tokenEndpoint}),
         ...(obj.embeddedAuthorizationServer && {embeddedAuthorizationServer: obj.embeddedAuthorizationServer}),
-        ...(obj.clientId && {clientId: obj.clientId}),
         ...(obj.clientSecret && {clientSecret: obj.clientSecret}),
+        ...(obj.preAuthorizedCode === false && {preAuthorizedCode: false}),
         usesNonces: true
     }, null, 4);
 }

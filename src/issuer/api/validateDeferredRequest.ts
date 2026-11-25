@@ -9,6 +9,7 @@ import { Session } from '#root/database/entities/index';
 import { extractBearerToken } from '#root/issuer/api/validateCredentialRequest';
 import { verifyAccessTokenJWT } from '#root/issuer/lib/verifyAccessTokenJWT';
 import { DPoPNonceRequiredError, validateDPoPProof } from '#root/issuer/lib/validateDPoPProof';
+import { expectedTokenIssuers } from '#root/utils/expectedTokenIssuers';
 import { sessionUsesAuthorisationCodeFlow } from '#root/utils/sessionUsesAuthorisationCodeFlow';
 import { CredentialOfferStatus } from '#root/types/api';
 
@@ -40,17 +41,8 @@ export async function validateDeferredRequest(issuer:Issuer, request:Request): P
         tokenPayload = data?.payload;
         session = await issuer.getSessionByState(tokenPayload?.issuer_state);
 
-        const usesAuthorisationCodeFlow = session ? sessionUsesAuthorisationCodeFlow(session) : issuer.usesAuthorisedCodeFlow();
-        if (usesAuthorisationCodeFlow) {
-            if (issuer.authorizationServerIdentifier() !== tokenPayload?.iss) {
-                debug("invalid because the access token issuer is not in our AS list", tokenPayload?.iss);
-                error.error = ErrorCodes.INVALID_REQUEST;
-                error.description = "Unauthorised";
-                return error;
-            }
-        }
-        else if (tokenPayload?.iss != issuer.did?.did) {
-            debug("invalid because the token issuer is not our did", tokenPayload?.iss);
+        if (!session || !expectedTokenIssuers(session).includes(tokenPayload?.iss)) {
+            debug("invalid because the access token issuer is not the authorization server of the offer", tokenPayload?.iss);
             error.error = ErrorCodes.INVALID_REQUEST;
             error.description = "Unauthorised";
             return error;
