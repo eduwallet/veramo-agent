@@ -8,9 +8,6 @@ import { VCT_CONFIGURATION_PATH } from "#root/environment";
 import { loadJsonFiles } from "#root/utils/generic";
 import { getBaseUrl } from "#root/utils/getBaseUrl";
 import { Vct } from "#root/types/specification/vct";
-import { getDbConnection } from '#root/database/databaseService';
-import { VCTDocument } from '#root/database/entities/index';
-import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 
 export interface VctConfiguration
@@ -19,6 +16,7 @@ export interface VctConfiguration
     path: string;
     fullPath?:string;
     document: Vct;
+    source?: any;       // the document as configured, before {{ here }} was replaced
 }
 
 export interface VctConfigurationStore {
@@ -28,48 +26,9 @@ export interface VctConfigurationStore {
 const _vctConfigurationStore: VctConfigurationStore = {};
 export const getVctConfigurationStore = (): VctConfigurationStore => _vctConfigurationStore;
 
-async function readFromDB()
-{
-    try {
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(VCTDocument);
-        const objs = await repo.createQueryBuilder('vct_document').getMany();
-        for (const obj of objs) {
-            const fullPath = getBaseUrl() + obj.path;
-            let jsonDoc = obj.document;
-            jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, fullPath);
-            const cfg:VctConfiguration = {
-                credentials: JSON.parse(obj.credentials),
-                path: obj.path,
-                fullPath: fullPath,
-                document: JSON.parse(jsonDoc)
-            }
-            cfg.document.vct = cfg.fullPath;
-            _vctConfigurationStore[obj.name] = cfg;
-        }
-    }
-    catch (e) {
-        console.error("Caught exception on VCT store initialisation", e);
-    }
-}
-
-async function clearDB()
-{
-    try {
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(VCTDocument);
-        await repo.clear();
-    }
-    catch (e) {
-        console.error("Caught exception on VCT store initialisation", e);
-    }  
-}
-
 async function readFromFile()
 {
     try {
-        const dbConnection = await getDbConnection();
-        const repo = dbConnection.getRepository(VCTDocument);
         debug('Loading vct configurations, path: ' + VCT_CONFIGURATION_PATH);
         try {
             const configurations = loadJsonFiles<VctConfiguration>({ path: VCT_CONFIGURATION_PATH }).asObject;
@@ -81,14 +40,8 @@ async function readFromFile()
                     jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, cfg.fullPath);
                     cfg.document = JSON.parse(jsonDoc);
                     cfg.document.vct = cfg.fullPath;
+                    cfg.source = configurations[key].document;
                     _vctConfigurationStore[key] = cfg;
-
-                    const vctDoc = new VCTDocument();
-                    vctDoc.name = key;
-                    vctDoc.path = cfg.path;
-                    vctDoc.document = JSON.stringify(configurations[key].document);
-                    vctDoc.credentials = JSON.stringify(cfg.credentials);
-                    await repo.save(vctDoc);
                 }
             }
         }
@@ -102,12 +55,6 @@ async function readFromFile()
 }
 
 export async function initialiseVctConfigurationStore() {
-    if (hasAdminBearerToken()) {
-        await readFromDB();
-    }
-    else {
-        await clearDB();
-    }
     await readFromFile();
     debug('end of VCT configuration store initialisation', _vctConfigurationStore);
 }

@@ -1,9 +1,13 @@
 import { getDbConnection } from '#root/database/databaseService';
-import { ContextDocument, CredentialType, Identifier, Issuer, VCTDocument } from '#root/database/entities/index';
+import { Identifier } from '#root/database/entities/index';
+import { Issuer } from '#root/issuer/Issuer';
+import { getIssuerStore } from '#root/issuer/Store';
+import { getCredentialConfigurationStore } from '#root/credentials/Store';
+import { getContextConfigurationStore } from '#root/contexts/Store';
+import { getVctConfigurationStore } from '#root/vct/Store';
 import { sendErrorResponse } from '#root/server/sendErrorResponse'
 import { ErrorCodes } from '#root/types/api';
 import { ArchiveFile, exportConfigAsZip } from '#root/utils/exportConfigAsZip';
-import { getBaseUrl } from '#root/utils/getBaseUrl';
 import { Request, Response } from 'express'
 
 export async function exportConfig(request: Request, response: Response) {
@@ -39,42 +43,24 @@ async function createFiles()
 
 async function addContextFiles(): Promise<ArchiveFile[]>
 {
-    const dbConnection = await getDbConnection();
-    const repo = dbConnection.getRepository(ContextDocument);
-    const objs =  await repo.createQueryBuilder('context_document').orderBy("context_document.name").getMany();
-    const retval:ArchiveFile[] = [];
-    for (const obj of objs) {
-        retval.push({content: contextToJson(obj), path: '/contexts', name: obj.name + '.json'});
-    }
-    return retval;
-}
-function contextToJson(obj:ContextDocument):string
-{
-    // replacing is not really necessary, as we store the configuration with the unreplaced tags
-    // as is in the database
-    const basePath = getBaseUrl();
-    let jsonDoc = obj.document;
-    jsonDoc = jsonDoc.replaceAll(`/${basePath}/gi`, "{{ here }}");
-    return JSON.stringify({
-        name: obj.name,
-        basePath: obj.path,
-        document: JSON.parse(jsonDoc)
-    }, null, 4);
+    return getContextConfigurationStore().configured().map((obj) => ({
+        content: JSON.stringify({
+            name: obj.name,
+            basePath: obj.basePath,
+            document: obj.source ?? obj.document
+        }, null, 4),
+        path: '/contexts',
+        name: obj.name + '.json'
+    }));
 }
 async function addCredentials(): Promise<ArchiveFile[]>
 {
-    const dbConnection = await getDbConnection();
-    const repo = dbConnection.getRepository(CredentialType);
-    const objs =  await repo.createQueryBuilder('credential_type').orderBy("credential_type.name").getMany();
-    const retval:ArchiveFile[] = [];
-    for (const obj of objs) {
-        retval.push({content: credentialToJson(obj), path: '/credentials', name: obj.name + '.json'});
-    }
-    return retval;
-}
-function credentialToJson(obj:CredentialType):string
-{
-    return JSON.stringify(JSON.parse(obj.configuration), null, 4);
+    const store = getCredentialConfigurationStore();
+    return Object.keys(store).sort().map((name) => ({
+        content: JSON.stringify(store[name], null, 4),
+        path: '/credentials',
+        name: name + '.json'
+    }));
 }
 async function addDids(): Promise<ArchiveFile[]>
 {
@@ -102,67 +88,43 @@ function didToJson(obj:Identifier):string
 }
 async function addIssuers(): Promise<ArchiveFile[]>
 {
-    const dbConnection = await getDbConnection();
-    const ids = dbConnection.getRepository(Issuer);
-    const objs =  await ids.createQueryBuilder('issuer').orderBy("issuer.name").getMany();
-    const retval:ArchiveFile[] = [];
-    for (const obj of objs) {
-        retval.push({content: issuerToJson(obj), path: '/issuers', name: obj.name + '.json'});
-    }
-    return retval;
+    return sortedIssuers().map((issuer) => ({content: issuerToJson(issuer), path: '/issuers', name: issuer.name + '.json'}));
 }
-function issuerToJson(obj:Issuer):string
+function sortedIssuers(): Issuer[]
 {
+    return Object.values(getIssuerStore()).sort((a, b) => a.name.localeCompare(b.name));
+}
+function issuerToJson(issuer:Issuer):string
+{
+    const obj = issuer.options;
     return JSON.stringify({
-        name: obj.name,
+        name: issuer.name,
         baseUrl: obj.baseUrl,
         ...(obj.adminToken && {adminToken: obj.adminToken}),
         did: obj.did,
         ...(obj.authorizationEndpoint && {authorizationEndpoint: obj.authorizationEndpoint}),
         ...(obj.tokenEndpoint && {tokenEndpoint: obj.tokenEndpoint}),
-        ...(obj.embeddedAuthorizationServer && {embeddedAuthorizationServer: JSON.parse(obj.embeddedAuthorizationServer)}),
+        ...(obj.embeddedAuthorizationServer && {embeddedAuthorizationServer: obj.embeddedAuthorizationServer}),
         ...(obj.clientId && {clientId: obj.clientId}),
         ...(obj.clientSecret && {clientSecret: obj.clientSecret}),
-        ...(obj.statuslists && {statusLists: JSON.parse(obj.statuslists)}),
         usesNonces: true
     }, null, 4);
 }
 async function addMetadata(): Promise<ArchiveFile[]>
 {
-    const dbConnection = await getDbConnection();
-    const ids = dbConnection.getRepository(Issuer);
-    const objs =  await ids.createQueryBuilder('issuer').orderBy("issuer.name").getMany();
-    const retval:ArchiveFile[] = [];
-    for (const obj of objs) {
-        retval.push({content: metadataToJson(obj), path: '/metadata', name: obj.name + '.json'});
-    }
-    return retval;
-}
-function metadataToJson(obj:Issuer):string
-{
-    return JSON.stringify(JSON.parse(obj.metadata ?? '{}'), null, 4);
+    return sortedIssuers().map((issuer) => ({content: JSON.stringify(issuer.metadata, null, 4), path: '/metadata', name: issuer.name + '.json'}));
 }
 async function addVCTs(): Promise<ArchiveFile[]>
 {
-    const dbConnection = await getDbConnection();
-    const repo = dbConnection.getRepository(VCTDocument);
-    const objs =  await repo.createQueryBuilder('vct_document').orderBy("vct_document.name").getMany();
-    const retval:ArchiveFile[] = [];
-    for (const obj of objs) {
-        retval.push({content: vctToJson(obj), path: '/vct', name: obj.name + '.json'});
-    }
-    return retval;
-}
-function vctToJson(obj:VCTDocument):string
-{
-    const basePath = getBaseUrl();
-    let jsonDoc = obj.document;
-    jsonDoc = jsonDoc.replaceAll(`/${basePath}/gi`, "{{ here }}");
-        
-    return JSON.stringify({
-        name: obj.name,
-        path: obj.path,
-        credentials: JSON.parse(obj.credentials),
-        document: JSON.parse(jsonDoc)
-    }, null, 4);
+    const store = getVctConfigurationStore();
+    return Object.keys(store).sort().map((name) => ({
+        content: JSON.stringify({
+            name,
+            path: store[name].path,
+            credentials: store[name].credentials,
+            document: store[name].source ?? store[name].document
+        }, null, 4),
+        path: '/vct',
+        name: name + '.json'
+    }));
 }

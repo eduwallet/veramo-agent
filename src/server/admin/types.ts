@@ -1,5 +1,9 @@
 import { getDbConnection } from "#root/database/databaseService";
-import { ContextDocument, CredentialType, Identifier, Issuer, Key, VCTDocument } from "#root/database/entities/index";
+import { Identifier, Key } from "#root/database/entities/index";
+import { Issuer } from "#root/issuer/Issuer";
+import { CredentialConfiguration } from "#root/types/specification/metadata";
+import { ContextConfiguration } from "#root/contexts/Store";
+import { VctConfiguration } from "#root/vct/Store";
 import moment from "moment";
 
 export interface DataList {
@@ -57,106 +61,78 @@ export async function identifierToScheme(id:Identifier) {
 }
 
 export interface IssuerScheme {
-    id?: number;
     name: string;
     baseUrl: string;
     did: string;
-    adminToken: string;
+    adminToken?: string;
     authorizationEndpoint?:string;
     tokenEndpoint?: string;
     embeddedAuthorizationServer?:any;
-    clientId?:string;
     clientSecret?:string;
     metadata?:any;
-    statusLists?:any;
-    saved: string;
-    updated:string;
 }
 
-export async function issuerToScheme(issuer:Issuer, doFull = false) {
+export function issuerToScheme(issuer:Issuer, doFull = false) {
+    const options = issuer.options;
     const retval:IssuerScheme = {
-        id: issuer.id,
         name: issuer.name,
-        did: issuer.did,
-        baseUrl: issuer.baseUrl,
-        adminToken: issuer.adminToken,
-        authorizationEndpoint: issuer.authorizationEndpoint,
-        tokenEndpoint: issuer.tokenEndpoint,
-        ...(issuer.embeddedAuthorizationServer && {embeddedAuthorizationServer: JSON.parse(issuer.embeddedAuthorizationServer)}),
-        clientId: issuer.clientId,
-        clientSecret: issuer.clientSecret,
-        saved: moment(issuer.saveDate).format('YYYY-MM-DD HH:mm:ss'),
-        updated: moment(issuer.updateDate).format('YYYY-MM-DD HH:mm:ss')
+        did: options.did,
+        baseUrl: options.baseUrl,
+        adminToken: options.adminToken,
+        authorizationEndpoint: options.authorizationEndpoint,
+        tokenEndpoint: options.tokenEndpoint,
+        ...(options.embeddedAuthorizationServer && {embeddedAuthorizationServer: options.embeddedAuthorizationServer}),
+        clientSecret: options.clientSecret
     };
 
     if (doFull) {
-        retval.metadata = JSON.parse(issuer.metadata ?? '{}');
-        retval.statusLists = JSON.parse(issuer.statuslists ?? '{}');
+        retval.metadata = issuer.metadata;
     }
 
     return retval;
 }
 
 export interface CredentialScheme {
-    id: number;
     name:string;
     configuration:string;
-    saved: string;
-    updated:string;
 }
 
-export async function credentialToScheme(credential:CredentialType) {
+export function credentialToScheme(name:string, configuration:CredentialConfiguration) {
     const retval:CredentialScheme = {
-        id: credential.id,
-        name: credential.name,
-        configuration: credential.configuration,
-        saved: moment(credential.saveDate).format('YYYY-MM-DD HH:mm:ss'),
-        updated: moment(credential.updateDate).format('YYYY-MM-DD HH:mm:ss')
+        name,
+        configuration: JSON.stringify(configuration)
     };
     return retval;
 }
 
 export interface ContextScheme {
-    id: number;
     name:string;
     path:string;
     document:string;
-    saved: string;
-    updated:string;
 }
 
-export async function contextToScheme(context:ContextDocument) {
+export function contextToScheme(context:ContextConfiguration) {
     const retval:ContextScheme = {
-        id: context.id,
-        name: context.name,
-        path: context.path,
-        document: context.document,
-        saved: moment(context.saveDate).format('YYYY-MM-DD HH:mm:ss'),
-        updated: moment(context.updateDate).format('YYYY-MM-DD HH:mm:ss')
+        name: context.name!,
+        path: context.basePath,
+        document: JSON.stringify(context.source ?? context.document)
     };
     return retval;
 }
 
-
 export interface VCTScheme {
-    id: number;
     name:string;
     path:string;
     credentials:string;
     document:string;
-    saved: string;
-    updated:string;
 }
 
-export async function vctToScheme(vct:VCTDocument) {
+export function vctToScheme(name:string, vct:VctConfiguration) {
     const retval:VCTScheme = {
-        id: vct.id,
-        name: vct.name,
+        name,
         path: vct.path,
-        credentials: vct.credentials,
-        document: vct.document,
-        saved: moment(vct.saveDate).format('YYYY-MM-DD HH:mm:ss'),
-        updated: moment(vct.updateDate).format('YYYY-MM-DD HH:mm:ss')
+        credentials: JSON.stringify(vct.credentials),
+        document: JSON.stringify(vct.source ?? vct.document)
     };
     return retval;
 }

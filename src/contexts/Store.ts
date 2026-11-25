@@ -8,14 +8,13 @@ import { CONTEXT_CONFIGURATION_PATH } from "#root/environment";
 import { loadJsonFiles } from "#root/utils/generic";
 import { getBaseUrl } from "#root/utils/getBaseUrl";
 import fs from 'fs';
-import { getDbConnection } from '#root/database/databaseService';
-import { ContextDocument } from '#root/database/entities/ContextDocument';
-import { hasAdminBearerToken } from '#root/utils/adminBearerToken';
 
 export interface ContextConfiguration {
     basePath: string;
     fullPath?: string;
     document: any;
+    name?: string;      // the name of the configuration file, only set for configured (non-default) contexts
+    source?: any;       // the document as configured, before {{ here }} was replaced
 }
 
 interface ContextConfigurations {
@@ -46,55 +45,18 @@ class ContextConfigurationStore {
       }
     };
 
-    private async readFromDB()
-    {
-        try {
-            const dbConnection = await getDbConnection();
-            const repo = dbConnection.getRepository(ContextDocument);
-            const objs = await repo.createQueryBuilder('context_document').getMany();
-            for (const obj of objs) {
-                const fullPath = getBaseUrl() + obj.path;
-                this.add(fullPath, JSON.parse(obj.document), obj.path);
-            }
-        }
-        catch (e) {
-            console.error(e);
-        }
-    }
-
-    private async clearDB()
-    {
-        try {
-            const dbConnection = await getDbConnection();
-            const repo = dbConnection.getRepository(ContextDocument);
-            await repo.clear();
-        }
-        catch (e) {
-            console.error(e);
-        }
-    }
-
     private async readFromFile()
     {
         try {
             debug('Loading context configurations, path: ' + CONTEXT_CONFIGURATION_PATH);
             const configurations = loadJsonFiles<ContextConfiguration>({ path: CONTEXT_CONFIGURATION_PATH });
-            const dbConnection = await getDbConnection();
-            const repo = dbConnection.getRepository(ContextDocument);
-
             for (const key of Object.keys(configurations.asObject)) {
                 const cfg = configurations.asObject[key];
                 cfg.fullPath = getBaseUrl() + cfg.basePath;
 
                 if (!this.configuration[cfg.fullPath]) {
                     debug("context full path is ", cfg.fullPath);
-                    this.add(cfg.fullPath, cfg.document, cfg.basePath);
-
-                    const cDoc = new ContextDocument();
-                    cDoc.name = key;
-                    cDoc.path = cfg.basePath;
-                    cDoc.document = JSON.stringify(cfg.document);
-                    await repo.save(cDoc);
+                    this.add(cfg.fullPath, cfg.document, cfg.basePath, key);
                 }
             }
         }
@@ -105,17 +67,12 @@ class ContextConfigurationStore {
 
     public async init()
     {
-        if (hasAdminBearerToken()) {
-            await this.readFromDB();
-        }
-        else {
-            await this.clearDB();
-        }
         await this.readFromFile();
     }
 
-    public add(url:string, doc:any, bp?:string)
+    public add(url:string, doc:any, bp?:string, name?:string)
     {
+        const source = doc;
         if (doc) {
             let jsonDoc = JSON.stringify(doc);
             jsonDoc = jsonDoc.replaceAll(/{{ ?here ?}}/gi, url);
@@ -124,7 +81,8 @@ class ContextConfigurationStore {
         this.configuration[url] = {
             basePath: bp ?? '',
             document: doc,
-            fullPath: url
+            fullPath: url,
+            ...(name && { name, source })
         };
     }
 
@@ -149,6 +107,11 @@ class ContextConfigurationStore {
 
     public keys() {
         return Object.keys(this.configuration);
+    }
+
+    // the contexts that were read from the configuration files
+    public configured():ContextConfiguration[] {
+        return Object.values(this.configuration).filter((c) => c.name !== undefined);
     }
 
     public get(key:string) {
